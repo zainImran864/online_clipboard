@@ -27,9 +27,9 @@ export default function CodeDisplay({ code, shareUrl }: CodeDisplayProps) {
     };
 
     return (
-        <div className="w-full space-y-4 rounded-2xl bg-blue-100 p-6 shadow-lg">
+        <div className="w-full space-y-3 rounded-2xl bg-blue-100 p-4 shadow-lg sm:space-y-4 sm:p-6">
             <div className="flex items-center gap-2 text-green-700">
-                <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="h-5 w-5 sm:h-6 sm:w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path
                         strokeLinecap="round"
                         strokeLinejoin="round"
@@ -37,23 +37,23 @@ export default function CodeDisplay({ code, shareUrl }: CodeDisplayProps) {
                         d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
                     />
                 </svg>
-                <h3 className="text-lg font-semibold">Share Code Generated!</h3>
+                <h3 className="text-base font-semibold sm:text-lg">Share Code Generated!</h3>
             </div>
 
             {/* Numeric Code */}
             <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700">6-Digit Code</label>
+                <label className="text-xs font-medium text-gray-700 sm:text-sm">6-Digit Code</label>
                 <div className="flex items-center gap-2">
-                    <div className="flex-1 rounded-lg bg-white p-4 font-mono text-3xl font-bold tracking-widest text-gray-800 shadow-sm">
+                    <div className="flex-1 rounded-lg bg-white p-3 text-center font-mono text-2xl font-bold tracking-widest text-gray-800 shadow-sm sm:p-4 sm:text-3xl">
                         {code}
                     </div>
                     <button
                         onClick={() => copyToClipboard(code, 'code')}
-                        className="rounded-lg bg-blue-500 p-4 text-white transition-all hover:bg-blue-600 active:scale-95"
+                        className="rounded-lg bg-blue-500 p-3 text-white transition-all hover:bg-blue-600 active:scale-95 sm:p-4"
                         title="Copy code"
                     >
                         {copiedCode ? (
-                            <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg className="h-5 w-5 sm:h-6 sm:w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path
                                     strokeLinecap="round"
                                     strokeLinejoin="round"
@@ -62,7 +62,7 @@ export default function CodeDisplay({ code, shareUrl }: CodeDisplayProps) {
                                 />
                             </svg>
                         ) : (
-                            <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg className="h-5 w-5 sm:h-6 sm:w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path
                                     strokeLinecap="round"
                                     strokeLinejoin="round"
@@ -77,18 +77,18 @@ export default function CodeDisplay({ code, shareUrl }: CodeDisplayProps) {
 
             {/* Shareable Link */}
             <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700">Shareable Link</label>
+                <label className="text-xs font-medium text-gray-700 sm:text-sm">Shareable Link</label>
                 <div className="flex items-center gap-2">
-                    <div className="flex-1 overflow-hidden rounded-lg bg-white p-3 shadow-sm">
-                        <p className="truncate text-sm text-blue-600">{shareUrl}</p>
+                    <div className="flex-1 overflow-hidden rounded-lg bg-white p-2 shadow-sm sm:p-3">
+                        <p className="truncate text-xs text-blue-600 sm:text-sm">{shareUrl}</p>
                     </div>
                     <button
                         onClick={() => copyToClipboard(shareUrl, 'link')}
-                        className="rounded-lg bg-purple-500 p-3 text-white transition-all hover:bg-purple-600 active:scale-95"
+                        className="rounded-lg bg-purple-500 p-2.5 text-white transition-all hover:bg-purple-600 active:scale-95 sm:p-3"
                         title="Copy link"
                     >
                         {copiedLink ? (
-                            <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg className="h-5 w-5 sm:h-6 sm:w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path
                                     strokeLinecap="round"
                                     strokeLinejoin="round"
@@ -97,7 +97,7 @@ export default function CodeDisplay({ code, shareUrl }: CodeDisplayProps) {
                                 />
                             </svg>
                         ) : (
-                            <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg className="h-5 w-5 sm:h-6 sm:w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path
                                     strokeLinecap="round"
                                     strokeLinejoin="round"
@@ -110,7 +110,7 @@ export default function CodeDisplay({ code, shareUrl }: CodeDisplayProps) {
                 </div>
             </div>
 
-            <p className="text-sm text-gray-600">
+            <p className="text-xs text-gray-600 sm:text-sm">
                 💡 Share the code or link with anyone. They can access your content for 24 hours.
             </p>
         </div>

@@ -18,7 +18,7 @@ export default function Home() {
       {/* Header */}
       <header className="p-4 sm:p-6">
         <Logo size={40} className="sm:hidden" />
-        <Logo size={50} className="hidden sm:block" />
+        <Logo size={50} className="hidden sm:flex" />
       </header>
 
       {/* Main Content */}

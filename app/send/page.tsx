@@ -126,7 +126,7 @@ export default function SendPage() {
             {/* Header */}
             <header className="flex flex-wrap items-center justify-between gap-3 p-4 sm:p-6">
                 <Logo size={40} className="sm:hidden" />
-                <Logo size={50} className="hidden sm:block" />
+                <Logo size={50} className="hidden sm:flex" />
                 <button
                     onClick={() => router.push('/')}
                     className="rounded-lg bg-white px-3 py-2 text-xs font-semibold text-gray-700 shadow-md transition-all hover:bg-gray-50 active:scale-95 sm:px-4 sm:text-sm"

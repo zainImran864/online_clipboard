@@ -176,19 +176,19 @@ export default function ContentViewer({ clip }: ContentViewerProps) {
     return (
         <div className="w-full space-y-4">
             {/* Content Display */}
-            <div className="rounded-2xl bg-white p-6 shadow-lg">{renderContent()}</div>
+            <div className="rounded-2xl bg-white p-4 shadow-lg sm:p-6">{renderContent()}</div>
 
             {/* Action Buttons */}
-            <div className="flex gap-3">
+            <div className="flex flex-col gap-3 sm:flex-row">
                 {/* Copy Text Button - for text or both types */}
                 {(clip.type === 'text' || clip.type === 'both') && (
                     <button
                         onClick={() => copyToClipboard(clip.type === 'text' ? clip.content : clip.textContent || '')}
-                        className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-blue-500 px-6 py-3 font-semibold text-white transition-all hover:bg-blue-600 active:scale-95"
+                        className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-blue-500 px-4 py-3 text-sm font-semibold text-white transition-all hover:bg-blue-600 active:scale-95 sm:px-6 sm:text-base"
                     >
                         {copied ? (
                             <>
-                                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg className="h-4 w-4 sm:h-5 sm:w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path
                                         strokeLinecap="round"
                                         strokeLinejoin="round"
@@ -200,7 +200,7 @@ export default function ContentViewer({ clip }: ContentViewerProps) {
                             </>
                         ) : (
                             <>
-                                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg className="h-4 w-4 sm:h-5 sm:w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path
                                         strokeLinecap="round"
                                         strokeLinejoin="round"
@@ -218,9 +218,9 @@ export default function ContentViewer({ clip }: ContentViewerProps) {
                 {(clip.type === 'file' || clip.type === 'both') && (
                     <button
                         onClick={downloadAllFiles}
-                        className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-purple-500 px-6 py-3 font-semibold text-white transition-all hover:bg-purple-600 active:scale-95"
+                        className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-purple-500 px-4 py-3 text-sm font-semibold text-white transition-all hover:bg-purple-600 active:scale-95 sm:px-6 sm:text-base"
                     >
-                        <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="h-4 w-4 sm:h-5 sm:w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path
                                 strokeLinecap="round"
                                 strokeLinejoin="round"
@@ -234,7 +234,7 @@ export default function ContentViewer({ clip }: ContentViewerProps) {
             </div>
 
             {/* Metadata */}
-            <div className="rounded-lg bg-gray-50 p-4 text-sm text-gray-600">
+            <div className="rounded-lg bg-gray-50 p-3 text-xs text-gray-600 sm:p-4 sm:text-sm">
                 <p>
                     <span className="font-semibold">Created:</span>{' '}
                     {clip.createdAt.toLocaleString()}
