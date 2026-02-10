@@ -43,14 +43,40 @@ export async function uploadFile(file: File, code: string): Promise<FileUploadRe
 export function validateFile(file: File): { valid: boolean; error?: string } {
     // Reduced max size for base64 storage (Firestore has 1MB document limit)
     const MAX_FILE_SIZE = 800 * 1024; // 800KB (to account for base64 encoding overhead)
+    
+    // Allowed MIME types
     const ALLOWED_TYPES = [
+        // Text files
         'text/plain',
+        'text/html',
+        'text/css',
+        'text/javascript',
+        'text/xml',
+        'text/csv',
+        'text/markdown',
+        // Application types
         'application/pdf',
+        'application/json',
+        'application/javascript',
+        'application/xml',
+        'application/x-javascript',
+        'application/x-python-code',
+        // Images
         'image/jpeg',
         'image/jpg',
         'image/png',
         'image/gif',
         'image/webp',
+        'image/svg+xml',
+    ];
+
+    // Common code file extensions (for files with empty/unknown MIME types)
+    const ALLOWED_EXTENSIONS = [
+        '.txt', '.html', '.htm', '.css', '.js', '.jsx', '.ts', '.tsx',
+        '.json', '.xml', '.md', '.py', '.java', '.c', '.cpp', '.h',
+        '.cs', '.php', '.rb', '.go', '.rs', '.swift', '.kt', '.sql',
+        '.sh', '.bash', '.yml', '.yaml', '.env', '.gitignore',
+        '.pdf', '.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg'
     ];
 
     if (file.size > MAX_FILE_SIZE) {
@@ -60,10 +86,16 @@ export function validateFile(file: File): { valid: boolean; error?: string } {
         };
     }
 
-    if (!ALLOWED_TYPES.includes(file.type)) {
+    // Check MIME type or file extension
+    const fileExt = '.' + file.name.split('.').pop()?.toLowerCase();
+    const isAllowedType = ALLOWED_TYPES.includes(file.type);
+    const isAllowedExt = ALLOWED_EXTENSIONS.includes(fileExt);
+    const isEmptyMimeType = !file.type || file.type === '';
+
+    if (!isAllowedType && !isAllowedExt && !isEmptyMimeType) {
         return {
             valid: false,
-            error: 'File type not supported. Please upload text, PDF, or image files.',
+            error: 'File type not supported. Please upload text, code, PDF, or image files.',
         };
     }
 
