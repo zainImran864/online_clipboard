@@ -3,6 +3,7 @@ import { db } from '@/lib/firebase';
 import {
     collection,
     addDoc,
+    deleteDoc,
     doc,
     getDoc,
     updateDoc,
@@ -37,6 +38,7 @@ export interface Clip {
 export function useClipboard() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const EXPIRATION_MS = 24 * 60 * 60 * 1000;
 
     /**
      * Create a new clip
@@ -54,7 +56,8 @@ export function useClipboard() {
             try {
                 const code = await generateUniqueCode();
                 const createdAt = Timestamp.now();
-                const expiresAt = Timestamp.fromDate(new Date(Date.now() + 24 * 60 * 60 * 1000)); // 24 hours
+                // Keep this field for Firestore TTL (configure TTL on `expiresAt`).
+                const expiresAt = Timestamp.fromDate(new Date(Date.now() + EXPIRATION_MS));
 
                 const clipData: any = {
                     code,
@@ -161,6 +164,12 @@ export function useClipboard() {
             const docData = querySnapshot.docs[0];
             const data = docData.data();
 
+            if (data.expiresAt && data.expiresAt.toMillis() <= Date.now()) {
+                await deleteDoc(doc(db, 'clips', docData.id));
+                setLoading(false);
+                return null;
+            }
+
             setLoading(false);
             return {
                 id: docData.id,
@@ -196,6 +205,10 @@ export function useClipboard() {
         const unsubscribe = onSnapshot(clipRef, (docSnap) => {
             if (docSnap.exists()) {
                 const data = docSnap.data();
+                if (data.expiresAt && data.expiresAt.toMillis() <= Date.now()) {
+                    void deleteDoc(clipRef);
+                    return;
+                }
                 callback({
                     id: docSnap.id,
                     code: data.code,
