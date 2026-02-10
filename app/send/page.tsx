@@ -10,21 +10,24 @@ import { uploadFile } from '@/lib/fileHandler';
 
 export default function SendPage() {
     const router = useRouter();
-    const { createClip, updateClip, subscribeToClip, loading, error } = useClipboard();
+    const { createClip, updateClip, updateClipWithFile, subscribeToClip, loading, error } = useClipboard();
 
     const [textContent, setTextContent] = useState('');
-    const [selectedFile, setSelectedFile] = useState<File | null>(null);
+    const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
     const [clip, setClip] = useState<Clip | null>(null);
     const [uploading, setUploading] = useState(false);
     const [sessionId] = useState(() => Math.random().toString(36).substring(7));
 
     // Subscribe to real-time updates
     useEffect(() => {
-        if (clip) {
+        if (clip?.id) {
             const unsubscribe = subscribeToClip(clip.id, (updatedClip) => {
                 setClip(updatedClip);
-                if (updatedClip.textContent) {
+                // Update text content based on the type
+                if (updatedClip.textContent !== undefined) {
                     setTextContent(updatedClip.textContent);
+                } else if (updatedClip.type === 'text') {
+                    setTextContent(updatedClip.content);
                 }
             });
 
@@ -34,46 +37,49 @@ export default function SendPage() {
 
             return () => unsubscribe();
         }
-    }, [clip, subscribeToClip, sessionId]);
+    }, [clip?.id, subscribeToClip, sessionId]);
 
     const handleGenerateCode = async () => {
         const hasText = textContent.trim().length > 0;
-        const hasFile = selectedFile !== null;
+        const hasFiles = selectedFiles.length > 0;
 
-        if (!hasText && !hasFile) {
-            alert('Please enter some text or select a file');
+        if (!hasText && !hasFiles) {
+            alert('Please enter some text or select at least one file');
             return;
         }
 
         setUploading(true);
 
         try {
-            if (hasText && hasFile) {
-                // Both text and file
-                const fileResult = await uploadFile(selectedFile, 'temp');
-                const newClip = await createClip(
-                    fileResult.url,
+            let uploadedFiles: Array<{ url: string; fileName: string; fileType: string; fileSize: number }> = [];
+
+            // Upload all selected files
+            if (hasFiles) {
+                const uploadPromises = selectedFiles.map(file => uploadFile(file, 'temp'));
+                const results = await Promise.all(uploadPromises);
+                uploadedFiles = results;
+            }
+
+            // Determine type and create clip
+            let newClip;
+            if (hasText && hasFiles) {
+                // Both text and files
+                newClip = await createClip(
+                    uploadedFiles[0].url,
                     'both',
-                    {
-                        fileName: fileResult.fileName,
-                        fileType: fileResult.fileType,
-                    },
+                    uploadedFiles,
                     textContent
                 );
-                setClip(newClip);
-            } else if (hasFile) {
-                // File only
-                const fileResult = await uploadFile(selectedFile, 'temp');
-                const newClip = await createClip(fileResult.url, 'file', {
-                    fileName: fileResult.fileName,
-                    fileType: fileResult.fileType,
-                });
-                setClip(newClip);
+            } else if (hasFiles) {
+                // Files only
+                newClip = await createClip(uploadedFiles[0].url, 'file', uploadedFiles);
             } else {
                 // Text only
-                const newClip = await createClip(textContent, 'text');
-                setClip(newClip);
+                newClip = await createClip(textContent, 'text');
             }
+
+            setClip(newClip);
+            setSelectedFiles([]); // Clear file selection after upload
         } catch (err) {
             console.error('Error creating clip:', err);
             alert('Failed to create clip. Please try again.');
@@ -85,8 +91,8 @@ export default function SendPage() {
     const handleTextChange = async (newText: string) => {
         setTextContent(newText);
 
-        // Update Firestore in real-time if clip exists and has text
-        if (clip && (clip.type === 'text' || clip.type === 'both')) {
+        // Update Firestore in real-time if clip exists
+        if (clip) {
             try {
                 await updateClip(clip.id, newText);
             } catch (err) {
@@ -95,25 +101,46 @@ export default function SendPage() {
         }
     };
 
+    const handleFileUploadAfterGenerate = async (files: File[]) => {
+        if (!clip || files.length === 0) return;
+
+        setUploading(true);
+        try {
+            const uploadPromises = files.map(file => uploadFile(file, 'temp'));
+            const results = await Promise.all(uploadPromises);
+
+            // Update the clip with new files
+            await updateClipWithFile(clip.id, results, textContent);
+
+            // The clip will be updated via the real-time subscription
+        } catch (err) {
+            console.error('Error uploading files:', err);
+            alert('Failed to upload files. Please try again.');
+        } finally {
+            setUploading(false);
+        }
+    };
+
     return (
-        <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
+        <div className="min-h-screen bg-blue-50">
             {/* Header */}
-            <header className="flex items-center justify-between p-6">
-                <Logo size={50} />
+            <header className="flex flex-wrap items-center justify-between gap-3 p-4 sm:p-6">
+                <Logo size={40} className="sm:hidden" />
+                <Logo size={50} className="hidden sm:block" />
                 <button
                     onClick={() => router.push('/')}
-                    className="rounded-lg bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-md transition-all hover:bg-gray-50 active:scale-95"
+                    className="rounded-lg bg-white px-3 py-2 text-xs font-semibold text-gray-700 shadow-md transition-all hover:bg-gray-50 active:scale-95 sm:px-4 sm:text-sm"
                 >
-                    ← Back to Home
+                    ← Back
                 </button>
             </header>
 
             {/* Main Content */}
-            <main className="flex min-h-[calc(100vh-120px)] items-center justify-center px-4">
-                <div className="w-full max-w-2xl space-y-6">
+            <main className="flex min-h-[calc(100vh-100px)] items-center justify-center px-4 py-6 sm:min-h-[calc(100vh-120px)]">
+                <div className="w-full max-w-2xl space-y-4 sm:space-y-6">
                     <div className="text-center">
-                        <h1 className="text-4xl font-bold text-gray-800">Share Content</h1>
-                        <p className="mt-2 text-gray-600">
+                        <h1 className="text-2xl font-bold text-gray-800 sm:text-3xl md:text-4xl">Share Content</h1>
+                        <p className="mt-2 text-sm text-gray-600 sm:text-base">
                             Write text, upload a file, or do both!
                         </p>
                     </div>
@@ -121,7 +148,7 @@ export default function SendPage() {
                     {!clip ? (
                         <>
                             {/* Unified Input Interface */}
-                            <div className="space-y-4 rounded-2xl bg-white p-6 shadow-lg">
+                            <div className="space-y-4 rounded-2xl bg-white p-4 shadow-lg sm:p-6">
                                 {/* Text Input */}
                                 <div>
                                     <label className="mb-2 block text-sm font-semibold text-gray-700">
@@ -138,24 +165,44 @@ export default function SendPage() {
                                 {/* File Upload */}
                                 <div>
                                     <label className="mb-2 block text-sm font-semibold text-gray-700">
-                                        📎 Upload File (Optional)
+                                        📎 Upload Files (Optional)
                                     </label>
                                     <FileUpload
-                                        onFileSelect={setSelectedFile}
+                                        onFileSelect={(files) => setSelectedFiles([...selectedFiles, ...files])}
                                         disabled={loading || uploading}
                                     />
-                                    {selectedFile && (
-                                        <div className="mt-3 rounded-lg bg-blue-50 p-4">
-                                            <p className="text-sm font-semibold text-gray-700">Selected File:</p>
-                                            <p className="text-sm text-gray-600">{selectedFile.name}</p>
-                                            <p className="text-xs text-gray-500">
-                                                {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
+                                    {selectedFiles.length > 0 && (
+                                        <div className="mt-3 space-y-2">
+                                            <p className="text-sm font-semibold text-gray-700">
+                                                Selected Files ({selectedFiles.length}):
                                             </p>
+                                            <div className="max-h-40 space-y-2 overflow-y-auto">
+                                                {selectedFiles.map((file, index) => (
+                                                    <div key={index} className="flex items-center justify-between rounded-lg bg-blue-50 p-3">
+                                                        <div className="min-w-0 flex-1">
+                                                            <p className="truncate text-sm font-semibold text-gray-700">
+                                                                {file.name}
+                                                            </p>
+                                                            <p className="text-xs text-gray-500">
+                                                                {(file.size / 1024).toFixed(2)} KB
+                                                            </p>
+                                                        </div>
+                                                        <button
+                                                            onClick={() => setSelectedFiles(selectedFiles.filter((_, i) => i !== index))}
+                                                            className="ml-2 flex-shrink-0 text-red-500 hover:text-red-700"
+                                                        >
+                                                            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                                            </svg>
+                                                        </button>
+                                                    </div>
+                                                ))}
+                                            </div>
                                             <button
-                                                onClick={() => setSelectedFile(null)}
-                                                className="mt-2 text-xs text-red-500 hover:text-red-700"
+                                                onClick={() => setSelectedFiles([])}
+                                                className="text-xs text-red-500 hover:text-red-700"
                                             >
-                                                Remove file
+                                                Clear all files
                                             </button>
                                         </div>
                                     )}
@@ -164,8 +211,8 @@ export default function SendPage() {
                                 {/* Generate Button */}
                                 <button
                                     onClick={handleGenerateCode}
-                                    disabled={loading || uploading || (!textContent.trim() && !selectedFile)}
-                                    className="w-full rounded-lg bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 px-6 py-3 font-semibold text-white transition-all hover:from-blue-600 hover:via-purple-600 hover:to-pink-600 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
+                                    disabled={loading || uploading || (!textContent.trim() && selectedFiles.length === 0)}
+                                    className="w-full rounded-lg bg-blue-600 px-6 py-3 font-semibold text-white transition-all hover:bg-blue-700 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
                                 >
                                     {loading || uploading ? 'Generating...' : 'Generate Share Code'}
                                 </button>
@@ -185,46 +232,93 @@ export default function SendPage() {
                                 shareUrl={`${window.location.origin}/view/${clip.code}`}
                             />
 
-                            {/* Editable Text Area (if text exists) */}
-                            {(clip.type === 'text' || clip.type === 'both') && (
+                            {/* Always show both text and file sections for real-time editing */}
+                            <div className="space-y-4">
+                                {/* Editable Text Area - Always visible */}
                                 <div className="rounded-2xl bg-white p-6 shadow-lg">
                                     <h3 className="mb-4 text-lg font-semibold text-gray-800">
-                                        Your Text (Editable until refresh)
+                                        📝 Text Content {(clip.type === 'text' || clip.type === 'both') && '(Editable in real-time)'}
                                     </h3>
                                     <textarea
                                         value={textContent}
                                         onChange={(e) => handleTextChange(e.target.value)}
+                                        placeholder={clip.type === 'file' ? 'Add text content here...' : ''}
                                         className="h-64 w-full rounded-lg border-2 border-gray-200 p-4 text-gray-800 focus:border-blue-500 focus:outline-none"
                                     />
-                                    <p className="mt-2 text-sm text-gray-500">
-                                        💡 Changes are saved automatically and updated in real-time
-                                    </p>
+                                    {(clip.type === 'text' || clip.type === 'both') && (
+                                        <p className="mt-2 text-sm text-gray-500">
+                                            💡 Changes are saved automatically and updated in real-time
+                                        </p>
+                                    )}
                                 </div>
-                            )}
 
-                            {/* File Preview */}
-                            {(clip.type === 'file' || clip.type === 'both') && (
+                                {/* File Section - Always visible */}
                                 <div className="rounded-2xl bg-white p-6 shadow-lg">
-                                    <h3 className="mb-4 text-lg font-semibold text-gray-800">File Uploaded</h3>
-                                    <div className="flex items-center gap-3 rounded-lg bg-gray-50 p-4">
-                                        <svg className="h-12 w-12 text-blue-500" fill="currentColor" viewBox="0 0 24 24">
-                                            <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6z" />
-                                            <path d="M14 2v6h6" />
-                                        </svg>
-                                        <div>
-                                            <p className="font-semibold text-gray-700">{clip.fileName}</p>
-                                            <p className="text-sm text-gray-500">{clip.fileType}</p>
+                                    <h3 className="mb-4 text-lg font-semibold text-gray-800">
+                                        📎 File Attachments
+                                    </h3>
+
+                                    {(clip.type === 'file' || clip.type === 'both') && clip.files && clip.files.length > 0 ? (
+                                        <div className="space-y-3">
+                                            <p className="text-sm text-gray-600">
+                                                {clip.files.length} {clip.files.length === 1 ? 'file' : 'files'} attached
+                                            </p>
+                                            <div className="max-h-60 space-y-2 overflow-y-auto">
+                                                {clip.files.map((file, index) => (
+                                                    <div key={index} className="flex items-center gap-3 rounded-lg bg-gray-50 p-3">
+                                                        <svg className="h-8 w-8 flex-shrink-0 text-blue-500" fill="currentColor" viewBox="0 0 24 24">
+                                                            <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6z" />
+                                                            <path d="M14 2v6h6" />
+                                                        </svg>
+                                                        <div className="min-w-0 flex-1">
+                                                            <p className="truncate font-semibold text-gray-700">{file.fileName}</p>
+                                                            <p className="text-xs text-gray-500">{file.fileType}</p>
+                                                        </div>
+                                                        <a
+                                                            href={file.url}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            className="flex-shrink-0 text-sm text-blue-500 hover:text-blue-700"
+                                                        >
+                                                            View
+                                                        </a>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                            {/* Upload more files */}
+                                            <div className="pt-3">
+                                                <p className="mb-2 text-sm text-gray-600">Upload more files:</p>
+                                                <FileUpload
+                                                    onFileSelect={handleFileUploadAfterGenerate}
+                                                    disabled={loading || uploading}
+                                                />
+                                            </div>
                                         </div>
-                                    </div>
+                                    ) : (
+                                        <div>
+                                            <p className="mb-3 text-sm text-gray-600">No files attached yet. Upload to add to this share:</p>
+                                            <FileUpload
+                                                onFileSelect={handleFileUploadAfterGenerate}
+                                                disabled={loading || uploading}
+                                            />
+                                        </div>
+                                    )}
+
+                                    {uploading && (
+                                        <div className="mt-3 text-center">
+                                            <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-blue-500 border-t-transparent"></div>
+                                            <p className="mt-2 text-sm text-gray-600">Uploading files...</p>
+                                        </div>
+                                    )}
                                 </div>
-                            )}
+                            </div>
 
                             {/* Create Another */}
                             <button
                                 onClick={() => {
                                     setClip(null);
                                     setTextContent('');
-                                    setSelectedFile(null);
+                                    setSelectedFiles([]);
                                     localStorage.removeItem('clipSessionId');
                                     localStorage.removeItem('clipId');
                                 }}

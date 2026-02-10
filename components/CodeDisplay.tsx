@@ -27,7 +27,7 @@ export default function CodeDisplay({ code, shareUrl }: CodeDisplayProps) {
     };
 
     return (
-        <div className="w-full space-y-4 rounded-2xl bg-gradient-to-br from-green-50 to-emerald-50 p-6 shadow-lg">
+        <div className="w-full space-y-4 rounded-2xl bg-blue-100 p-6 shadow-lg">
             <div className="flex items-center gap-2 text-green-700">
                 <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path

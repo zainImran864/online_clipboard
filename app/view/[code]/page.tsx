@@ -23,14 +23,14 @@ export default function ViewPage() {
 
     // Subscribe to real-time updates
     useEffect(() => {
-        if (clip) {
+        if (clip?.id) {
             const unsubscribe = subscribeToClip(clip.id, (updatedClip) => {
                 setClip(updatedClip);
             });
 
             return () => unsubscribe();
         }
-    }, [clip, subscribeToClip]);
+    }, [clip?.id, subscribeToClip]);
 
     const loadClip = async () => {
         try {
@@ -49,7 +49,7 @@ export default function ViewPage() {
 
     if (loading) {
         return (
-            <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
+            <div className="flex min-h-screen items-center justify-center bg-blue-50">
                 <div className="text-center">
                     <div className="mx-auto mb-4 h-16 w-16 animate-spin rounded-full border-4 border-blue-500 border-t-transparent"></div>
                     <p className="text-lg font-semibold text-gray-700">Loading shared content...</p>
@@ -60,7 +60,7 @@ export default function ViewPage() {
 
     if (notFound) {
         return (
-            <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
+            <div className="min-h-screen bg-blue-50">
                 <header className="p-6">
                     <Logo size={50} />
                 </header>
@@ -87,7 +87,7 @@ export default function ViewPage() {
                         </div>
                         <button
                             onClick={() => router.push('/')}
-                            className="w-full rounded-lg bg-gradient-to-r from-blue-500 to-purple-500 px-6 py-3 font-semibold text-white transition-all hover:from-blue-600 hover:to-purple-600 active:scale-95"
+                            className="w-full rounded-lg bg-blue-600 px-6 py-3 font-semibold text-white transition-all hover:bg-blue-700 active:scale-95"
                         >
                             Go to Home
                         </button>
@@ -100,22 +100,23 @@ export default function ViewPage() {
     return (
         <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
             {/* Header */}
-            <header className="flex items-center justify-between p-6">
-                <Logo size={50} />
+            <header className="flex flex-wrap items-center justify-between gap-3 p-4 sm:p-6">
+                <Logo size={40} className="sm:hidden" />
+                <Logo size={50} className="hidden sm:block" />
                 <button
                     onClick={() => router.push('/')}
-                    className="rounded-lg bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-md transition-all hover:bg-gray-50 active:scale-95"
+                    className="rounded-lg bg-white px-3 py-2 text-xs font-semibold text-gray-700 shadow-md transition-all hover:bg-gray-50 active:scale-95 sm:px-4 sm:text-sm"
                 >
-                    ← Back to Home
+                    ← Back
                 </button>
             </header>
 
             {/* Main Content */}
-            <main className="flex min-h-[calc(100vh-120px)] items-center justify-center px-4">
-                <div className="w-full max-w-2xl space-y-6">
+            <main className="flex min-h-[calc(100vh-100px)] items-center justify-center px-4 py-6 sm:min-h-[calc(100vh-120px)]">
+                <div className="w-full max-w-2xl space-y-4 sm:space-y-6">
                     <div className="text-center">
-                        <h1 className="text-4xl font-bold text-gray-800">Shared Content</h1>
-                        <p className="mt-2 text-gray-600">
+                        <h1 className="text-2xl font-bold text-gray-800 sm:text-3xl md:text-4xl">Shared Content</h1>
+                        <p className="mt-2 text-sm text-gray-600 sm:text-base">
                             Code: <span className="font-mono font-bold">{code}</span>
                         </p>
                     </div>

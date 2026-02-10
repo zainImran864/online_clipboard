@@ -4,11 +4,12 @@ import React, { useCallback, useState } from 'react';
 import { validateFile } from '@/lib/fileHandler';
 
 interface FileUploadProps {
-    onFileSelect: (file: File) => void;
+    onFileSelect: (files: File[]) => void;
     disabled?: boolean;
+    multiple?: boolean;
 }
 
-export default function FileUpload({ onFileSelect, disabled = false }: FileUploadProps) {
+export default function FileUpload({ onFileSelect, disabled = false, multiple = true }: FileUploadProps) {
     const [dragActive, setDragActive] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -31,16 +32,27 @@ export default function FileUpload({ onFileSelect, disabled = false }: FileUploa
 
             if (disabled) return;
 
-            if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-                const file = e.dataTransfer.files[0];
-                const validation = validateFile(file);
+            if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+                const files = Array.from(e.dataTransfer.files);
+                const validFiles: File[] = [];
+                const errors: string[] = [];
 
-                if (!validation.valid) {
-                    setError(validation.error || 'Invalid file');
-                    return;
+                files.forEach(file => {
+                    const validation = validateFile(file);
+                    if (validation.valid) {
+                        validFiles.push(file);
+                    } else {
+                        errors.push(`${file.name}: ${validation.error}`);
+                    }
+                });
+
+                if (errors.length > 0) {
+                    setError(errors.join(', '));
                 }
 
-                onFileSelect(file);
+                if (validFiles.length > 0) {
+                    onFileSelect(validFiles);
+                }
             }
         },
         [onFileSelect, disabled]
@@ -53,16 +65,27 @@ export default function FileUpload({ onFileSelect, disabled = false }: FileUploa
 
             if (disabled) return;
 
-            if (e.target.files && e.target.files[0]) {
-                const file = e.target.files[0];
-                const validation = validateFile(file);
+            if (e.target.files && e.target.files.length > 0) {
+                const files = Array.from(e.target.files);
+                const validFiles: File[] = [];
+                const errors: string[] = [];
 
-                if (!validation.valid) {
-                    setError(validation.error || 'Invalid file');
-                    return;
+                files.forEach(file => {
+                    const validation = validateFile(file);
+                    if (validation.valid) {
+                        validFiles.push(file);
+                    } else {
+                        errors.push(`${file.name}: ${validation.error}`);
+                    }
+                });
+
+                if (errors.length > 0) {
+                    setError(errors.join(', '));
                 }
 
-                onFileSelect(file);
+                if (validFiles.length > 0) {
+                    onFileSelect(validFiles);
+                }
             }
         },
         [onFileSelect, disabled]
@@ -72,8 +95,8 @@ export default function FileUpload({ onFileSelect, disabled = false }: FileUploa
         <div className="w-full">
             <div
                 className={`relative flex flex-col items-center justify-center rounded-2xl border-2 border-dashed p-8 transition-all ${dragActive
-                        ? 'border-blue-500 bg-blue-50'
-                        : 'border-gray-300 bg-gray-50 hover:border-gray-400'
+                    ? 'border-blue-500 bg-blue-50'
+                    : 'border-gray-300 bg-gray-50 hover:border-gray-400'
                     } ${disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}
                 onDragEnter={handleDrag}
                 onDragLeave={handleDrag}
@@ -85,10 +108,11 @@ export default function FileUpload({ onFileSelect, disabled = false }: FileUploa
                     className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
                     onChange={handleChange}
                     disabled={disabled}
+                    multiple={multiple}
                     accept=".txt,.pdf,.jpg,.jpeg,.png,.gif,.webp"
                 />
                 <div className="flex flex-col items-center gap-3 text-center">
-                    <div className="rounded-full bg-gradient-to-br from-blue-500 to-purple-500 p-4">
+                    <div className="rounded-full bg-blue-600 p-4">
                         <svg
                             className="h-8 w-8 text-white"
                             fill="none"
@@ -105,10 +129,10 @@ export default function FileUpload({ onFileSelect, disabled = false }: FileUploa
                     </div>
                     <div>
                         <p className="text-lg font-semibold text-gray-700">
-                            Drop your file here or click to browse
+                            Drop your files here or click to browse
                         </p>
                         <p className="mt-1 text-sm text-gray-500">
-                            Supports: Text, PDF, Images (Max 10MB)
+                            Supports: Text, PDF, Images • Max 800KB each • Multiple files allowed
                         </p>
                     </div>
                 </div>

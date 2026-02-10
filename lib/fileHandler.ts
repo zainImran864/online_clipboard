@@ -1,36 +1,38 @@
-import { storage } from './firebase';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-
 export interface FileUploadResult {
-    url: string;
+    url: string; // base64 data URL
     fileName: string;
     fileType: string;
     fileSize: number;
 }
 
 /**
- * Uploads a file to Firebase Storage
- * @param file - The file to upload
- * @param code - The clip code to organize files
- * @returns Promise<FileUploadResult> - Upload result with URL and metadata
+ * Converts a file to base64 data URL (stores in Firestore, not Storage)
+ * @param file - The file to convert
+ * @param code - The clip code (not used for base64, kept for compatibility)
+ * @returns Promise<FileUploadResult> - Result with base64 URL and metadata
  */
 export async function uploadFile(file: File, code: string): Promise<FileUploadResult> {
-    const timestamp = Date.now();
-    const fileName = `${code}_${timestamp}_${file.name}`;
-    const storageRef = ref(storage, `clips/${fileName}`);
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
 
-    // Upload file
-    await uploadBytes(storageRef, file);
+        reader.onload = () => {
+            const base64String = reader.result as string;
 
-    // Get download URL
-    const url = await getDownloadURL(storageRef);
+            resolve({
+                url: base64String, // base64 data URL (e.g., data:image/png;base64,...)
+                fileName: file.name,
+                fileType: file.type,
+                fileSize: file.size,
+            });
+        };
 
-    return {
-        url,
-        fileName: file.name,
-        fileType: file.type,
-        fileSize: file.size,
-    };
+        reader.onerror = () => {
+            reject(new Error('Failed to read file'));
+        };
+
+        // Read file as data URL (base64)
+        reader.readAsDataURL(file);
+    });
 }
 
 /**
@@ -39,7 +41,8 @@ export async function uploadFile(file: File, code: string): Promise<FileUploadRe
  * @returns boolean - Whether the file is valid
  */
 export function validateFile(file: File): { valid: boolean; error?: string } {
-    const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+    // Reduced max size for base64 storage (Firestore has 1MB document limit)
+    const MAX_FILE_SIZE = 800 * 1024; // 800KB (to account for base64 encoding overhead)
     const ALLOWED_TYPES = [
         'text/plain',
         'application/pdf',
@@ -53,7 +56,7 @@ export function validateFile(file: File): { valid: boolean; error?: string } {
     if (file.size > MAX_FILE_SIZE) {
         return {
             valid: false,
-            error: 'File size must be less than 10MB',
+            error: 'File size must be less than 800KB for direct storage',
         };
     }
 

@@ -20,14 +20,26 @@ export default function ContentViewer({ clip }: ContentViewerProps) {
         }
     };
 
-    const downloadFile = () => {
+    const downloadFile = (fileUrl?: string, fileName?: string) => {
         const link = document.createElement('a');
-        link.href = clip.content;
-        link.download = clip.fileName || 'download';
+        link.href = fileUrl || clip.content;
+        link.download = fileName || clip.fileName || 'download';
         link.target = '_blank';
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
+    };
+
+    const downloadAllFiles = () => {
+        if (clip.files && clip.files.length > 1) {
+            clip.files.forEach((file, index) => {
+                setTimeout(() => {
+                    downloadFile(file.url, file.fileName);
+                }, index * 300); // Stagger downloads
+            });
+        } else {
+            downloadFile();
+        }
     };
 
     const renderContent = () => {
@@ -72,13 +84,58 @@ export default function ContentViewer({ clip }: ContentViewerProps) {
     };
 
     const renderFilePreview = () => {
+        const files = clip.files || [];
+        
+        if (files.length === 0) return null;
+
+        // Multiple files - show grid
+        if (files.length > 1) {
+            return (
+                <div className="space-y-4">
+                    <p className="text-sm font-semibold text-gray-700">
+                        📎 {files.length} files attached
+                    </p>
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                        {files.map((file, index) => (
+                            <div
+                                key={index}
+                                className="group relative overflow-hidden rounded-lg bg-gray-50 p-4 transition-all hover:bg-gray-100 hover:shadow-md"
+                            >
+                                {renderSingleFile(file)}
+                                {/* Hover Download Button */}
+                                <button
+                                    onClick={() => downloadFile(file.url, file.fileName)}
+                                    className="absolute right-2 top-2 flex items-center gap-1 rounded-lg bg-blue-600 px-3 py-2 text-xs font-semibold text-white opacity-0 shadow-lg transition-opacity hover:bg-blue-700 group-hover:opacity-100"
+                                >
+                                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                            strokeWidth={2}
+                                            d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                                        />
+                                    </svg>
+                                    Download
+                                </button>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            );
+        }
+
+        // Single file - show large preview
+        return renderSingleFile(files[0]);
+    };
+
+    const renderSingleFile = (file: { url: string; fileName: string; fileType: string }) => {
         // Image file
-        if (clip.fileType?.startsWith('image/')) {
+        if (file.fileType?.startsWith('image/')) {
             return (
                 <div className="flex justify-center rounded-lg bg-gray-50 p-6">
                     <img
-                        src={clip.content}
-                        alt={clip.fileName || 'Shared image'}
+                        src={file.url}
+                        alt={file.fileName || 'Shared image'}
                         className="max-h-96 rounded-lg shadow-md"
                     />
                 </div>
@@ -86,18 +143,16 @@ export default function ContentViewer({ clip }: ContentViewerProps) {
         }
 
         // PDF file
-        if (clip.fileType === 'application/pdf') {
+        if (file.fileType === 'application/pdf') {
             return (
-                <div className="rounded-lg bg-gray-50 p-6">
-                    <div className="flex items-center gap-3 text-gray-700">
-                        <svg className="h-12 w-12 text-red-500" fill="currentColor" viewBox="0 0 24 24">
-                            <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6z" />
-                            <path d="M14 2v6h6" />
-                        </svg>
-                        <div>
-                            <p className="font-semibold">{clip.fileName}</p>
-                            <p className="text-sm text-gray-500">PDF Document</p>
-                        </div>
+                <div className="flex items-center gap-3 text-gray-700">
+                    <svg className="h-12 w-12 flex-shrink-0 text-red-500" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6z" />
+                        <path d="M14 2v6h6" />
+                    </svg>
+                    <div className="min-w-0 flex-1">
+                        <p className="truncate font-semibold">{file.fileName}</p>
+                        <p className="text-sm text-gray-500">PDF Document</p>
                     </div>
                 </div>
             );
@@ -105,16 +160,14 @@ export default function ContentViewer({ clip }: ContentViewerProps) {
 
         // Other file types
         return (
-            <div className="rounded-lg bg-gray-50 p-6">
-                <div className="flex items-center gap-3 text-gray-700">
-                    <svg className="h-12 w-12 text-blue-500" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6z" />
-                        <path d="M14 2v6h6M16 13H8m8 4H8m2-8H8" />
-                    </svg>
-                    <div>
-                        <p className="font-semibold">{clip.fileName}</p>
-                        <p className="text-sm text-gray-500">{clip.fileType || 'File'}</p>
-                    </div>
+            <div className="flex items-center gap-3 text-gray-700">
+                <svg className="h-12 w-12 flex-shrink-0 text-blue-500" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6z" />
+                    <path d="M14 2v6h6M16 13H8m8 4H8m2-8H8" />
+                </svg>
+                <div className="min-w-0 flex-1">
+                    <p className="truncate font-semibold">{file.fileName}</p>
+                    <p className="text-sm text-gray-500">{file.fileType || 'File'}</p>
                 </div>
             </div>
         );
@@ -164,7 +217,7 @@ export default function ContentViewer({ clip }: ContentViewerProps) {
                 {/* Download File Button - for file or both types */}
                 {(clip.type === 'file' || clip.type === 'both') && (
                     <button
-                        onClick={downloadFile}
+                        onClick={downloadAllFiles}
                         className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-purple-500 px-6 py-3 font-semibold text-white transition-all hover:bg-purple-600 active:scale-95"
                     >
                         <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -175,7 +228,7 @@ export default function ContentViewer({ clip }: ContentViewerProps) {
                                 d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
                             />
                         </svg>
-                        Download File
+                        {clip.files && clip.files.length > 1 ? `Download All (${clip.files.length})` : 'Download File'}
                     </button>
                 )}
             </div>

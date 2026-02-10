@@ -15,6 +15,9 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "ClipShare - Share Anything, Instantly",
   description: "Share files, text, PDFs, and images instantly with a simple code. No login required.",
+  icons: {
+    icon: '/icon.svg',
+  },
 };
 
 export default function RootLayout({

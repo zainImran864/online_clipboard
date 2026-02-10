@@ -9,7 +9,7 @@ export default function Logo({ size = 60, className = '' }: LogoProps) {
     return (
         <div className={`flex items-center gap-3 ${className}`}>
             <div
-                className="relative flex items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 shadow-lg"
+                className="relative flex items-center justify-center rounded-2xl bg-blue-600 shadow-lg"
                 style={{ width: size, height: size }}
             >
                 <svg
@@ -48,7 +48,7 @@ export default function Logo({ size = 60, className = '' }: LogoProps) {
                 </svg>
             </div>
             <div className="flex flex-col">
-                <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                <h1 className="text-2xl font-bold text-blue-700">
                     ClipShare
                 </h1>
                 <p className="text-xs text-gray-500">Share anything, instantly</p>

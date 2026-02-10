@@ -59,24 +59,25 @@ export default function ReadPage() {
     };
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
+        <div className="min-h-screen bg-blue-50">
             {/* Header */}
-            <header className="flex items-center justify-between p-6">
-                <Logo size={50} />
+            <header className="flex flex-wrap items-center justify-between gap-3 p-4 sm:p-6">
+                <Logo size={40} className="sm:hidden" />
+                <Logo size={50} className="hidden sm:block" />
                 <button
                     onClick={() => router.push('/')}
-                    className="rounded-lg bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-md transition-all hover:bg-gray-50 active:scale-95"
+                    className="rounded-lg bg-white px-3 py-2 text-xs font-semibold text-gray-700 shadow-md transition-all hover:bg-gray-50 active:scale-95 sm:px-4 sm:text-sm"
                 >
-                    ← Back to Home
+                    ← Back
                 </button>
             </header>
 
             {/* Main Content */}
-            <main className="flex min-h-[calc(100vh-120px)] items-center justify-center px-4">
-                <div className="w-full max-w-2xl space-y-6">
+            <main className="flex min-h-[calc(100vh-100px)] items-center justify-center px-4 py-6 sm:min-h-[calc(100vh-120px)]">
+                <div className="w-full max-w-2xl space-y-4 sm:space-y-6">
                     <div className="text-center">
-                        <h1 className="text-4xl font-bold text-gray-800">Read Shared Content</h1>
-                        <p className="mt-2 text-gray-600">
+                        <h1 className="text-2xl font-bold text-gray-800 sm:text-3xl md:text-4xl">Read Shared Content</h1>
+                        <p className="mt-2 text-sm text-gray-600 sm:text-base">
                             Enter the 6-digit code to view shared content
                         </p>
                     </div>
@@ -84,7 +85,7 @@ export default function ReadPage() {
                     {!clip ? (
                         <>
                             {/* Code Input */}
-                            <div className="rounded-2xl bg-white p-8 shadow-lg">
+                            <div className="rounded-2xl bg-white p-4 shadow-lg sm:p-6 md:p-8">
                                 {/* Tab Buttons */}
                                 <div className="mb-6 flex gap-2 rounded-lg bg-gray-100 p-1">
                                     <button
@@ -123,7 +124,7 @@ export default function ReadPage() {
                                         </label>
 
                                         {/* Code Input */}
-                                        <div className="flex gap-3">
+                                        <div className="flex flex-col gap-3 sm:flex-row">
                                             <input
                                                 type="text"
                                                 value={code}
@@ -134,12 +135,12 @@ export default function ReadPage() {
                                                 onKeyPress={handleKeyPress}
                                                 placeholder="123456"
                                                 maxLength={6}
-                                                className="flex-1 rounded-lg border-2 border-gray-200 p-4 text-center font-mono text-2xl font-bold tracking-widest text-gray-800 focus:border-blue-500 focus:outline-none"
+                                                className="flex-1 rounded-lg border-2 border-gray-200 p-3 text-center font-mono text-xl font-bold tracking-widest text-gray-800 focus:border-blue-500 focus:outline-none sm:p-4 sm:text-2xl"
                                             />
                                             <button
                                                 onClick={handleReadCode}
                                                 disabled={loading || code.length !== 6}
-                                                className="rounded-lg bg-gradient-to-r from-purple-500 to-pink-500 px-8 py-4 font-semibold text-white transition-all hover:from-purple-600 hover:to-pink-600 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
+                                                className="w-full rounded-lg bg-cyan-600 px-6 py-3 font-semibold text-white transition-all hover:bg-cyan-700 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto sm:px-8 sm:py-4"
                                             >
                                                 {loading ? 'Loading...' : 'Read'}
                                             </button>
@@ -156,7 +157,7 @@ export default function ReadPage() {
                                         <label className="mb-3 block text-sm font-semibold text-gray-700">
                                             Paste Shareable Link
                                         </label>
-                                        <div className="flex gap-3">
+                                        <div className="flex flex-col gap-3 sm:flex-row">
                                             <input
                                                 type="text"
                                                 placeholder="Paste shareable link here..."
@@ -175,12 +176,12 @@ export default function ReadPage() {
                                                         handleReadCode();
                                                     }
                                                 }}
-                                                className="flex-1 rounded-lg border-2 border-gray-200 p-4 text-gray-800 focus:border-purple-500 focus:outline-none"
+                                                className="flex-1 rounded-lg border-2 border-gray-200 p-3 text-sm text-gray-800 focus:border-purple-500 focus:outline-none sm:p-4 sm:text-base"
                                             />
                                             <button
                                                 onClick={handleReadCode}
                                                 disabled={loading || code.length !== 6}
-                                                className="rounded-lg bg-gradient-to-r from-blue-500 to-purple-500 px-8 py-4 font-semibold text-white transition-all hover:from-blue-600 hover:to-purple-600 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
+                                                className="w-full rounded-lg bg-blue-600 px-6 py-3 font-semibold text-white transition-all hover:bg-blue-700 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto sm:px-8 sm:py-4"
                                             >
                                                 {loading ? 'Loading...' : 'Read'}
                                             </button>
@@ -234,17 +235,14 @@ export default function ReadPage() {
                         </>
                     ) : (
                         <>
-                            {/* Content Display */}
-                            <ContentViewer clip={clip} />
-
                             {/* Live Mode Toggle */}
-                            <div className="rounded-2xl bg-white p-6 shadow-lg">
-                                <div className="flex items-center justify-between">
+                            <div className="rounded-2xl bg-white p-4 shadow-lg sm:p-6">
+                                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                                     <div className="flex-1">
-                                        <h3 className="text-lg font-semibold text-gray-800">
+                                        <h3 className="text-base font-semibold text-gray-800 sm:text-lg">
                                             Real-Time Updates
                                         </h3>
-                                        <p className="text-sm text-gray-600">
+                                        <p className="mt-1 text-xs text-gray-600 sm:text-sm">
                                             {isLiveMode
                                                 ? '🟢 Live mode active - Content updates automatically'
                                                 : 'Enable to see changes as the sender edits'}
@@ -252,15 +250,18 @@ export default function ReadPage() {
                                     </div>
                                     <button
                                         onClick={toggleLiveMode}
-                                        className={`rounded-lg px-6 py-3 font-semibold transition-all active:scale-95 ${isLiveMode
-                                                ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white hover:from-green-600 hover:to-emerald-600'
-                                                : 'bg-gradient-to-r from-blue-500 to-purple-500 text-white hover:from-blue-600 hover:to-purple-600'
+                                        className={`w-full rounded-lg px-4 py-2.5 text-sm font-semibold transition-all active:scale-95 sm:w-auto sm:px-6 sm:py-3 ${isLiveMode
+                                            ? 'bg-green-600 text-white hover:bg-green-700'
+                                            : 'bg-blue-600 text-white hover:bg-blue-700'
                                             }`}
                                     >
-                                        {isLiveMode ? '✓ Live' : 'Enable Live Mode'}
+                                        {isLiveMode ? '✓ Live' : 'Enable Live'}
                                     </button>
                                 </div>
                             </div>
+
+                            {/* Content Display */}
+                            <ContentViewer clip={clip} />
 
                             {/* Read Another */}
                             <button

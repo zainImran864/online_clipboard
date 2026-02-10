@@ -29,7 +29,7 @@ export default function SplashScreen({ onComplete }: SplashScreenProps) {
 
     return (
         <div
-            className={`fixed inset-0 z-50 flex items-center justify-center bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 transition-opacity duration-500 ${fadeOut ? 'opacity-0' : 'opacity-100'
+            className={`fixed inset-0 z-50 flex items-center justify-center bg-blue-50 transition-opacity duration-500 ${fadeOut ? 'opacity-0' : 'opacity-100'
                 }`}
         >
             <div className="animate-pulse">

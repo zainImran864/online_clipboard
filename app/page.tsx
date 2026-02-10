@@ -14,39 +14,40 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
+    <div className="min-h-screen bg-blue-50">
       {/* Header */}
-      <header className="p-6">
-        <Logo size={50} />
+      <header className="p-4 sm:p-6">
+        <Logo size={40} className="sm:hidden" />
+        <Logo size={50} className="hidden sm:block" />
       </header>
 
       {/* Main Content */}
-      <main className="flex min-h-[calc(100vh-120px)] items-center justify-center px-4">
-        <div className="w-full max-w-2xl animate-fadeIn space-y-8 text-center">
-          <div className="space-y-4">
-            <h1 className="text-5xl font-bold text-gray-800">
+      <main className="flex min-h-[calc(100vh-100px)] items-center justify-center px-4 py-6 sm:min-h-[calc(100vh-120px)]">
+        <div className="w-full max-w-2xl animate-fadeIn space-y-6 text-center sm:space-y-8">
+          <div className="space-y-3 sm:space-y-4">
+            <h1 className="text-3xl font-bold text-gray-800 sm:text-4xl md:text-5xl">
               Share Anything,{' '}
-              <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+              <span className="text-blue-600">
                 Instantly
               </span>
             </h1>
-            <p className="text-xl text-gray-600">
+            <p className="text-base text-gray-600 sm:text-lg md:text-xl">
               Upload files or write text, get a code, and share with anyone. No login required.
             </p>
           </div>
 
           {/* Action Cards */}
-          <div className="grid gap-6 md:grid-cols-2">
+          <div className="grid gap-4 sm:gap-6 md:grid-cols-2">
             {/* Send File Card */}
             <button
               onClick={() => router.push('/send')}
-              className="group relative overflow-hidden rounded-2xl bg-white p-8 shadow-lg transition-all hover:scale-105 hover:shadow-xl active:scale-100"
+              className="group relative overflow-hidden rounded-2xl bg-white p-6 shadow-lg transition-all hover:scale-105 hover:shadow-xl active:scale-100 sm:p-8"
             >
-              <div className="absolute inset-0 bg-gradient-to-br from-blue-500 to-purple-500 opacity-0 transition-opacity group-hover:opacity-10" />
-              <div className="relative space-y-4">
-                <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-purple-500">
+              <div className="absolute inset-0 bg-blue-500 opacity-0 transition-opacity group-hover:opacity-10" />
+              <div className="relative space-y-3 sm:space-y-4">
+                <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-blue-600 sm:h-20 sm:w-20">
                   <svg
-                    className="h-10 w-10 text-white"
+                    className="h-8 w-8 text-white sm:h-10 sm:w-10"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -60,8 +61,8 @@ export default function Home() {
                   </svg>
                 </div>
                 <div>
-                  <h2 className="text-2xl font-bold text-gray-800">Send File</h2>
-                  <p className="mt-2 text-gray-600">
+                  <h2 className="text-xl font-bold text-gray-800 sm:text-2xl">Send File</h2>
+                  <p className="mt-2 text-sm text-gray-600 sm:text-base">
                     Upload a file or write text to generate a share code
                   </p>
                 </div>
@@ -71,13 +72,13 @@ export default function Home() {
             {/* Read File Card */}
             <button
               onClick={() => router.push('/read')}
-              className="group relative overflow-hidden rounded-2xl bg-white p-8 shadow-lg transition-all hover:scale-105 hover:shadow-xl active:scale-100"
+              className="group relative overflow-hidden rounded-2xl bg-white p-6 shadow-lg transition-all hover:scale-105 hover:shadow-xl active:scale-100 sm:p-8"
             >
-              <div className="absolute inset-0 bg-gradient-to-br from-purple-500 to-pink-500 opacity-0 transition-opacity group-hover:opacity-10" />
-              <div className="relative space-y-4">
-                <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-purple-500 to-pink-500">
+              <div className="absolute inset-0 bg-blue-600 opacity-0 transition-opacity group-hover:opacity-10" />
+              <div className="relative space-y-3 sm:space-y-4">
+                <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-cyan-600 sm:h-20 sm:w-20">
                   <svg
-                    className="h-10 w-10 text-white"
+                    className="h-8 w-8 text-white sm:h-10 sm:w-10"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -97,8 +98,8 @@ export default function Home() {
                   </svg>
                 </div>
                 <div>
-                  <h2 className="text-2xl font-bold text-gray-800">Read File</h2>
-                  <p className="mt-2 text-gray-600">
+                  <h2 className="text-xl font-bold text-gray-800 sm:text-2xl">Read File</h2>
+                  <p className="mt-2 text-sm text-gray-600 sm:text-base">
                     Enter a code to view shared content
                   </p>
                 </div>
@@ -107,9 +108,9 @@ export default function Home() {
           </div>
 
           {/* Features */}
-          <div className="grid gap-4 text-sm text-gray-600 md:grid-cols-3">
+          <div className="grid gap-3 text-xs sm:gap-4 sm:text-sm text-gray-600 md:grid-cols-3">
             <div className="flex items-center justify-center gap-2">
-              <svg className="h-5 w-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+              <svg className="h-4 w-4 flex-shrink-0 text-green-500 sm:h-5 sm:w-5" fill="currentColor" viewBox="0 0 20 20">
                 <path
                   fillRule="evenodd"
                   d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
@@ -119,7 +120,7 @@ export default function Home() {
               <span>No Login Required</span>
             </div>
             <div className="flex items-center justify-center gap-2">
-              <svg className="h-5 w-5 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
+              <svg className="h-4 w-4 flex-shrink-0 text-blue-500 sm:h-5 sm:w-5" fill="currentColor" viewBox="0 0 20 20">
                 <path
                   fillRule="evenodd"
                   d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
@@ -129,7 +130,7 @@ export default function Home() {
               <span>Real-time Updates</span>
             </div>
             <div className="flex items-center justify-center gap-2">
-              <svg className="h-5 w-5 text-purple-500" fill="currentColor" viewBox="0 0 20 20">
+              <svg className="h-4 w-4 flex-shrink-0 text-purple-500 sm:h-5 sm:w-5" fill="currentColor" viewBox="0 0 20 20">
                 <path
                   fillRule="evenodd"
                   d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
