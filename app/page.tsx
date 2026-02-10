@@ -1,63 +1,145 @@
-import Image from "next/image";
+'use client';
+
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import SplashScreen from '@/components/SplashScreen';
+import Logo from '@/components/Logo';
 
 export default function Home() {
+  const [showSplash, setShowSplash] = useState(true);
+  const router = useRouter();
+
+  if (showSplash) {
+    return <SplashScreen onComplete={() => setShowSplash(false)} />;
+  }
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
+    <div className="min-h-screen bg-blue-50">
+      {/* Header */}
+      <header className="p-4 sm:p-6">
+        <Logo size={40} className="sm:hidden" />
+        <Logo size={50} className="hidden sm:block" />
+      </header>
+
+      {/* Main Content */}
+      <main className="flex min-h-[calc(100vh-100px)] items-center justify-center px-4 py-6 sm:min-h-[calc(100vh-120px)]">
+        <div className="w-full max-w-2xl animate-fadeIn space-y-6 text-center sm:space-y-8">
+          <div className="space-y-3 sm:space-y-4">
+            <h1 className="text-3xl font-bold text-gray-800 sm:text-4xl md:text-5xl">
+              Share Anything,{' '}
+              <span className="text-blue-600">
+                Instantly
+              </span>
+            </h1>
+            <p className="text-base text-gray-600 sm:text-lg md:text-xl">
+              Upload files or write text, get a code, and share with anyone. No login required.
+            </p>
+          </div>
+
+          {/* Action Cards */}
+          <div className="grid gap-4 sm:gap-6 md:grid-cols-2">
+            {/* Send File Card */}
+            <button
+              onClick={() => router.push('/send')}
+              className="group relative overflow-hidden rounded-2xl bg-white p-6 shadow-lg transition-all hover:scale-105 hover:shadow-xl active:scale-100 sm:p-8"
             >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
+              <div className="absolute inset-0 bg-blue-500 opacity-0 transition-opacity group-hover:opacity-10" />
+              <div className="relative space-y-3 sm:space-y-4">
+                <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-blue-600 sm:h-20 sm:w-20">
+                  <svg
+                    className="h-8 w-8 text-white sm:h-10 sm:w-10"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+                    />
+                  </svg>
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-gray-800 sm:text-2xl">Send File</h2>
+                  <p className="mt-2 text-sm text-gray-600 sm:text-base">
+                    Upload a file or write text to generate a share code
+                  </p>
+                </div>
+              </div>
+            </button>
+
+            {/* Read File Card */}
+            <button
+              onClick={() => router.push('/read')}
+              className="group relative overflow-hidden rounded-2xl bg-white p-6 shadow-lg transition-all hover:scale-105 hover:shadow-xl active:scale-100 sm:p-8"
             >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+              <div className="absolute inset-0 bg-blue-600 opacity-0 transition-opacity group-hover:opacity-10" />
+              <div className="relative space-y-3 sm:space-y-4">
+                <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-cyan-600 sm:h-20 sm:w-20">
+                  <svg
+                    className="h-8 w-8 text-white sm:h-10 sm:w-10"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                    />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                    />
+                  </svg>
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-gray-800 sm:text-2xl">Read File</h2>
+                  <p className="mt-2 text-sm text-gray-600 sm:text-base">
+                    Enter a code to view shared content
+                  </p>
+                </div>
+              </div>
+            </button>
+          </div>
+
+          {/* Features */}
+          <div className="grid gap-3 text-xs sm:gap-4 sm:text-sm text-gray-600 md:grid-cols-3">
+            <div className="flex items-center justify-center gap-2">
+              <svg className="h-4 w-4 flex-shrink-0 text-green-500 sm:h-5 sm:w-5" fill="currentColor" viewBox="0 0 20 20">
+                <path
+                  fillRule="evenodd"
+                  d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                  clipRule="evenodd"
+                />
+              </svg>
+              <span>No Login Required</span>
+            </div>
+            <div className="flex items-center justify-center gap-2">
+              <svg className="h-4 w-4 flex-shrink-0 text-blue-500 sm:h-5 sm:w-5" fill="currentColor" viewBox="0 0 20 20">
+                <path
+                  fillRule="evenodd"
+                  d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                  clipRule="evenodd"
+                />
+              </svg>
+              <span>Real-time Updates</span>
+            </div>
+            <div className="flex items-center justify-center gap-2">
+              <svg className="h-4 w-4 flex-shrink-0 text-purple-500 sm:h-5 sm:w-5" fill="currentColor" viewBox="0 0 20 20">
+                <path
+                  fillRule="evenodd"
+                  d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                  clipRule="evenodd"
+                />
+              </svg>
+              <span>24 Hour Access</span>
+            </div>
+          </div>
         </div>
       </main>
     </div>

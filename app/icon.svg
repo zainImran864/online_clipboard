@@ -1,0 +1,32 @@
+<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="64" height="64" rx="12" fill="#2563EB"/>
+  
+  <!-- Clipboard Icon -->
+  <path
+    d="M24 18H20C18.3431 18 17 19.3431 17 21V43C17 44.6569 18.3431 46 20 46H44C45.6569 46 47 44.6569 47 43V21C47 19.3431 45.6569 18 44 18H40"
+    stroke="white"
+    stroke-width="3"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+  <path
+    d="M24 18C24 15.7909 25.7909 14 28 14H36C38.2091 14 40 15.7909 40 18V22H24V18Z"
+    stroke="white"
+    stroke-width="3"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+  <path
+    d="M24 30H40"
+    stroke="white"
+    stroke-width="3"
+    stroke-linecap="round"
+  />
+  <path
+    d="M24 38H34"
+    stroke="white"
+    stroke-width="3"
+    stroke-linecap="round"
+  />
+</svg>
