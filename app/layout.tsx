@@ -66,6 +66,7 @@ export default function RootLayout({
         <meta name="theme-color" content="#2563EB" />
         <meta name="msapplication-TileColor" content="#2563EB" />
         <meta name="msapplication-config" content="/browserconfig.xml" />
+        <meta name="google-site-verification" content="P4Vz3wA55Mrq9AEUqizMLh8BvGLTqOP6TOwknVTipds" />
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
