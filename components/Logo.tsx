@@ -7,9 +7,9 @@ interface LogoProps {
 
 export default function Logo({ size = 60, className = '' }: LogoProps) {
     return (
-        <div className={`flex items-center gap-3 ${className}`}>
+        <div className={`flex flex-row items-center gap-2 sm:gap-3 ${className}`}>
             <div
-                className="relative flex items-center justify-center rounded-2xl bg-blue-600 shadow-lg"
+                className="relative flex flex-shrink-0 items-center justify-center rounded-2xl bg-blue-600 shadow-lg"
                 style={{ width: size, height: size }}
             >
                 <svg
@@ -47,11 +47,11 @@ export default function Logo({ size = 60, className = '' }: LogoProps) {
                     />
                 </svg>
             </div>
-            <div className="flex flex-col">
-                <h1 className="text-2xl font-bold text-blue-700">
+            <div className="flex min-w-0 flex-col">
+                <h1 className="whitespace-nowrap text-xl font-bold text-blue-700 sm:text-2xl">
                     ClipShare
                 </h1>
-                <p className="text-xs text-gray-500">Share anything, instantly</p>
+                <p className="hidden whitespace-nowrap text-xs text-gray-500 sm:block">Share anything, instantly</p>
             </div>
         </div>
     );
