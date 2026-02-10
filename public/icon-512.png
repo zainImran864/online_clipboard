@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="512" height="512" rx="96" fill="#2563EB"/>
+  
+  <!-- Clipboard Icon (centered and scaled) -->
+  <path
+    d="M192 144H160C142.327 144 128 158.327 128 176V368C128 385.673 142.327 400 160 400H352C369.673 400 384 385.673 384 368V176C384 158.327 369.673 144 352 144H320"
+    stroke="white"
+    stroke-width="16"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+  <path
+    d="M192 144C192 126.327 206.327 112 224 112H288C305.673 112 320 126.327 320 144V176H192V144Z"
+    stroke="white"
+    stroke-width="16"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+  <path
+    d="M192 256H320"
+    stroke="white"
+    stroke-width="16"
+    stroke-linecap="round"
+  />
+  <path
+    d="M192 304H256"
+    stroke="white"
+    stroke-width="16"
+    stroke-linecap="round"
+  />
+</svg>
