@@ -12,7 +12,6 @@ export default function SendPage() {
     const router = useRouter();
     const { createClip, updateClip, subscribeToClip, loading, error } = useClipboard();
 
-    const [mode, setMode] = useState<'select' | 'text' | 'file'>('select');
     const [textContent, setTextContent] = useState('');
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const [clip, setClip] = useState<Clip | null>(null);
@@ -24,8 +23,8 @@ export default function SendPage() {
         if (clip) {
             const unsubscribe = subscribeToClip(clip.id, (updatedClip) => {
                 setClip(updatedClip);
-                if (updatedClip.type === 'text') {
-                    setTextContent(updatedClip.content);
+                if (updatedClip.textContent) {
+                    setTextContent(updatedClip.textContent);
                 }
             });
 
@@ -38,32 +37,41 @@ export default function SendPage() {
     }, [clip, subscribeToClip, sessionId]);
 
     const handleGenerateCode = async () => {
-        if (mode === 'text' && !textContent.trim()) {
-            alert('Please enter some text');
-            return;
-        }
+        const hasText = textContent.trim().length > 0;
+        const hasFile = selectedFile !== null;
 
-        if (mode === 'file' && !selectedFile) {
-            alert('Please select a file');
+        if (!hasText && !hasFile) {
+            alert('Please enter some text or select a file');
             return;
         }
 
         setUploading(true);
 
         try {
-            if (mode === 'text') {
-                const newClip = await createClip(textContent, 'text');
-                setClip(newClip);
-            } else if (mode === 'file' && selectedFile) {
-                // Upload file to Firebase Storage
+            if (hasText && hasFile) {
+                // Both text and file
                 const fileResult = await uploadFile(selectedFile, 'temp');
-
-                // Create clip with file URL
+                const newClip = await createClip(
+                    fileResult.url,
+                    'both',
+                    {
+                        fileName: fileResult.fileName,
+                        fileType: fileResult.fileType,
+                    },
+                    textContent
+                );
+                setClip(newClip);
+            } else if (hasFile) {
+                // File only
+                const fileResult = await uploadFile(selectedFile, 'temp');
                 const newClip = await createClip(fileResult.url, 'file', {
                     fileName: fileResult.fileName,
                     fileType: fileResult.fileType,
                 });
-
+                setClip(newClip);
+            } else {
+                // Text only
+                const newClip = await createClip(textContent, 'text');
                 setClip(newClip);
             }
         } catch (err) {
@@ -77,8 +85,8 @@ export default function SendPage() {
     const handleTextChange = async (newText: string) => {
         setTextContent(newText);
 
-        // Update Firestore in real-time if clip exists
-        if (clip && clip.type === 'text') {
+        // Update Firestore in real-time if clip exists and has text
+        if (clip && (clip.type === 'text' || clip.type === 'both')) {
             try {
                 await updateClip(clip.id, newText);
             } catch (err) {
@@ -104,137 +112,64 @@ export default function SendPage() {
             <main className="flex min-h-[calc(100vh-120px)] items-center justify-center px-4">
                 <div className="w-full max-w-2xl space-y-6">
                     <div className="text-center">
-                        <h1 className="text-4xl font-bold text-gray-800">Send File or Text</h1>
+                        <h1 className="text-4xl font-bold text-gray-800">Share Content</h1>
                         <p className="mt-2 text-gray-600">
-                            Choose how you want to share your content
+                            Write text, upload a file, or do both!
                         </p>
                     </div>
 
                     {!clip ? (
                         <>
-                            {/* Mode Selection */}
-                            {mode === 'select' && (
-                                <div className="grid gap-4 md:grid-cols-2">
-                                    <button
-                                        onClick={() => setMode('text')}
-                                        className="group rounded-2xl bg-white p-8 shadow-lg transition-all hover:scale-105 hover:shadow-xl active:scale-100"
-                                    >
-                                        <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-purple-500">
-                                            <svg
-                                                className="h-8 w-8 text-white"
-                                                fill="none"
-                                                stroke="currentColor"
-                                                viewBox="0 0 24 24"
-                                            >
-                                                <path
-                                                    strokeLinecap="round"
-                                                    strokeLinejoin="round"
-                                                    strokeWidth={2}
-                                                    d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                                                />
-                                            </svg>
-                                        </div>
-                                        <h3 className="text-xl font-bold text-gray-800">Write Text</h3>
-                                        <p className="mt-2 text-sm text-gray-600">
-                                            Type or paste your text directly
-                                        </p>
-                                    </button>
-
-                                    <button
-                                        onClick={() => setMode('file')}
-                                        className="group rounded-2xl bg-white p-8 shadow-lg transition-all hover:scale-105 hover:shadow-xl active:scale-100"
-                                    >
-                                        <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-purple-500 to-pink-500">
-                                            <svg
-                                                className="h-8 w-8 text-white"
-                                                fill="none"
-                                                stroke="currentColor"
-                                                viewBox="0 0 24 24"
-                                            >
-                                                <path
-                                                    strokeLinecap="round"
-                                                    strokeLinejoin="round"
-                                                    strokeWidth={2}
-                                                    d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
-                                                />
-                                            </svg>
-                                        </div>
-                                        <h3 className="text-xl font-bold text-gray-800">Upload File</h3>
-                                        <p className="mt-2 text-sm text-gray-600">
-                                            Upload text, PDF, or image files
-                                        </p>
-                                    </button>
-                                </div>
-                            )}
-
-                            {/* Text Input Mode */}
-                            {mode === 'text' && (
-                                <div className="space-y-4 rounded-2xl bg-white p-6 shadow-lg">
-                                    <div className="flex items-center justify-between">
-                                        <h3 className="text-lg font-semibold text-gray-800">Write Your Text</h3>
-                                        <button
-                                            onClick={() => {
-                                                setMode('select');
-                                                setTextContent('');
-                                            }}
-                                            className="text-sm text-gray-500 hover:text-gray-700"
-                                        >
-                                            Change Mode
-                                        </button>
-                                    </div>
+                            {/* Unified Input Interface */}
+                            <div className="space-y-4 rounded-2xl bg-white p-6 shadow-lg">
+                                {/* Text Input */}
+                                <div>
+                                    <label className="mb-2 block text-sm font-semibold text-gray-700">
+                                        📝 Shareable Text (Optional)
+                                    </label>
                                     <textarea
                                         value={textContent}
                                         onChange={(e) => setTextContent(e.target.value)}
                                         placeholder="Type or paste your text here..."
-                                        className="h-64 w-full rounded-lg border-2 border-gray-200 p-4 text-gray-800 focus:border-blue-500 focus:outline-none"
+                                        className="h-48 w-full rounded-lg border-2 border-gray-200 p-4 text-gray-800 focus:border-blue-500 focus:outline-none"
                                     />
-                                    <button
-                                        onClick={handleGenerateCode}
-                                        disabled={loading || uploading || !textContent.trim()}
-                                        className="w-full rounded-lg bg-gradient-to-r from-blue-500 to-purple-500 px-6 py-3 font-semibold text-white transition-all hover:from-blue-600 hover:to-purple-600 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
-                                    >
-                                        {loading || uploading ? 'Generating...' : 'Generate Send Code'}
-                                    </button>
                                 </div>
-                            )}
 
-                            {/* File Upload Mode */}
-                            {mode === 'file' && (
-                                <div className="space-y-4 rounded-2xl bg-white p-6 shadow-lg">
-                                    <div className="flex items-center justify-between">
-                                        <h3 className="text-lg font-semibold text-gray-800">Upload Your File</h3>
-                                        <button
-                                            onClick={() => {
-                                                setMode('select');
-                                                setSelectedFile(null);
-                                            }}
-                                            className="text-sm text-gray-500 hover:text-gray-700"
-                                        >
-                                            Change Mode
-                                        </button>
-                                    </div>
+                                {/* File Upload */}
+                                <div>
+                                    <label className="mb-2 block text-sm font-semibold text-gray-700">
+                                        📎 Upload File (Optional)
+                                    </label>
                                     <FileUpload
                                         onFileSelect={setSelectedFile}
                                         disabled={loading || uploading}
                                     />
                                     {selectedFile && (
-                                        <div className="rounded-lg bg-blue-50 p-4">
+                                        <div className="mt-3 rounded-lg bg-blue-50 p-4">
                                             <p className="text-sm font-semibold text-gray-700">Selected File:</p>
                                             <p className="text-sm text-gray-600">{selectedFile.name}</p>
                                             <p className="text-xs text-gray-500">
                                                 {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
                                             </p>
+                                            <button
+                                                onClick={() => setSelectedFile(null)}
+                                                className="mt-2 text-xs text-red-500 hover:text-red-700"
+                                            >
+                                                Remove file
+                                            </button>
                                         </div>
                                     )}
-                                    <button
-                                        onClick={handleGenerateCode}
-                                        disabled={loading || uploading || !selectedFile}
-                                        className="w-full rounded-lg bg-gradient-to-r from-purple-500 to-pink-500 px-6 py-3 font-semibold text-white transition-all hover:from-purple-600 hover:to-pink-600 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
-                                    >
-                                        {loading || uploading ? 'Uploading...' : 'Generate Send Code'}
-                                    </button>
                                 </div>
-                            )}
+
+                                {/* Generate Button */}
+                                <button
+                                    onClick={handleGenerateCode}
+                                    disabled={loading || uploading || (!textContent.trim() && !selectedFile)}
+                                    className="w-full rounded-lg bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 px-6 py-3 font-semibold text-white transition-all hover:from-blue-600 hover:via-purple-600 hover:to-pink-600 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
+                                >
+                                    {loading || uploading ? 'Generating...' : 'Generate Share Code'}
+                                </button>
+                            </div>
 
                             {error && (
                                 <div className="rounded-lg bg-red-50 p-4 text-red-600">
@@ -250,8 +185,8 @@ export default function SendPage() {
                                 shareUrl={`${window.location.origin}/view/${clip.code}`}
                             />
 
-                            {/* Editable Text Area (if text mode) */}
-                            {clip.type === 'text' && (
+                            {/* Editable Text Area (if text exists) */}
+                            {(clip.type === 'text' || clip.type === 'both') && (
                                 <div className="rounded-2xl bg-white p-6 shadow-lg">
                                     <h3 className="mb-4 text-lg font-semibold text-gray-800">
                                         Your Text (Editable until refresh)
@@ -268,7 +203,7 @@ export default function SendPage() {
                             )}
 
                             {/* File Preview */}
-                            {clip.type === 'file' && (
+                            {(clip.type === 'file' || clip.type === 'both') && (
                                 <div className="rounded-2xl bg-white p-6 shadow-lg">
                                     <h3 className="mb-4 text-lg font-semibold text-gray-800">File Uploaded</h3>
                                     <div className="flex items-center gap-3 rounded-lg bg-gray-50 p-4">
@@ -288,7 +223,6 @@ export default function SendPage() {
                             <button
                                 onClick={() => {
                                     setClip(null);
-                                    setMode('select');
                                     setTextContent('');
                                     setSelectedFile(null);
                                     localStorage.removeItem('clipSessionId');

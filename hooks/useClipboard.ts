@@ -18,8 +18,9 @@ import { uploadFile, FileUploadResult } from '@/lib/fileHandler';
 export interface Clip {
     id: string;
     code: string;
-    type: 'text' | 'file';
+    type: 'text' | 'file' | 'both';
     content: string;
+    textContent?: string;
     fileName?: string;
     fileType?: string;
     createdAt: Date;
@@ -34,7 +35,7 @@ export function useClipboard() {
      * Create a new clip
      */
     const createClip = useCallback(
-        async (content: string, type: 'text' | 'file', fileMetadata?: Partial<FileUploadResult>) => {
+        async (content: string, type: 'text' | 'file' | 'both', fileMetadata?: Partial<FileUploadResult>, textContent?: string) => {
             setLoading(true);
             setError(null);
 
@@ -47,6 +48,7 @@ export function useClipboard() {
                     code,
                     type,
                     content,
+                    ...(textContent && { textContent }),
                     ...(fileMetadata && {
                         fileName: fileMetadata.fileName,
                         fileType: fileMetadata.fileType,
@@ -63,6 +65,7 @@ export function useClipboard() {
                     code,
                     type,
                     content,
+                    textContent,
                     fileName: fileMetadata?.fileName,
                     fileType: fileMetadata?.fileType,
                     createdAt: createdAt.toDate(),
@@ -123,6 +126,7 @@ export function useClipboard() {
                 code: data.code,
                 type: data.type,
                 content: data.content,
+                textContent: data.textContent,
                 fileName: data.fileName,
                 fileType: data.fileType,
                 createdAt: data.createdAt.toDate(),
@@ -150,6 +154,7 @@ export function useClipboard() {
                     code: data.code,
                     type: data.type,
                     content: data.content,
+                    textContent: data.textContent,
                     fileName: data.fileName,
                     fileType: data.fileType,
                     createdAt: data.createdAt.toDate(),

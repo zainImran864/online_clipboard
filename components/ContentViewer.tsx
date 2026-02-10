@@ -10,9 +10,9 @@ interface ContentViewerProps {
 export default function ContentViewer({ clip }: ContentViewerProps) {
     const [copied, setCopied] = useState(false);
 
-    const copyToClipboard = async () => {
+    const copyToClipboard = async (text: string) => {
         try {
-            await navigator.clipboard.writeText(clip.content);
+            await navigator.clipboard.writeText(text);
             setCopied(true);
             setTimeout(() => setCopied(false), 2000);
         } catch (err) {
@@ -31,6 +31,32 @@ export default function ContentViewer({ clip }: ContentViewerProps) {
     };
 
     const renderContent = () => {
+        // Handle 'both' type - show both text and file
+        if (clip.type === 'both') {
+            return (
+                <div className="space-y-4">
+                    {/* Text Content */}
+                    {clip.textContent && (
+                        <div>
+                            <h4 className="mb-2 text-sm font-semibold text-gray-700">📝 Text Content</h4>
+                            <div className="rounded-lg bg-gray-50 p-6">
+                                <pre className="whitespace-pre-wrap break-words font-sans text-gray-800">
+                                    {clip.textContent}
+                                </pre>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* File Content */}
+                    <div>
+                        <h4 className="mb-2 text-sm font-semibold text-gray-700">📎 Attached File</h4>
+                        {renderFilePreview()}
+                    </div>
+                </div>
+            );
+        }
+
+        // Handle text-only type
         if (clip.type === 'text') {
             return (
                 <div className="rounded-lg bg-gray-50 p-6">
@@ -41,7 +67,12 @@ export default function ContentViewer({ clip }: ContentViewerProps) {
             );
         }
 
-        // File type
+        // Handle file-only type
+        return renderFilePreview();
+    };
+
+    const renderFilePreview = () => {
+        // Image file
         if (clip.fileType?.startsWith('image/')) {
             return (
                 <div className="flex justify-center rounded-lg bg-gray-50 p-6">
@@ -54,6 +85,7 @@ export default function ContentViewer({ clip }: ContentViewerProps) {
             );
         }
 
+        // PDF file
         if (clip.fileType === 'application/pdf') {
             return (
                 <div className="rounded-lg bg-gray-50 p-6">
@@ -71,7 +103,7 @@ export default function ContentViewer({ clip }: ContentViewerProps) {
             );
         }
 
-        // Text file
+        // Other file types
         return (
             <div className="rounded-lg bg-gray-50 p-6">
                 <div className="flex items-center gap-3 text-gray-700">
@@ -81,7 +113,7 @@ export default function ContentViewer({ clip }: ContentViewerProps) {
                     </svg>
                     <div>
                         <p className="font-semibold">{clip.fileName}</p>
-                        <p className="text-sm text-gray-500">Text File</p>
+                        <p className="text-sm text-gray-500">{clip.fileType || 'File'}</p>
                     </div>
                 </div>
             </div>
@@ -95,9 +127,10 @@ export default function ContentViewer({ clip }: ContentViewerProps) {
 
             {/* Action Buttons */}
             <div className="flex gap-3">
-                {clip.type === 'text' && (
+                {/* Copy Text Button - for text or both types */}
+                {(clip.type === 'text' || clip.type === 'both') && (
                     <button
-                        onClick={copyToClipboard}
+                        onClick={() => copyToClipboard(clip.type === 'text' ? clip.content : clip.textContent || '')}
                         className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-blue-500 px-6 py-3 font-semibold text-white transition-all hover:bg-blue-600 active:scale-95"
                     >
                         {copied ? (
@@ -127,7 +160,9 @@ export default function ContentViewer({ clip }: ContentViewerProps) {
                         )}
                     </button>
                 )}
-                {clip.type === 'file' && (
+
+                {/* Download File Button - for file or both types */}
+                {(clip.type === 'file' || clip.type === 'both') && (
                     <button
                         onClick={downloadFile}
                         className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-purple-500 px-6 py-3 font-semibold text-white transition-all hover:bg-purple-600 active:scale-95"
