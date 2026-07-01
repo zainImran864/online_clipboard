@@ -54,6 +54,11 @@ export async function GET(request: Request) {
                 .filter((file) => file.storageProvider === 'r2' && file.storageKey)
                 .map((file) => file.storageKey as string);
 
+            // Oversized text is stored in R2 too — clean it up alongside files.
+            if (data.textStorageProvider === 'r2' && data.textStorageKey) {
+                r2Keys.push(data.textStorageKey as string);
+            }
+
             let clipHadDeleteError = false;
 
             for (const storageKey of r2Keys) {

@@ -3,7 +3,6 @@ import { db } from '@/lib/firebase';
 import {
     collection,
     addDoc,
-    deleteDoc,
     doc,
     getDoc,
     updateDoc,
@@ -257,7 +256,9 @@ export function useClipboard() {
             const data = docData.data();
 
             if (data.expiresAt && data.expiresAt.toMillis() <= Date.now()) {
-                await deleteDoc(doc(db, 'clips', docData.id));
+                // Treat as gone, but leave deletion to the cron so it can also
+                // remove any associated R2 objects (text/files) — the browser
+                // cannot delete from R2 and would orphan them.
                 setLoading(false);
                 return null;
             }
@@ -302,7 +303,7 @@ export function useClipboard() {
             if (docSnap.exists()) {
                 const data = docSnap.data();
                 if (data.expiresAt && data.expiresAt.toMillis() <= Date.now()) {
-                    void deleteDoc(clipRef);
+                    // Leave deletion to the cron so R2 objects are cleaned too.
                     return;
                 }
                 void (async () => {
