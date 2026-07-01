@@ -62,14 +62,29 @@ function getClientIp(request: Request) {
     );
 }
 
-function getQuotaHash(ip: string) {
+/**
+ * Identifier the daily quota is scoped to.
+ *
+ * Derived purely server-side from the request (IP + User-Agent), never from
+ * anything stored in the browser. This means clearing site data / localStorage
+ * / cookies cannot reset the quota, while still giving different devices or
+ * browsers behind the same shared IP their own 10MB allowance (different
+ * User-Agent → different bucket).
+ */
+function getQuotaSubject(request: Request) {
+    const ip = getClientIp(request);
+    const userAgent = request.headers.get('user-agent')?.trim() || 'unknown-agent';
+    return `ip:${ip}|ua:${userAgent}`;
+}
+
+function getQuotaHash(subject: string) {
     const secret =
         process.env.QUOTA_HASH_SECRET ||
         process.env.CRON_SECRET ||
         process.env.R2_SECRET_ACCESS_KEY ||
         'local-dev-quota-secret';
 
-    return createHash('sha256').update(`${secret}:${ip}`).digest('hex');
+    return createHash('sha256').update(`${secret}:${subject}`).digest('hex');
 }
 
 function getUtcDay() {
@@ -87,7 +102,7 @@ function validateFile(file: File) {
 
 async function reserveDailyQuota(request: Request, fileSize: number) {
     const day = getUtcDay();
-    const ipHash = getQuotaHash(getClientIp(request));
+    const ipHash = getQuotaHash(getQuotaSubject(request));
     const quotaRef = doc(db, QUOTA_COLLECTION, `_quota_${day}_${ipHash}`);
     const expiresAt = Timestamp.fromDate(new Date(Date.now() + 24 * 60 * 60 * 1000));
 
@@ -133,7 +148,7 @@ async function reserveDailyQuota(request: Request, fileSize: number) {
 
 async function refundDailyQuota(request: Request, fileSize: number) {
     const day = getUtcDay();
-    const ipHash = getQuotaHash(getClientIp(request));
+    const ipHash = getQuotaHash(getQuotaSubject(request));
     const quotaRef = doc(db, QUOTA_COLLECTION, `_quota_${day}_${ipHash}`);
 
     await runTransaction(db, async (transaction) => {
