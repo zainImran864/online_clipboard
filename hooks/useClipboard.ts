@@ -7,6 +7,7 @@ import {
     doc,
     getDoc,
     updateDoc,
+    deleteField,
     query,
     where,
     getDocs,
@@ -16,6 +17,76 @@ import {
 import { generateUniqueCode } from '@/lib/codeGenerator';
 
 export type StorageProvider = 'firebase-inline' | 'r2';
+
+// Text larger than this (UTF-8 bytes) is offloaded to R2 instead of being
+// written inline, since a Firestore document is capped at ~1 MiB total.
+const TEXT_INLINE_LIMIT = 900 * 1024;
+
+function getTextByteSize(text: string) {
+    return new TextEncoder().encode(text).length;
+}
+
+async function uploadTextToR2(text: string): Promise<{ url: string; storageKey: string }> {
+    const response = await fetch('/api/text/upload', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text }),
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+        throw new Error(result.error || 'Failed to store large text');
+    }
+
+    return result;
+}
+
+/**
+ * Builds the Firestore field payload for a text value, offloading to R2 when
+ * it exceeds the inline limit. `fieldName` is the field that holds the text
+ * ('content' for text-only clips, 'textContent' for 'both' clips).
+ */
+async function buildTextFields(text: string, fieldName: 'content' | 'textContent') {
+    if (getTextByteSize(text) > TEXT_INLINE_LIMIT) {
+        const uploaded = await uploadTextToR2(text);
+        return {
+            [fieldName]: uploaded.url,
+            textStorageProvider: 'r2' as const,
+            textStorageKey: uploaded.storageKey,
+        };
+    }
+
+    return {
+        [fieldName]: text,
+        // Clear any previous R2 markers when the text shrinks back to inline.
+        textStorageProvider: deleteField(),
+        textStorageKey: deleteField(),
+    };
+}
+
+/**
+ * Resolves the actual text of a clip, fetching it from R2 when it was offloaded.
+ * Keeps `content` / `textContent` as plain strings for the rest of the app.
+ */
+async function resolveTextFromStorage(data: any): Promise<{ content: string; textContent?: string }> {
+    let content = data.content;
+    let textContent = data.textContent;
+
+    if (data.textStorageProvider === 'r2') {
+        try {
+            if (data.type === 'text') {
+                content = await (await fetch(data.content)).text();
+            } else if (data.textContent) {
+                textContent = await (await fetch(data.textContent)).text();
+            }
+        } catch (err) {
+            console.error('Failed to load large text from storage:', err);
+        }
+    }
+
+    return { content, textContent };
+}
 
 export interface SharedFile {
     url: string;
@@ -33,6 +104,9 @@ export interface Clip {
     content: string;
     textContent?: string;
     files?: SharedFile[];
+    // Present when the clip's text is stored in R2 rather than inline.
+    textStorageProvider?: StorageProvider;
+    textStorageKey?: string;
     // Legacy fields for backward compatibility
     fileName?: string;
     fileType?: string;
@@ -74,6 +148,19 @@ export function useClipboard() {
 
                 if (textContent) {
                     clipData.textContent = textContent;
+                }
+
+                // Offload oversized text to R2. For text-only clips the text
+                // lives in `content`; for 'both' clips it lives in `textContent`.
+                const inlineTextField = type === 'text' ? 'content' : textContent ? 'textContent' : null;
+                if (inlineTextField) {
+                    const textValue = clipData[inlineTextField];
+                    if (getTextByteSize(textValue) > TEXT_INLINE_LIMIT) {
+                        const uploaded = await uploadTextToR2(textValue);
+                        clipData[inlineTextField] = uploaded.url;
+                        clipData.textStorageProvider = 'r2';
+                        clipData.textStorageKey = uploaded.storageKey;
+                    }
                 }
 
                 if (files && files.length > 0) {
@@ -125,16 +212,16 @@ export function useClipboard() {
 
                 if (clipData.type === 'both') {
                     // Update textContent field for 'both' type
-                    await updateDoc(clipRef, { textContent: content });
+                    await updateDoc(clipRef, await buildTextFields(content, 'textContent'));
                 } else if (clipData.type === 'text') {
                     // Update content field for 'text' type
-                    await updateDoc(clipRef, { content });
+                    await updateDoc(clipRef, await buildTextFields(content, 'content'));
                 } else if (clipData.type === 'file') {
                     // Convert 'file' to 'both' when text is added
                     if (content.trim().length > 0) {
                         await updateDoc(clipRef, {
                             type: 'both',
-                            textContent: content,
+                            ...(await buildTextFields(content, 'textContent')),
                         });
                     }
                 }
@@ -175,13 +262,17 @@ export function useClipboard() {
                 return null;
             }
 
+            const { content, textContent } = await resolveTextFromStorage(data);
+
             setLoading(false);
             return {
                 id: docData.id,
                 code: data.code,
                 type: data.type,
-                content: data.content,
-                textContent: data.textContent,
+                content,
+                textContent,
+                textStorageProvider: data.textStorageProvider,
+                textStorageKey: data.textStorageKey,
                 files: data.files || (data.fileName ? [{
                     url: data.content,
                     fileName: data.fileName,
@@ -214,23 +305,28 @@ export function useClipboard() {
                     void deleteDoc(clipRef);
                     return;
                 }
-                callback({
-                    id: docSnap.id,
-                    code: data.code,
-                    type: data.type,
-                    content: data.content,
-                    textContent: data.textContent,
-                    files: data.files || (data.fileName ? [{
-                        url: data.content,
+                void (async () => {
+                    const { content, textContent } = await resolveTextFromStorage(data);
+                    callback({
+                        id: docSnap.id,
+                        code: data.code,
+                        type: data.type,
+                        content,
+                        textContent,
+                        textStorageProvider: data.textStorageProvider,
+                        textStorageKey: data.textStorageKey,
+                        files: data.files || (data.fileName ? [{
+                            url: data.content,
+                            fileName: data.fileName,
+                            fileType: data.fileType,
+                            fileSize: 0
+                        }] : undefined),
                         fileName: data.fileName,
                         fileType: data.fileType,
-                        fileSize: 0
-                    }] : undefined),
-                    fileName: data.fileName,
-                    fileType: data.fileType,
-                    createdAt: data.createdAt.toDate(),
-                    expiresAt: data.expiresAt?.toDate(),
-                } as Clip);
+                        createdAt: data.createdAt.toDate(),
+                        expiresAt: data.expiresAt?.toDate(),
+                    } as Clip);
+                })();
             }
         });
 
@@ -269,7 +365,7 @@ export function useClipboard() {
                         await updateDoc(clipRef, {
                             type: 'both',
                             content: allFiles[0].url, // Keep first file URL in content for backward compatibility
-                            textContent: currentTextContent,
+                            ...(await buildTextFields(currentTextContent as string, 'textContent')),
                             files: allFiles,
                             fileName: allFiles[0].fileName,
                             fileType: allFiles[0].fileType,
