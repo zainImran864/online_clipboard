@@ -1,38 +1,31 @@
+// Generates the PWA PNG icons (public/icon-192.png, public/icon-512.png)
+// from the Pasteport mark. Uses a full-bleed square background (no rounded
+// corners) so the icons work as "maskable" — the OS applies its own mask.
+//
+// Run: node convert-icons.js
 const sharp = require('sharp');
-const fs = require('fs');
 const path = require('path');
 
-async function convertIcons() {
+// Maskable source: solid theme-color square + white "P" monogram + paper plane.
+// The mark stays well within the maskable safe zone (centered ~80%).
+const svg = `<svg width="512" height="512" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+  <rect width="64" height="64" fill="#2563EB"/>
+  <path d="M23 48V18h13a9 9 0 0 1 0 18h-9" fill="none" stroke="#ffffff" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M45 21l-12 4 4.5 2 1.5 4.5z" fill="#ffffff"/>
+</svg>`;
+
+async function generate() {
   const publicDir = path.join(__dirname, 'public');
-  
-  // Read the SVG content
-  const svg192 = fs.readFileSync(path.join(publicDir, 'icon-192.png'), 'utf-8');
-  const svg512 = fs.readFileSync(path.join(publicDir, 'icon-512.png'), 'utf-8');
-  
-  try {
-    // Convert 192x192
-    await sharp(Buffer.from(svg192))
-      .resize(192, 192)
-      .png()
-      .toFile(path.join(publicDir, 'icon-192-converted.png'));
-    
-    console.log('✓ Created icon-192-converted.png');
-    
-    // Convert 512x512
-    await sharp(Buffer.from(svg512))
-      .resize(512, 512)
-      .png()
-      .toFile(path.join(publicDir, 'icon-512-converted.png'));
-    
-    console.log('✓ Created icon-512-converted.png');
-    
-    console.log('\nNow replace the original files:');
-    console.log('mv public/icon-192-converted.png public/icon-192.png');
-    console.log('mv public/icon-512-converted.png public/icon-512.png');
-    
-  } catch (error) {
-    console.error('Error converting icons:', error);
+  const buffer = Buffer.from(svg);
+
+  for (const size of [192, 512]) {
+    const out = path.join(publicDir, `icon-${size}.png`);
+    await sharp(buffer).resize(size, size).png().toFile(out);
+    console.log(`✓ wrote public/icon-${size}.png`);
   }
 }
 
-convertIcons();
+generate().catch((err) => {
+  console.error('Icon generation failed:', err);
+  process.exit(1);
+});

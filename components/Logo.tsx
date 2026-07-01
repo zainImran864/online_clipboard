@@ -13,38 +13,22 @@ export default function Logo({ size = 60, className = '' }: LogoProps) {
                 style={{ width: size, height: size }}
             >
                 <svg
-                    width={size * 0.6}
-                    height={size * 0.6}
-                    viewBox="0 0 24 24"
+                    width={size * 0.7}
+                    height={size * 0.7}
+                    viewBox="0 0 64 64"
                     fill="none"
                     xmlns="http://www.w3.org/2000/svg"
                 >
+                    {/* "P" monogram */}
                     <path
-                        d="M9 5H7C5.89543 5 5 5.89543 5 7V19C5 20.1046 5.89543 21 7 21H17C18.1046 21 19 20.1046 19 19V7C19 5.89543 18.1046 5 17 5H15"
+                        d="M23 48V18h13a9 9 0 0 1 0 18h-9"
                         stroke="white"
-                        strokeWidth="2"
+                        strokeWidth="5"
                         strokeLinecap="round"
                         strokeLinejoin="round"
                     />
-                    <path
-                        d="M9 5C9 3.89543 9.89543 3 11 3H13C14.1046 3 15 3.89543 15 5V7H9V5Z"
-                        stroke="white"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                    />
-                    <path
-                        d="M9 12H15"
-                        stroke="white"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                    />
-                    <path
-                        d="M9 16H12"
-                        stroke="white"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                    />
+                    {/* Paper plane (send) */}
+                    <path d="M45 21l-12 4 4.5 2 1.5 4.5z" fill="white" />
                 </svg>
             </div>
             <div className="flex min-w-0 flex-col">
