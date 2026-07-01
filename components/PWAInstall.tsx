@@ -22,8 +22,9 @@ export default function PWAInstall() {
       return;
     }
 
-    // Register service worker
-    if ('serviceWorker' in navigator) {
+    // Register service worker (production only — registering in dev conflicts
+    // with Turbopack HMR and throws "script evaluation failed" on each reload).
+    if ('serviceWorker' in navigator && process.env.NODE_ENV === 'production') {
       const registerSW = async () => {
         try {
           const swUrl = `/sw.js?v=${Date.now()}`;
@@ -40,6 +41,12 @@ export default function PWAInstall() {
       registerSW();
       // Retry after a delay to catch late registrations
       setTimeout(registerSW, 2000);
+    } else if ('serviceWorker' in navigator) {
+      // Development: remove any service worker registered by a previous session
+      // so it stops erroring against the Turbopack dev server.
+      navigator.serviceWorker.getRegistrations().then((registrations) => {
+        registrations.forEach((registration) => registration.unregister());
+      });
     }
 
     // Listen for beforeinstallprompt event
