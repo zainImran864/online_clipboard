@@ -1,0 +1,9 @@
+# *
+User-agent: *
+Allow: /
+
+# Host
+Host: https://online-clipboard-beta.vercel.app
+
+# Sitemaps
+Sitemap: https://online-clipboard-beta.vercel.app/sitemap.xml
