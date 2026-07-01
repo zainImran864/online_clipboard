@@ -6,7 +6,7 @@ import Logo from '@/components/Logo';
 import FileUpload from '@/components/FileUpload';
 import CodeDisplay from '@/components/CodeDisplay';
 import { useClipboard, Clip } from '@/hooks/useClipboard';
-import { uploadFile } from '@/lib/fileHandler';
+import { uploadFile, FileUploadResult } from '@/lib/fileHandler';
 
 export default function SendPage() {
     const router = useRouter();
@@ -51,7 +51,7 @@ export default function SendPage() {
         setUploading(true);
 
         try {
-            let uploadedFiles: Array<{ url: string; fileName: string; fileType: string; fileSize: number }> = [];
+            let uploadedFiles: FileUploadResult[] = [];
 
             // Upload all selected files
             if (hasFiles) {
@@ -82,7 +82,8 @@ export default function SendPage() {
             setSelectedFiles([]); // Clear file selection after upload
         } catch (err) {
             console.error('Error creating clip:', err);
-            alert('Failed to create clip. Please try again.');
+            const message = err instanceof Error ? err.message : 'Failed to create clip. Please try again.';
+            alert(message);
         } finally {
             setUploading(false);
         }
@@ -115,7 +116,8 @@ export default function SendPage() {
             // The clip will be updated via the real-time subscription
         } catch (err) {
             console.error('Error uploading files:', err);
-            alert('Failed to upload files. Please try again.');
+            const message = err instanceof Error ? err.message : 'Failed to upload files. Please try again.';
+            alert(message);
         } finally {
             setUploading(false);
         }
@@ -333,3 +335,4 @@ export default function SendPage() {
         </div>
     );
 }
+

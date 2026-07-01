@@ -14,7 +14,17 @@ import {
     Timestamp,
 } from 'firebase/firestore';
 import { generateUniqueCode } from '@/lib/codeGenerator';
-import { uploadFile, FileUploadResult } from '@/lib/fileHandler';
+
+export type StorageProvider = 'firebase-inline' | 'r2';
+
+export interface SharedFile {
+    url: string;
+    fileName: string;
+    fileType: string;
+    fileSize: number;
+    storageProvider?: StorageProvider;
+    storageKey?: string;
+}
 
 export interface Clip {
     id: string;
@@ -22,12 +32,7 @@ export interface Clip {
     type: 'text' | 'file' | 'both';
     content: string;
     textContent?: string;
-    files?: Array<{
-        url: string;
-        fileName: string;
-        fileType: string;
-        fileSize: number;
-    }>;
+    files?: SharedFile[];
     // Legacy fields for backward compatibility
     fileName?: string;
     fileType?: string;
@@ -47,7 +52,7 @@ export function useClipboard() {
         async (
             content: string,
             type: 'text' | 'file' | 'both',
-            files?: Array<{ url: string; fileName: string; fileType: string; fileSize: number }>,
+            files?: SharedFile[],
             textContent?: string
         ) => {
             setLoading(true);
@@ -238,7 +243,7 @@ export function useClipboard() {
     const updateClipWithFile = useCallback(
         async (
             clipId: string,
-            newFiles: Array<{ url: string; fileName: string; fileType: string; fileSize: number }>,
+            newFiles: SharedFile[],
             currentTextContent?: string
         ) => {
             setLoading(true);
@@ -310,3 +315,4 @@ export function useClipboard() {
         subscribeToClip,
     };
 }
+

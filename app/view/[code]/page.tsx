@@ -14,6 +14,7 @@ export default function ViewPage() {
     const { fetchClipByCode, subscribeToClip, loading } = useClipboard();
     const [clip, setClip] = useState<any>(null);
     const [notFound, setNotFound] = useState(false);
+    const [isLiveMode, setIsLiveMode] = useState(false);
 
     useEffect(() => {
         if (code) {
@@ -21,16 +22,20 @@ export default function ViewPage() {
         }
     }, [code]);
 
-    // Subscribe to real-time updates
+    // Subscribe to real-time updates when live mode is enabled
     useEffect(() => {
-        if (clip?.id) {
+        if (clip?.id && isLiveMode) {
             const unsubscribe = subscribeToClip(clip.id, (updatedClip) => {
                 setClip(updatedClip);
             });
 
             return () => unsubscribe();
         }
-    }, [clip?.id, subscribeToClip]);
+    }, [clip?.id, isLiveMode, subscribeToClip]);
+
+    const toggleLiveMode = () => {
+        setIsLiveMode(!isLiveMode);
+    };
 
     const loadClip = async () => {
         try {
@@ -123,15 +128,42 @@ export default function ViewPage() {
 
                     {clip && (
                         <>
+                            {/* Live Mode Toggle */}
+                            <div className="rounded-2xl bg-white p-4 shadow-lg sm:p-6">
+                                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                                    <div className="flex-1">
+                                        <h3 className="text-base font-semibold text-gray-800 sm:text-lg">
+                                            Real-Time Updates
+                                        </h3>
+                                        <p className="mt-1 text-xs text-gray-600 sm:text-sm">
+                                            {isLiveMode
+                                                ? '🟢 Live mode active - Content updates automatically'
+                                                : 'Enable to see changes as the sender edits'}
+                                        </p>
+                                    </div>
+                                    <button
+                                        onClick={toggleLiveMode}
+                                        className={`w-full rounded-lg px-4 py-2.5 text-sm font-semibold transition-all active:scale-95 sm:w-auto sm:px-6 sm:py-3 ${isLiveMode
+                                            ? 'bg-green-600 text-white hover:bg-green-700'
+                                            : 'bg-blue-600 text-white hover:bg-blue-700'
+                                            }`}
+                                    >
+                                        {isLiveMode ? '✓ Live' : 'Enable Live'}
+                                    </button>
+                                </div>
+                            </div>
+
                             <ContentViewer clip={clip} />
 
                             {/* Real-time Update Indicator */}
-                            <div className="rounded-lg bg-green-50 p-4 text-center text-sm text-green-700">
-                                <div className="flex items-center justify-center gap-2">
-                                    <div className="h-2 w-2 animate-pulse rounded-full bg-green-500"></div>
-                                    <span>This content updates in real-time</span>
+                            {isLiveMode && (
+                                <div className="rounded-lg bg-green-50 p-4 text-center text-sm text-green-700">
+                                    <div className="flex items-center justify-center gap-2">
+                                        <div className="h-2 w-2 animate-pulse rounded-full bg-green-500"></div>
+                                        <span>This content updates in real-time</span>
+                                    </div>
                                 </div>
-                            </div>
+                            )}
                         </>
                     )}
                 </div>

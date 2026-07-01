@@ -262,12 +262,74 @@ export default function ContentViewer({ clip }: ContentViewerProps) {
         return renderSingleFile(files[0]);
     };
 
+    const getDocumentLabel = (fileExt: string, fileType?: string) => {
+        if (['doc', 'docx'].includes(fileExt) || fileType?.includes('wordprocessingml') || fileType === 'application/msword') {
+            return 'Word Document';
+        }
+        if (['xls', 'xlsx'].includes(fileExt) || fileType?.includes('spreadsheetml') || fileType === 'application/vnd.ms-excel') {
+            return 'Excel Spreadsheet';
+        }
+        if (['ppt', 'pptx'].includes(fileExt) || fileType?.includes('presentationml') || fileType === 'application/vnd.ms-powerpoint') {
+            return 'PowerPoint Presentation';
+        }
+        if (fileExt === 'rar' || fileType?.includes('rar')) {
+            return 'RAR Archive';
+        }
+        if (fileExt === 'zip' || fileType?.includes('zip')) {
+            return 'ZIP Archive';
+        }
+        return fileType || 'File';
+    };
+
+    const renderDocumentFile = (file: { url: string; fileName: string; fileType: string }, fileExt: string) => {
+        return (
+            <div className="flex items-center gap-3 rounded-lg bg-gray-50 p-4 text-gray-700">
+                <svg className="h-12 w-12 flex-shrink-0 text-blue-600" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6z" />
+                    <path d="M14 2v6h6" />
+                </svg>
+                <div className="min-w-0 flex-1">
+                    <p className="truncate font-semibold">{file.fileName}</p>
+                    <p className="text-sm text-gray-500">{getDocumentLabel(fileExt, file.fileType)}</p>
+                    <p className="mt-1 text-xs text-gray-500">
+                        Preview is not available for this file type. Download it to view the original document.
+                    </p>
+                </div>
+                <button
+                    onClick={() => downloadFile(file.url, file.fileName)}
+                    className="flex-shrink-0 rounded-lg bg-blue-600 px-3 py-2 text-xs font-semibold text-white transition-colors hover:bg-blue-700"
+                >
+                    Download
+                </button>
+            </div>
+        );
+    };
+
     const renderSingleFile = (file: { url: string; fileName: string; fileType: string }) => {
         const fileExt = file.fileName.split('.').pop()?.toLowerCase() || '';
-        
+
+        const binaryDocumentExtensions = ['doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'rar', 'zip'];
+        const binaryDocumentTypes = [
+            'application/msword',
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            'application/vnd.ms-excel',
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'application/vnd.ms-powerpoint',
+            'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+            'application/vnd.rar',
+            'application/x-rar-compressed',
+            'application/zip',
+            'application/x-zip-compressed',
+        ];
+        const isBinaryDocument = binaryDocumentExtensions.includes(fileExt) || binaryDocumentTypes.includes(file.fileType);
+
         // Code file extensions
         const codeExtensions = ['html', 'htm', 'css', 'js', 'jsx', 'ts', 'tsx', 'json', 'xml', 'py', 'java', 'c', 'cpp', 'h', 'cs', 'php', 'rb', 'go', 'rs', 'swift', 'kt', 'sql', 'sh', 'bash', 'yml', 'yaml', 'md'];
         const isCodeFile = codeExtensions.includes(fileExt) || file.fileType?.startsWith('text/') || file.fileType?.includes('javascript') || file.fileType?.includes('json') || file.fileType?.includes('xml');
+
+        if (isBinaryDocument) {
+            return renderDocumentFile(file, fileExt);
+        }
 
         // Image file
         if (file.fileType?.startsWith('image/')) {

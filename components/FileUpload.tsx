@@ -109,7 +109,7 @@ export default function FileUpload({ onFileSelect, disabled = false, multiple = 
                     onChange={handleChange}
                     disabled={disabled}
                     multiple={multiple}
-                    accept=".txt,.pdf,.jpg,.jpeg,.png,.gif,.webp"
+                    accept=".txt,.pdf,.jpg,.jpeg,.png,.gif,.webp,.svg,.zip,.rar,.conf,.csv,.cvs,.doc,.docx,.xls,.xlsx,.ppt,.pptx"
                 />
                 <div className="flex flex-col items-center gap-3 text-center">
                     <div className="rounded-full bg-blue-600 p-4">
@@ -132,7 +132,7 @@ export default function FileUpload({ onFileSelect, disabled = false, multiple = 
                             Drop your files here or click to browse
                         </p>
                         <p className="mt-1 text-sm text-gray-500">
-                            Supports: Text, PDF, Images • Max 800KB each • Multiple files allowed
+                            Supports: Text, archives, Office, PDF, Images • 10MB daily limit
                         </p>
                     </div>
                 </div>
@@ -145,3 +145,4 @@ export default function FileUpload({ onFileSelect, disabled = false, multiple = 
         </div>
     );
 }
+

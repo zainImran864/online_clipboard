@@ -1,38 +1,47 @@
+export type StorageProvider = 'firebase-inline' | 'r2';
+
 export interface FileUploadResult {
-    url: string; // base64 data URL
+    url: string;
     fileName: string;
     fileType: string;
     fileSize: number;
+    storageProvider: StorageProvider;
+    storageKey?: string;
+}
+
+const MAX_FILE_SIZE = 10 * 1024 * 1024;
+
+async function uploadFileThroughServer(file: File): Promise<FileUploadResult> {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const response = await fetch('/api/files/upload', {
+        method: 'POST',
+        body: formData,
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+        const remainingBytes =
+            typeof result.remainingBytes === 'number'
+                ? ` ${Math.max(0, result.remainingBytes / (1024 * 1024)).toFixed(2)}MB remaining today.`
+                : '';
+        throw new Error(`${result.error || 'Failed to upload file'}${remainingBytes}`);
+    }
+
+    return result as FileUploadResult;
 }
 
 /**
- * Converts a file to base64 data URL (stores in Firestore, not Storage)
- * @param file - The file to convert
- * @param code - The clip code (not used for base64, kept for compatibility)
- * @returns Promise<FileUploadResult> - Result with base64 URL and metadata
+ * Routes files to Firestore inline storage or Cloudflare R2 by size.
+ * @param file - The file to upload
+ * @param code - The clip code, kept for compatibility with existing callers
  */
 export async function uploadFile(file: File, code: string): Promise<FileUploadResult> {
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader();
+    void code;
 
-        reader.onload = () => {
-            const base64String = reader.result as string;
-
-            resolve({
-                url: base64String, // base64 data URL (e.g., data:image/png;base64,...)
-                fileName: file.name,
-                fileType: file.type,
-                fileSize: file.size,
-            });
-        };
-
-        reader.onerror = () => {
-            reject(new Error('Failed to read file'));
-        };
-
-        // Read file as data URL (base64)
-        reader.readAsDataURL(file);
-    });
+    return uploadFileThroughServer(file);
 }
 
 /**
@@ -41,12 +50,7 @@ export async function uploadFile(file: File, code: string): Promise<FileUploadRe
  * @returns boolean - Whether the file is valid
  */
 export function validateFile(file: File): { valid: boolean; error?: string } {
-    // Reduced max size for base64 storage (Firestore has 1MB document limit)
-    const MAX_FILE_SIZE = 800 * 1024; // 800KB (to account for base64 encoding overhead)
-    
-    // Allowed MIME types
     const ALLOWED_TYPES = [
-        // Text files
         'text/plain',
         'text/html',
         'text/css',
@@ -54,14 +58,23 @@ export function validateFile(file: File): { valid: boolean; error?: string } {
         'text/xml',
         'text/csv',
         'text/markdown',
-        // Application types
         'application/pdf',
         'application/json',
         'application/javascript',
         'application/xml',
         'application/x-javascript',
         'application/x-python-code',
-        // Images
+        'application/zip',
+        'application/x-zip-compressed',
+        'multipart/x-zip',
+        'application/vnd.rar',
+        'application/x-rar-compressed',
+        'application/msword',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'application/vnd.ms-excel',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'application/vnd.ms-powerpoint',
+        'application/vnd.openxmlformats-officedocument.presentationml.presentation',
         'image/jpeg',
         'image/jpg',
         'image/png',
@@ -70,23 +83,22 @@ export function validateFile(file: File): { valid: boolean; error?: string } {
         'image/svg+xml',
     ];
 
-    // Common code file extensions (for files with empty/unknown MIME types)
     const ALLOWED_EXTENSIONS = [
         '.txt', '.html', '.htm', '.css', '.js', '.jsx', '.ts', '.tsx',
         '.json', '.xml', '.md', '.py', '.java', '.c', '.cpp', '.h',
         '.cs', '.php', '.rb', '.go', '.rs', '.swift', '.kt', '.sql',
-        '.sh', '.bash', '.yml', '.yaml', '.env', '.gitignore',
-        '.pdf', '.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg'
+        '.sh', '.bash', '.yml', '.yaml', '.env', '.gitignore', '.conf',
+        '.pdf', '.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg', '.zip',
+        '.rar', '.csv', '.cvs', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx'
     ];
 
     if (file.size > MAX_FILE_SIZE) {
         return {
             valid: false,
-            error: 'File size must be less than 800KB for direct storage',
+            error: 'File size must be 10MB or less',
         };
     }
 
-    // Check MIME type or file extension
     const fileExt = '.' + file.name.split('.').pop()?.toLowerCase();
     const isAllowedType = ALLOWED_TYPES.includes(file.type);
     const isAllowedExt = ALLOWED_EXTENSIONS.includes(fileExt);
@@ -95,7 +107,7 @@ export function validateFile(file: File): { valid: boolean; error?: string } {
     if (!isAllowedType && !isAllowedExt && !isEmptyMimeType) {
         return {
             valid: false,
-            error: 'File type not supported. Please upload text, code, PDF, or image files.',
+            error: 'File type not supported. Please upload text, code, archives, Office, PDF, or image files.',
         };
     }
 
