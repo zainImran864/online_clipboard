@@ -49,7 +49,7 @@ export default function Logo({ size = 60, className = '' }: LogoProps) {
             </div>
             <div className="flex min-w-0 flex-col">
                 <h1 className="whitespace-nowrap text-xl font-bold text-blue-700 sm:text-2xl">
-                    ClipShare
+                    Pasteport
                 </h1>
                 <p className="hidden whitespace-nowrap text-xs text-gray-500 sm:block">Share anything, instantly</p>
             </div>

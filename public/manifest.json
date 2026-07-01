@@ -1,6 +1,6 @@
 {
-  "name": "ClipShare - Share Anything Instantly",
-  "short_name": "ClipShare",
+  "name": "Pasteport - Share Anything Instantly",
+  "short_name": "Pasteport",
   "description": "Share files, text, PDFs, and images instantly with a simple code. No login required.",
   "start_url": "/",
   "scope": "/",

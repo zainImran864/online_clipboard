@@ -138,7 +138,7 @@ export default function PWAInstall() {
             </svg>
           </div>
           <div className="flex-1">
-            <h3 className="font-bold text-white">Install ClipShare</h3>
+            <h3 className="font-bold text-white">Install Pasteport</h3>
             <p className="text-sm text-blue-100">
               Install our app for quick access and offline use!
             </p>

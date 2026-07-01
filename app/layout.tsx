@@ -16,7 +16,7 @@ const geistMono = Geist_Mono({
 const siteUrl = "https://online-clipboard-beta.vercel.app";
 
 export const metadata: Metadata = {
-  title: "ClipShare - Share Anything, Instantly",
+  title: "Pasteport - Share Anything, Instantly",
   description: "Share files, text, PDFs, and images instantly with a simple code. No login required.",
   metadataBase: new URL(siteUrl),
   alternates: {
@@ -76,21 +76,21 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
-    title: 'ClipShare',
+    title: 'Pasteport',
   },
   formatDetection: {
     telephone: false,
   },
   openGraph: {
     type: 'website',
-    siteName: 'ClipShare',
-    title: 'ClipShare - Share Anything, Instantly',
+    siteName: 'Pasteport',
+    title: 'Pasteport - Share Anything, Instantly',
     description: 'Share files, text, PDFs, and images instantly with a simple code. No login required.',
     url: siteUrl,
   },
   twitter: {
     card: 'summary',
-    title: 'ClipShare - Share Anything, Instantly',
+    title: 'Pasteport - Share Anything, Instantly',
     description: 'Share files, text, PDFs, and images instantly with a simple code. No login required.',
   },
 };

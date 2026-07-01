@@ -1,4 +1,4 @@
-# Contributing to ClipShare
+# Contributing to Pasteport
 
 Thanks for your interest in contributing! This document explains how to set up the project and the conventions we follow.
 

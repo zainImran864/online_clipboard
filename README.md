@@ -1,4 +1,4 @@
-# ClipShare — Online Clipboard
+# Pasteport — Online Clipboard
 
 Share files, text, PDFs, and images instantly with a simple 6‑digit code. **No login required.** Content is available for 24 hours, then automatically deleted.
 
@@ -272,7 +272,7 @@ Security headers (`X-Frame-Options`, `X-Content-Type-Options`, etc.) and PWA/ser
 
 ### Progressive Web App (PWA)
 
-ClipShare is installable and works offline for cached pages. The pieces:
+Pasteport is installable and works offline for cached pages. The pieces:
 
 - `public/manifest.json` — app metadata, icons, theme, and display mode.
 - `public/sw.js` — service worker (registered by `components/PWAInstall.tsx`; disabled in dev for easier debugging).
