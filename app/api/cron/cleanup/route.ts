@@ -81,9 +81,50 @@ export async function GET(request: Request) {
         if (deletedClips === deletedBeforeBatch) break;
     }
 
+    // Secret-share uploads live in their own collection with a single R2 object
+    // each (storageKey) and a 6h expiry. Sweep them the same way.
+    let deletedSecureClips = 0;
+    let checkedSecureClips = 0;
+
+    while (true) {
+        const expiredSecure = await getDocs(
+            query(collection(db, 'secureClips'), where('expiresAt', '<=', Timestamp.now()), limit(BATCH_SIZE))
+        );
+
+        if (expiredSecure.empty) break;
+
+        checkedSecureClips += expiredSecure.size;
+        const deletedBeforeBatch = deletedSecureClips;
+
+        for (const secureDoc of expiredSecure.docs) {
+            const storageKey = secureDoc.data().storageKey as string | undefined;
+            let hadDeleteError = false;
+
+            if (storageKey) {
+                try {
+                    await deleteFromR2(storageKey);
+                    deletedR2Objects += 1;
+                } catch (error) {
+                    console.error(`Failed to delete R2 object ${storageKey}:`, error);
+                    r2DeleteErrors += 1;
+                    hadDeleteError = true;
+                }
+            }
+
+            if (!hadDeleteError) {
+                await deleteDoc(secureDoc.ref);
+                deletedSecureClips += 1;
+            }
+        }
+
+        if (deletedSecureClips === deletedBeforeBatch) break;
+    }
+
     return NextResponse.json({
         checked: checkedClips,
         deletedClips,
+        checkedSecureClips,
+        deletedSecureClips,
         deletedR2Objects,
         r2DeleteErrors,
     });
