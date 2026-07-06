@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { collection, getDocs, query, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { createPresignedUploadPost, createSecureStorageKey } from '@/lib/r2Storage';
+import { createPresignedUploadUrl, createSecureStorageKey } from '@/lib/r2Storage';
 import { ACCESS_CODE_LENGTH, SECURE_MAX_FILE_SIZE } from '@/lib/secureShare';
 
 export const runtime = 'nodejs';
@@ -57,13 +57,9 @@ export async function POST(request: Request) {
         const contentType = typeof fileType === 'string' && fileType ? fileType : 'application/octet-stream';
         const storageKey = createSecureStorageKey(fileName);
 
-        const post = await createPresignedUploadPost({
-            storageKey,
-            contentType,
-            maxBytes: SECURE_MAX_FILE_SIZE,
-        });
+        const uploadUrl = await createPresignedUploadUrl({ storageKey });
 
-        return NextResponse.json({ storageKey, post });
+        return NextResponse.json({ storageKey, uploadUrl, contentType });
     } catch (error) {
         console.error('Secure authorize failed:', error);
         const message = error instanceof Error ? error.message : 'Failed to authorize upload';
