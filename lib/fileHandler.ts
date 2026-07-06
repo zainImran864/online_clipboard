@@ -81,6 +81,20 @@ export function validateFile(file: File): { valid: boolean; error?: string } {
         'image/gif',
         'image/webp',
         'image/svg+xml',
+        'audio/mpeg',
+        'audio/mp3',
+        'audio/wav',
+        'audio/x-wav',
+        'audio/ogg',
+        'audio/webm',
+        'audio/mp4',
+        'audio/x-m4a',
+        'audio/aac',
+        'audio/flac',
+        'audio/x-flac',
+        'audio/opus',
+        'audio/midi',
+        'audio/x-midi',
     ];
 
     const ALLOWED_EXTENSIONS = [
@@ -89,7 +103,8 @@ export function validateFile(file: File): { valid: boolean; error?: string } {
         '.cs', '.php', '.rb', '.go', '.rs', '.swift', '.kt', '.sql',
         '.sh', '.bash', '.yml', '.yaml', '.env', '.gitignore', '.conf',
         '.pdf', '.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg', '.zip',
-        '.rar', '.csv', '.cvs', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx'
+        '.rar', '.csv', '.cvs', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx',
+        '.mp3', '.wav', '.ogg', '.oga', '.m4a', '.aac', '.flac', '.opus', '.weba', '.mid', '.midi'
     ];
 
     if (file.size > MAX_FILE_SIZE) {
@@ -107,7 +122,7 @@ export function validateFile(file: File): { valid: boolean; error?: string } {
     if (!isAllowedType && !isAllowedExt && !isEmptyMimeType) {
         return {
             valid: false,
-            error: 'File type not supported. Please upload text, code, archives, Office, PDF, or image files.',
+            error: 'File type not supported. Please upload text, code, archives, Office, PDF, image, or audio files.',
         };
     }
 

@@ -351,6 +351,29 @@ export default function ContentViewer({ clip }: ContentViewerProps) {
             );
         }
 
+        // Audio file
+        const audioExtensions = ['mp3', 'wav', 'ogg', 'oga', 'm4a', 'aac', 'flac', 'opus', 'weba', 'mid', 'midi'];
+        if (file.fileType?.startsWith('audio/') || audioExtensions.includes(fileExt)) {
+            return (
+                <div className="flex flex-col gap-3 rounded-lg bg-gray-50 p-6">
+                    <div className="flex items-center gap-3 text-gray-700">
+                        <svg className="h-12 w-12 flex-shrink-0 text-purple-500" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M9 18V5l12-2v13" />
+                            <circle cx="6" cy="18" r="3" />
+                            <circle cx="18" cy="16" r="3" />
+                        </svg>
+                        <div className="min-w-0 flex-1">
+                            <p className="truncate font-semibold">{file.fileName}</p>
+                            <p className="text-sm text-gray-500">Audio File</p>
+                        </div>
+                    </div>
+                    <audio controls src={file.url} className="w-full">
+                        Your browser does not support the audio element.
+                    </audio>
+                </div>
+            );
+        }
+
         // PDF file
         if (file.fileType === 'application/pdf') {
             return (
