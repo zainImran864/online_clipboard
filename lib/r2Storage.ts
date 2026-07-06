@@ -1,5 +1,4 @@
 import { DeleteObjectCommand, GetObjectCommand, HeadObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
-import { createPresignedPost, type PresignedPost } from '@aws-sdk/s3-presigned-post';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 
 let r2Client: S3Client | null = null;
@@ -81,28 +80,27 @@ export async function deleteFromR2(storageKey: string) {
 }
 
 /**
- * Creates a presigned POST that lets the browser upload directly to R2,
- * bypassing the Vercel request-body limit. The `content-length-range`
- * condition enforces the size cap server-side, so a client cannot upload more
- * than `maxBytes` no matter what it claims.
+ * Creates a presigned PUT URL that lets the browser upload directly to R2,
+ * bypassing the Vercel request-body limit.
+ *
+ * R2 does NOT support presigned POST (form) uploads — it returns 501 Not
+ * Implemented — so we use PUT. Content-Type is intentionally left unsigned so
+ * the browser's PUT doesn't have to match a signed header; the object's type
+ * is taken from the request header the client sends. The 600MB cap can't be
+ * enforced in the signature here, so it's re-checked server-side in /finalize
+ * via a HEAD (oversized uploads are deleted).
  */
-export async function createPresignedUploadPost(params: {
+export async function createPresignedUploadUrl(params: {
     storageKey: string;
-    contentType: string;
-    maxBytes: number;
     expiresSeconds?: number;
-}): Promise<PresignedPost> {
-    return createPresignedPost(getR2Client(), {
+}): Promise<string> {
+    const command = new PutObjectCommand({
         Bucket: getRequiredEnv('R2_BUCKET_NAME'),
         Key: params.storageKey,
-        Conditions: [
-            ['content-length-range', 0, params.maxBytes],
-            ['eq', '$Content-Type', params.contentType],
-        ],
-        Fields: {
-            'Content-Type': params.contentType,
-        },
-        Expires: params.expiresSeconds ?? 30 * 60,
+    });
+
+    return getSignedUrl(getR2Client(), command, {
+        expiresIn: params.expiresSeconds ?? 30 * 60,
     });
 }
 

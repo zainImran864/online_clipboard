@@ -1,5 +1,3 @@
-import type { PresignedPost } from '@aws-sdk/s3-presigned-post';
-
 // Gated "secret share" limits. Files up to 600 MB, kept for 6 hours, then the
 // cron sweep deletes the R2 object and its Firestore record.
 export const SECURE_MAX_FILE_SIZE = 600 * 1024 * 1024;
@@ -10,7 +8,8 @@ export const SEND_CODE_LENGTH = 8;
 
 export interface SecureAuthorizeResult {
     storageKey: string;
-    post: PresignedPost;
+    uploadUrl: string;
+    contentType: string;
 }
 
 export interface SecureDownloadResult {
@@ -59,9 +58,9 @@ export async function uploadSecureFile(
         throw new Error(await readError(authorizeRes, 'Invalid or already-used secret code'));
     }
 
-    const { storageKey, post } = (await authorizeRes.json()) as SecureAuthorizeResult;
+    const { storageKey, uploadUrl } = (await authorizeRes.json()) as SecureAuthorizeResult;
 
-    await uploadToPresignedPost(post, file, onProgress);
+    await uploadToPresignedUrl(uploadUrl, file, contentType, onProgress);
 
     const finalizeRes = await fetch('/api/secure/finalize', {
         method: 'POST',
@@ -82,18 +81,16 @@ export async function uploadSecureFile(
     return (await finalizeRes.json()) as { sendCode: string };
 }
 
-function uploadToPresignedPost(
-    post: PresignedPost,
+function uploadToPresignedUrl(
+    uploadUrl: string,
     file: File,
+    contentType: string,
     onProgress?: (fraction: number) => void
 ): Promise<void> {
     return new Promise((resolve, reject) => {
-        const form = new FormData();
-        Object.entries(post.fields).forEach(([key, value]) => form.append(key, value));
-        form.append('file', file);
-
         const xhr = new XMLHttpRequest();
-        xhr.open('POST', post.url, true);
+        xhr.open('PUT', uploadUrl, true);
+        xhr.setRequestHeader('Content-Type', contentType);
 
         xhr.upload.onprogress = (event) => {
             if (onProgress && event.lengthComputable) {
@@ -105,12 +102,12 @@ function uploadToPresignedPost(
             if (xhr.status >= 200 && xhr.status < 300) {
                 resolve();
             } else {
-                reject(new Error(`Upload failed (${xhr.status}). The file may exceed the 600MB limit.`));
+                reject(new Error(`Upload failed (${xhr.status}). Please try again.`));
             }
         };
 
         xhr.onerror = () => reject(new Error('Upload failed. Please check your connection and try again.'));
-        xhr.send(form);
+        xhr.send(file);
     });
 }
 
