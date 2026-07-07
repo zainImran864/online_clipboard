@@ -1,7 +1,10 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
+  /* Pasteport is a light-only design. Keep these fixed so the body never
+     flashes a dark background (e.g. during the splash-to-home fade) when the
+     OS/browser is in dark mode. */
+  --background: #f8fafc; /* slate-50, matches the home page background */
   --foreground: #171717;
 }
 
@@ -10,13 +13,6 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
 }
 
 body {
