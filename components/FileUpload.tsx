@@ -109,7 +109,7 @@ export default function FileUpload({ onFileSelect, disabled = false, multiple = 
                     onChange={handleChange}
                     disabled={disabled}
                     multiple={multiple}
-                    accept=".txt,.pdf,.jpg,.jpeg,.png,.gif,.webp,.svg,.zip,.rar,.conf,.csv,.cvs,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.mp3,.wav,.ogg,.oga,.m4a,.aac,.flac,.opus,.weba,.mid,.midi"
+                    accept=".txt,.pdf,.jpg,.jpeg,.png,.gif,.webp,.svg,.zip,.rar,.conf,.csv,.cvs,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.mp3,.wav,.ogg,.oga,.m4a,.aac,.flac,.opus,.weba,.mid,.midi,.mp4,.webm,.ogv,.mov,.avi,.mkv,.mpeg,.mpg,.3gp,.flv,.wmv,.m4v"
                 />
                 <div className="flex flex-col items-center gap-3 text-center">
                     <div className="rounded-full bg-blue-600 p-4">

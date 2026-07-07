@@ -95,6 +95,16 @@ export function validateFile(file: File): { valid: boolean; error?: string } {
         'audio/opus',
         'audio/midi',
         'audio/x-midi',
+        'video/mp4',
+        'video/webm',
+        'video/ogg',
+        'video/quicktime',
+        'video/x-msvideo',
+        'video/x-matroska',
+        'video/mpeg',
+        'video/3gpp',
+        'video/x-flv',
+        'video/x-ms-wmv',
     ];
 
     const ALLOWED_EXTENSIONS = [
@@ -104,7 +114,8 @@ export function validateFile(file: File): { valid: boolean; error?: string } {
         '.sh', '.bash', '.yml', '.yaml', '.env', '.gitignore', '.conf',
         '.pdf', '.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg', '.zip',
         '.rar', '.csv', '.cvs', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx',
-        '.mp3', '.wav', '.ogg', '.oga', '.m4a', '.aac', '.flac', '.opus', '.weba', '.mid', '.midi'
+        '.mp3', '.wav', '.ogg', '.oga', '.m4a', '.aac', '.flac', '.opus', '.weba', '.mid', '.midi',
+        '.mp4', '.webm', '.ogv', '.mov', '.avi', '.mkv', '.mpeg', '.mpg', '.3gp', '.flv', '.wmv', '.m4v'
     ];
 
     if (file.size > MAX_FILE_SIZE) {
@@ -122,7 +133,7 @@ export function validateFile(file: File): { valid: boolean; error?: string } {
     if (!isAllowedType && !isAllowedExt && !isEmptyMimeType) {
         return {
             valid: false,
-            error: 'File type not supported. Please upload text, code, archives, Office, PDF, image, or audio files.',
+            error: 'File type not supported. Please upload text, code, archives, Office, PDF, image, audio, or video files.',
         };
     }
 

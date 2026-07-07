@@ -55,6 +55,16 @@ const ALLOWED_TYPES = [
     'audio/opus',
     'audio/midi',
     'audio/x-midi',
+    'video/mp4',
+    'video/webm',
+    'video/ogg',
+    'video/quicktime',
+    'video/x-msvideo',
+    'video/x-matroska',
+    'video/mpeg',
+    'video/3gpp',
+    'video/x-flv',
+    'video/x-ms-wmv',
 ];
 
 const ALLOWED_EXTENSIONS = [
@@ -65,6 +75,7 @@ const ALLOWED_EXTENSIONS = [
     '.pdf', '.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg', '.zip',
     '.rar', '.csv', '.cvs', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx',
     '.mp3', '.wav', '.ogg', '.oga', '.m4a', '.aac', '.flac', '.opus', '.weba', '.mid', '.midi',
+    '.mp4', '.webm', '.ogv', '.mov', '.avi', '.mkv', '.mpeg', '.mpg', '.3gp', '.flv', '.wmv', '.m4v',
 ];
 
 function getClientIp(request: Request) {
@@ -194,7 +205,7 @@ export async function POST(request: Request) {
 
         if (!validateFile(file)) {
             return NextResponse.json(
-                { error: 'File type not supported. Please upload text, code, archives, Office, PDF, image, or audio files.' },
+                { error: 'File type not supported. Please upload text, code, archives, Office, PDF, image, audio, or video files.' },
                 { status: 400 }
             );
         }
