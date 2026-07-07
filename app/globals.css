@@ -52,6 +52,45 @@ body {
   animation: slideUp 0.4s ease-out forwards;
 }
 
+/* Splash: paper plane flies from the bottom-left corner to the top-right corner
+   and off screen, leading the reveal of the home page beneath. */
+@keyframes planeFly {
+  0% {
+    transform: translate(-62vw, 55vh) rotate(-6deg) scale(0.65);
+    opacity: 0;
+  }
+  18% {
+    opacity: 1;
+  }
+  55% {
+    transform: translate(-6vw, 2vh) rotate(-10deg) scale(1.05);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(62vw, -80vh) rotate(-14deg) scale(1.2);
+    opacity: 0;
+  }
+}
+
+.animate-plane-fly {
+  animation: planeFly 1.15s cubic-bezier(0.55, 0, 0.35, 1) forwards;
+}
+
+/* Gentle idle bob for the plane before it launches. */
+@keyframes planeBob {
+  0%,
+  100% {
+    transform: translateY(0) rotate(-6deg);
+  }
+  50% {
+    transform: translateY(-6px) rotate(-2deg);
+  }
+}
+
+.animate-plane-bob {
+  animation: planeBob 1.6s ease-in-out infinite;
+}
+
 /* Glassmorphism effect */
 .glass {
   background: rgba(255, 255, 255, 0.7);
