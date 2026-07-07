@@ -2,6 +2,11 @@
 
 import { useEffect, useState } from 'react';
 
+// Module-level flag: once the user dismisses/installs, the banner stays hidden
+// for the rest of this session across client-side navigations. It resets only
+// on a full page refresh (a hard reload re-evaluates this module).
+let dismissedThisSession = false;
+
 export default function PWAInstall() {
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [showInstallBanner, setShowInstallBanner] = useState(false);
@@ -54,7 +59,10 @@ export default function PWAInstall() {
       console.log('[PWA] beforeinstallprompt event fired');
       e.preventDefault();
       setDeferredPrompt(e);
-      setShowInstallBanner(true);
+      // Don't re-show if the user already dismissed/installed this session.
+      if (!dismissedThisSession) {
+        setShowInstallBanner(true);
+      }
     };
 
     // Listen for app installed event
@@ -108,6 +116,7 @@ export default function PWAInstall() {
       console.log(`[PWA] User response to install prompt: ${outcome}`);
 
       if (outcome === 'accepted') {
+        dismissedThisSession = true;
         setShowInstallBanner(false);
       }
       setDeferredPrompt(null);
@@ -117,6 +126,7 @@ export default function PWAInstall() {
   };
 
   const handleDismiss = () => {
+    dismissedThisSession = true;
     setShowInstallBanner(false);
   };
 

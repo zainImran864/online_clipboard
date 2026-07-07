@@ -351,6 +351,19 @@ export default function ContentViewer({ clip }: ContentViewerProps) {
             );
         }
 
+        // Video file
+        const videoExtensions = ['mp4', 'webm', 'ogv', 'mov', 'avi', 'mkv', 'mpeg', 'mpg', '3gp', 'flv', 'wmv', 'm4v'];
+        if (file.fileType?.startsWith('video/') || videoExtensions.includes(fileExt)) {
+            return (
+                <div className="flex flex-col gap-3 rounded-lg bg-gray-50 p-4">
+                    <video controls src={file.url} className="max-h-96 w-full rounded-lg bg-black">
+                        Your browser does not support the video element.
+                    </video>
+                    <p className="truncate text-sm text-gray-600">{file.fileName}</p>
+                </div>
+            );
+        }
+
         // Audio file
         const audioExtensions = ['mp3', 'wav', 'ogg', 'oga', 'm4a', 'aac', 'flac', 'opus', 'weba', 'mid', 'midi'];
         if (file.fileType?.startsWith('audio/') || audioExtensions.includes(fileExt)) {
