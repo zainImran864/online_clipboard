@@ -278,6 +278,9 @@ export default function ContentViewer({ clip }: ContentViewerProps) {
         if (fileExt === 'zip' || fileType?.includes('zip')) {
             return 'ZIP Archive';
         }
+        if (['tar', 'gz', 'tgz'].includes(fileExt) || fileType?.includes('tar') || fileType?.includes('gzip')) {
+            return 'TAR/GZ Archive';
+        }
         return fileType || 'File';
     };
 
@@ -308,7 +311,7 @@ export default function ContentViewer({ clip }: ContentViewerProps) {
     const renderSingleFile = (file: { url: string; fileName: string; fileType: string }) => {
         const fileExt = file.fileName.split('.').pop()?.toLowerCase() || '';
 
-        const binaryDocumentExtensions = ['doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'rar', 'zip'];
+        const binaryDocumentExtensions = ['doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'rar', 'zip', 'tar', 'gz', 'tgz'];
         const binaryDocumentTypes = [
             'application/msword',
             'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
@@ -320,6 +323,12 @@ export default function ContentViewer({ clip }: ContentViewerProps) {
             'application/x-rar-compressed',
             'application/zip',
             'application/x-zip-compressed',
+            'application/gzip',
+            'application/x-gzip',
+            'application/x-tar',
+            'application/x-gtar',
+            'application/x-compressed-tar',
+            'application/x-tgz',
         ];
         const isBinaryDocument = binaryDocumentExtensions.includes(fileExt) || binaryDocumentTypes.includes(file.fileType);
 

@@ -96,6 +96,12 @@ export function validateFile(file: File): { valid: boolean; error?: string } {
         'multipart/x-zip',
         'application/vnd.rar',
         'application/x-rar-compressed',
+        'application/gzip',
+        'application/x-gzip',
+        'application/x-tar',
+        'application/x-gtar',
+        'application/x-compressed-tar',
+        'application/x-tgz',
         'application/msword',
         'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
         'application/vnd.ms-excel',
@@ -140,7 +146,7 @@ export function validateFile(file: File): { valid: boolean; error?: string } {
         '.cs', '.php', '.rb', '.go', '.rs', '.swift', '.kt', '.sql',
         '.sh', '.bash', '.yml', '.yaml', '.env', '.gitignore', '.conf',
         '.pdf', '.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg', '.zip',
-        '.rar', '.csv', '.cvs', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx',
+        '.rar', '.tar', '.gz', '.tgz', '.csv', '.cvs', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx',
         '.mp3', '.wav', '.ogg', '.oga', '.m4a', '.aac', '.flac', '.opus', '.weba', '.mid', '.midi',
         '.mp4', '.webm', '.ogv', '.mov', '.avi', '.mkv', '.mpeg', '.mpg', '.3gp', '.flv', '.wmv', '.m4v'
     ];
