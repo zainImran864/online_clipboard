@@ -19,8 +19,10 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
-  /* Never allow a stray-wide element to create horizontal scroll / side gaps. */
-  overflow-x: hidden;
+  /* Never allow a stray-wide element to create horizontal scroll / side gaps.
+     Use `clip` (not `hidden`) so we don't create a scroll container — that
+     would break `position: sticky` on descendants (e.g. the share card). */
+  overflow-x: clip;
 }
 
 /* Clickable elements should show the hand cursor everywhere (browsers default
