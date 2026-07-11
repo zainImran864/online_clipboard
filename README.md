@@ -70,12 +70,16 @@ my-clipboard/
 │   ├── send/page.tsx               # Create a clip (text + files)
 │   ├── read/page.tsx               # Open a clip by code or link
 │   ├── view/[code]/page.tsx        # Open a clip directly via /view/<code>
+│   ├── secure/page.tsx             # Secret share — direct‑to‑R2 upload/download by code
 │   ├── layout.tsx                  # Root layout, metadata, PWA tags
 │   ├── globals.css                 # Tailwind + global styles
 │   └── api/
-│       ├── files/upload/route.ts   # POST — validate, store file (inline or R2)
-│       ├── text/upload/route.ts    # POST — store oversized text in R2
-│       └── cron/cleanup/route.ts   # GET  — delete expired clips + R2 objects
+│       ├── files/upload/route.ts       # POST — validate, store file (inline or R2)
+│       ├── text/upload/route.ts        # POST — store oversized text in R2
+│       ├── secure/authorize/route.ts   # POST — validate code, presign R2 upload
+│       ├── secure/finalize/route.ts    # POST — burn code, create secure clip, return send code
+│       ├── secure/download/route.ts    # POST — resolve send code to a presigned download URL
+│       └── cron/cleanup/route.ts       # GET  — delete expired clips + R2 objects
 ├── components/
 │   ├── ContentViewer.tsx           # Renders text/file/both clips (code preview, images, docs)
 │   ├── FileUpload.tsx              # Drag‑and‑drop file picker with validation
@@ -87,7 +91,8 @@ my-clipboard/
 │   ├── firebase.ts                 # Firebase app + Firestore init
 │   ├── r2Storage.ts                # R2 upload/delete + key/URL helpers (S3 SDK)
 │   ├── fileHandler.ts              # Client upload wrapper + file validation
-│   └── codeGenerator.ts            # Unique 6‑digit code generation
+│   ├── secureShare.ts              # Secret‑share client helpers + shared constants
+│   └── codeGenerator.ts            # Unique 6‑/8‑digit code generation
 ├── public/                         # Icons, manifest, static assets
 ├── next.config.ts, vercel.json, next-sitemap.config.js
 └── .env.example                    # Environment variable template
@@ -103,6 +108,7 @@ my-clipboard/
 | `/send`        | Compose a clip: enter text, attach files, generate a code, edit in real time. |
 | `/read`        | Enter a 6‑digit code **or** paste a share link to view content.             |
 | `/view/[code]` | Direct deep link to a clip; the `[code]` segment is the 6‑digit code.       |
+| `/secure`      | Secret share: upload a large file directly to R2 with a one‑time access code, or download by send code. |
 
 ### API endpoints
 
@@ -119,6 +125,22 @@ Uploads a single file.
 Stores oversized clip text in R2 (Firestore documents are capped at ~1 MiB; there is **no** size limit on text).
 - **Body:** JSON `{ "text": "…" }`.
 - **Response:** `{ url, storageKey, storageProvider: "r2" }`.
+
+#### `POST /api/secure/authorize`
+Step 1 of a secret‑share upload. Validates a one‑time access code and returns a **presigned POST** so the browser uploads the file straight to R2 (it never passes through the server, bypassing the serverless body limit). The code is *not* consumed here.
+- **Body:** JSON `{ accessCode, fileName, fileType, fileSize }`.
+- **Validation:** access code format + unused; `fileSize` ≤ `SECURE_MAX_FILE_SIZE`.
+- **Response:** `{ uploadUrl, fields, storageKey }` for the direct R2 upload.
+
+#### `POST /api/secure/finalize`
+Step 2 of a secret‑share upload. Runs after the R2 upload lands: burns the one‑time access code, verifies the stored object, creates the secure clip document, and returns the **send code** used to download.
+- **Body:** JSON `{ accessCode, storageKey, fileName, fileType }`.
+- **Response:** `{ sendCode }`.
+
+#### `POST /api/secure/download`
+Resolves a send code to a short‑lived presigned download URL. Single request — there is deliberately no live/realtime path for secret shares, and expired shares (6h) are refused immediately.
+- **Body:** JSON `{ sendCode }`.
+- **Response:** `{ url, fileName, fileType, fileSize }`.
 
 #### `GET /api/cron/cleanup`
 Deletes all expired clips and their R2 objects (files **and** text). Intended to be called on a schedule.
@@ -159,7 +181,6 @@ Exposed to the browser via the `NEXT_PUBLIC_` prefix (expected for the Firebase 
 | Variable            | Required | Description                                                                                 |
 | ------------------- | -------- | ------------------------------------------------------------------------------------------- |
 | `CRON_SECRET`       | Yes*     | Bearer token authorizing `/api/cron/cleanup`. *Required to run the cleanup cron.            |
-| `QUOTA_HASH_SECRET` | No       | Secret for hashing the quota subject. Falls back to `CRON_SECRET`, then `R2_SECRET_ACCESS_KEY`. |
 
 > **Note:** The public R2 bucket must allow browser `GET` (CORS) so large text/code files can be fetched and displayed client‑side.
 
