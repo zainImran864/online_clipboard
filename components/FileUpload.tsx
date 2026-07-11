@@ -2,6 +2,7 @@
 
 import React, { useCallback, useState } from 'react';
 import { validateFile } from '@/lib/fileHandler';
+import { FILE_ACCEPT_ATTR } from '@/lib/allowedFiles';
 
 interface FileUploadProps {
     onFileSelect: (files: File[]) => void;
@@ -11,8 +12,7 @@ interface FileUploadProps {
     variant?: 'box' | 'compact';
 }
 
-const ACCEPT =
-    '.txt,.pdf,.jpg,.jpeg,.png,.gif,.webp,.svg,.ico,.zip,.rar,.tar,.gz,.tgz,.conf,.csv,.cvs,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.mp3,.wav,.ogg,.oga,.m4a,.aac,.flac,.opus,.weba,.mid,.midi,.mp4,.webm,.ogv,.mov,.avi,.mkv,.mpeg,.mpg,.3gp,.flv,.wmv,.m4v';
+const ACCEPT = FILE_ACCEPT_ATTR;
 
 export default function FileUpload({ onFileSelect, disabled = false, multiple = true, variant = 'box' }: FileUploadProps) {
     const [dragActive, setDragActive] = useState(false);
