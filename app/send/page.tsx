@@ -179,7 +179,7 @@ export default function SendPage() {
     };
 
     return (
-        <div className="min-h-screen bg-[radial-gradient(1000px_500px_at_15%_-10%,#dbeafe_0%,transparent_55%),radial-gradient(900px_500px_at_100%_0%,#ede9fe_0%,transparent_50%)] bg-slate-50">
+        <div className="min-h-screen overflow-x-hidden bg-[radial-gradient(1000px_500px_at_15%_-10%,#dbeafe_0%,transparent_55%),radial-gradient(900px_500px_at_100%_0%,#ede9fe_0%,transparent_50%)] bg-slate-50">
             {/* Header */}
             <header className="flex flex-wrap items-center justify-between gap-3 p-4 sm:p-6">
                 <Logo size={40} className="sm:hidden" />
@@ -437,19 +437,17 @@ export default function SendPage() {
                                         />
                                     </div>
 
-                                    {/* Code digits + copy */}
-                                    <div className="mt-4 flex items-center justify-center gap-2 sm:gap-3">
-                                        <div className="flex gap-2 sm:gap-2.5">
-                                            {clip.code.split('').map((d, i) => (
-                                                <div key={i} className="flex h-14 w-11 items-center justify-center rounded-xl border border-indigo-200 bg-gradient-to-b from-indigo-50 to-indigo-100 font-mono text-2xl font-extrabold text-indigo-800 sm:h-16 sm:w-14 sm:text-3xl">
-                                                    {d}
-                                                </div>
-                                            ))}
-                                        </div>
+                                    {/* Code digits + copy — wraps instead of overflowing the card */}
+                                    <div className="mt-4 flex flex-wrap items-center justify-center gap-1.5 sm:gap-2">
+                                        {clip.code.split('').map((d, i) => (
+                                            <div key={i} className="flex h-12 w-9 items-center justify-center rounded-xl border border-indigo-200 bg-gradient-to-b from-indigo-50 to-indigo-100 font-mono text-xl font-extrabold text-indigo-800 sm:h-14 sm:w-11 sm:text-2xl">
+                                                {d}
+                                            </div>
+                                        ))}
                                         <button
                                             onClick={() => copyValue(clip.code, 'code')}
                                             title="Copy code"
-                                            className="flex h-14 w-11 flex-shrink-0 items-center justify-center rounded-xl bg-blue-600 text-lg text-white transition-all hover:bg-blue-700 active:scale-95 sm:h-16"
+                                            className="flex h-12 w-9 flex-shrink-0 items-center justify-center rounded-xl bg-blue-600 text-base text-white transition-all hover:bg-blue-700 active:scale-95 sm:h-14 sm:w-11 sm:text-lg"
                                         >
                                             {copiedCode ? '✓' : '📋'}
                                         </button>
