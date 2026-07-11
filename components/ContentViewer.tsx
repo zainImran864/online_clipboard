@@ -14,7 +14,7 @@ const CODE_EXTENSIONS = [
     'c', 'cpp', 'h', 'cs', 'php', 'rb', 'go', 'rs', 'swift', 'kt', 'sql', 'sh',
     'bash', 'yml', 'yaml', 'md', 'txt', 'conf', 'csv', 'cvs',
 ];
-const IMAGE_EXTENSIONS = ['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg'];
+const IMAGE_EXTENSIONS = ['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'ico'];
 const VIDEO_EXTENSIONS = ['mp4', 'webm', 'ogv', 'mov', 'avi', 'mkv', 'mpeg', 'mpg', '3gp', 'flv', 'wmv', 'm4v'];
 const AUDIO_EXTENSIONS = ['mp3', 'wav', 'ogg', 'oga', 'm4a', 'aac', 'flac', 'opus', 'weba', 'mid', 'midi'];
 

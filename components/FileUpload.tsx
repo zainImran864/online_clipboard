@@ -12,7 +12,7 @@ interface FileUploadProps {
 }
 
 const ACCEPT =
-    '.txt,.pdf,.jpg,.jpeg,.png,.gif,.webp,.svg,.zip,.rar,.tar,.gz,.tgz,.conf,.csv,.cvs,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.mp3,.wav,.ogg,.oga,.m4a,.aac,.flac,.opus,.weba,.mid,.midi,.mp4,.webm,.ogv,.mov,.avi,.mkv,.mpeg,.mpg,.3gp,.flv,.wmv,.m4v';
+    '.txt,.pdf,.jpg,.jpeg,.png,.gif,.webp,.svg,.ico,.zip,.rar,.tar,.gz,.tgz,.conf,.csv,.cvs,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.mp3,.wav,.ogg,.oga,.m4a,.aac,.flac,.opus,.weba,.mid,.midi,.mp4,.webm,.ogv,.mov,.avi,.mkv,.mpeg,.mpg,.3gp,.flv,.wmv,.m4v';
 
 export default function FileUpload({ onFileSelect, disabled = false, multiple = true, variant = 'box' }: FileUploadProps) {
     const [dragActive, setDragActive] = useState(false);

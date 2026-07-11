@@ -110,6 +110,8 @@ export function validateFile(file: File): { valid: boolean; error?: string } {
         'image/gif',
         'image/webp',
         'image/svg+xml',
+        'image/x-icon',
+        'image/vnd.microsoft.icon',
         'audio/mpeg',
         'audio/mp3',
         'audio/wav',
@@ -141,7 +143,7 @@ export function validateFile(file: File): { valid: boolean; error?: string } {
         '.json', '.xml', '.md', '.py', '.java', '.c', '.cpp', '.h',
         '.cs', '.php', '.rb', '.go', '.rs', '.swift', '.kt', '.sql',
         '.sh', '.bash', '.yml', '.yaml', '.env', '.gitignore', '.conf',
-        '.pdf', '.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg', '.zip',
+        '.pdf', '.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg', '.ico', '.zip',
         '.rar', '.tar', '.gz', '.tgz', '.csv', '.cvs', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx',
         '.mp3', '.wav', '.ogg', '.oga', '.m4a', '.aac', '.flac', '.opus', '.weba', '.mid', '.midi',
         '.mp4', '.webm', '.ogv', '.mov', '.avi', '.mkv', '.mpeg', '.mpg', '.3gp', '.flv', '.wmv', '.m4v'
