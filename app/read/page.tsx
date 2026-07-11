@@ -213,14 +213,14 @@ export default function ReadPage() {
                                 <>
                                     <li>• Ask the sender for the 6-digit code</li>
                                     <li>• Enter the code in the field above</li>
-                                    <li>• Click "Read" to view the shared content</li>
+                                    <li>• Click &quot;Read&quot; to view the shared content</li>
                                     <li>• Content is available for 24 hours</li>
                                 </>
                             ) : (
                                 <>
                                     <li>• Ask the sender for the shareable link</li>
                                     <li>• Paste the full link in the field above</li>
-                                    <li>• Click "Read" to open the shared content</li>
+                                    <li>• Click &quot;Read&quot; to open the shared content</li>
                                     <li>• Content is available for 24 hours</li>
                                 </>
                             )}
