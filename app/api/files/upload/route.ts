@@ -217,7 +217,7 @@ export async function POST(request: Request) {
         }
 
         if (file.size > DAILY_UPLOAD_LIMIT) {
-            return NextResponse.json({ error: 'File size must be 10MB or less' }, { status: 400 });
+            return NextResponse.json({ error: "You can't upload files larger than 10MB." }, { status: 400 });
         }
 
         const quota = await reserveDailyQuota(request, file.size);
