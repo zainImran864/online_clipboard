@@ -397,7 +397,9 @@ export default function SendPage() {
                                                         </div>
                                                         <div className="min-w-0 flex-1">
                                                             <p className="truncate text-sm font-semibold text-gray-700">{file.fileName}</p>
-                                                            <p className="text-xs text-gray-400">{file.fileType || 'File'}</p>
+                                                            <p className="text-xs text-gray-400">
+                                                                {file.fileType || 'File'}{file.fileSize ? ` · ${formatBytes(file.fileSize)}` : ''}
+                                                            </p>
                                                         </div>
                                                         <a href={file.url} target="_blank" rel="noopener noreferrer" className="flex-shrink-0 text-sm font-bold text-blue-600 hover:text-blue-700">
                                                             View
