@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-require-imports -- CommonJS Node build script, run via `node convert-icons.js` */
 // Generates the PWA PNG icons (public/icon-192.png, public/icon-512.png)
 // from the Pasteport mark. Uses a full-bleed square background (no rounded
 // corners) so the icons work as "maskable" — the OS applies its own mask.

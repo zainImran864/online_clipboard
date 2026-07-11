@@ -9,14 +9,28 @@ interface ContentViewerProps {
 
 /* ---------- file classification ---------- */
 
+// Text/code-like files render inline in the read-only preview. This includes
+// shell/script files (.bat, .ps1, .sh, …): they are shown as ESCAPED TEXT and
+// are never executed — displaying them is safe.
 const CODE_EXTENSIONS = [
-    'html', 'htm', 'css', 'js', 'jsx', 'ts', 'tsx', 'json', 'xml', 'py', 'java',
-    'c', 'cpp', 'h', 'cs', 'php', 'rb', 'go', 'rs', 'swift', 'kt', 'sql', 'sh',
-    'bash', 'yml', 'yaml', 'md', 'txt', 'conf', 'csv', 'cvs',
+    'html', 'htm', 'css', 'js', 'jsx', 'ts', 'tsx', 'mjs', 'cjs', 'json', 'json5',
+    'xml', 'py', 'java', 'c', 'cpp', 'h', 'cs', 'php', 'rb', 'go', 'rs', 'swift',
+    'kt', 'sql', 'sh', 'bash', 'zsh', 'fish', 'ps1', 'bat', 'cmd', 'yml', 'yaml',
+    'toml', 'ini', 'cfg', 'config', 'properties', 'env', 'gitignore', 'gitattributes',
+    'gitmodules', 'dockerfile', 'dockerignore', 'editorconfig', 'eslintrc', 'prettierrc',
+    'stylelintrc', 'npmrc', 'yarnrc', 'babelrc', 'ignore', 'md', 'txt', 'conf', 'log',
+    'out', 'err', 'trace', 'csv', 'cvs', 'tsv', 'ndjson', 'geojson', 'ipynb',
+    'vue', 'svelte', 'astro', 'dart', 'mm', 'm', 'scala', 'r', 'lua', 'pl', 'pm',
+    'tcl', 'groovy', 'fs', 'fsx', 'f90', 'f95', 'asm', 's', 'v', 'vh', 'sol',
+    'clj', 'cljs', 'ex', 'exs', 'erl', 'hrl', 'nim', 'zig', 'cr', 'ml', 'mli',
+    'cob', 'cobol', 'abap', 'scss', 'sass', 'less', 'styl', 'pcss', 'graphql',
+    'gql', 'ejs', 'hbs', 'handlebars', 'pug', 'jade', 'njk', 'liquid', 'gradle',
+    'lock', 'mod', 'sum', 'tf', 'tfvars', 'hcl', 'nomad', 'sln', 'csproj', 'vbproj',
+    'vcxproj', 'props', 'targets', 'http', 'rest', 'code-workspace', 'gd', 'tscn',
 ];
-const IMAGE_EXTENSIONS = ['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'ico'];
-const VIDEO_EXTENSIONS = ['mp4', 'webm', 'ogv', 'mov', 'avi', 'mkv', 'mpeg', 'mpg', '3gp', 'flv', 'wmv', 'm4v'];
-const AUDIO_EXTENSIONS = ['mp3', 'wav', 'ogg', 'oga', 'm4a', 'aac', 'flac', 'opus', 'weba', 'mid', 'midi'];
+const IMAGE_EXTENSIONS = ['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'ico', 'bmp', 'tiff', 'avif', 'heic', 'heif'];
+const VIDEO_EXTENSIONS = ['mp4', 'webm', 'ogv', 'mov', 'avi', 'mkv', 'mpeg', 'mpg', '3gp', 'flv', 'wmv', 'm4v', 'mts', 'm2ts', 'vob', 'rm', 'rmvb', 'f4v'];
+const AUDIO_EXTENSIONS = ['mp3', 'wav', 'ogg', 'oga', 'm4a', 'aac', 'flac', 'opus', 'weba', 'mid', 'midi', 'aiff', 'aif', 'amr', 'ac3', 'wma'];
 
 const ext = (name: string) => name.split('.').pop()?.toLowerCase() || '';
 

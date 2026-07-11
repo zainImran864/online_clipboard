@@ -2,28 +2,35 @@
 
 import { useEffect, useState } from 'react';
 
+// The non-standard event Chromium fires before showing the install prompt.
+// It isn't in the DOM lib, so we type the parts we use.
+interface BeforeInstallPromptEvent extends Event {
+  prompt: () => Promise<void>;
+  userChoice: Promise<{ outcome: 'accepted' | 'dismissed'; platform: string }>;
+}
+
+function detectStandalone() {
+  if (typeof window === 'undefined') return false;
+  const standaloneMode = window.matchMedia('(display-mode: standalone)').matches;
+  const appleStandalone = (window.navigator as Navigator & { standalone?: boolean }).standalone === true;
+  return standaloneMode || appleStandalone;
+}
+
 // Module-level flag: once the user dismisses/installs, the banner stays hidden
 // for the rest of this session across client-side navigations. It resets only
 // on a full page refresh (a hard reload re-evaluates this module).
 let dismissedThisSession = false;
 
 export default function PWAInstall() {
-  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [showInstallBanner, setShowInstallBanner] = useState(false);
-  const [isStandalone, setIsStandalone] = useState(false);
+  // Computed once during render so the effect doesn't have to setState synchronously.
+  const [isStandalone, setIsStandalone] = useState<boolean>(detectStandalone);
 
   useEffect(() => {
-    // Check if app is already standalone
-    const checkStandalone = () => {
-      const isStandaloneMode = window.matchMedia('(display-mode: standalone)').matches;
-      const isAppleStandalone = (window.navigator as any).standalone === true;
-      return isStandaloneMode || isAppleStandalone;
-    };
-
-    if (checkStandalone()) {
+    // Already installed/standalone (detected in the initial state) — nothing to set up.
+    if (isStandalone) {
       console.log('[PWA] App is running as PWA');
-      setIsStandalone(true);
-      setShowInstallBanner(false);
       return;
     }
 
@@ -58,7 +65,7 @@ export default function PWAInstall() {
     const handleBeforeInstallPrompt = (e: Event) => {
       console.log('[PWA] beforeinstallprompt event fired');
       e.preventDefault();
-      setDeferredPrompt(e);
+      setDeferredPrompt(e as BeforeInstallPromptEvent);
       // Don't re-show if the user already dismissed/installed this session.
       if (!dismissedThisSession) {
         setShowInstallBanner(true);
@@ -74,7 +81,7 @@ export default function PWAInstall() {
 
     // Listen for display mode changes
     const mql = window.matchMedia('(display-mode: standalone)');
-    const handleDisplayModeChange = (e: any) => {
+    const handleDisplayModeChange = (e: MediaQueryListEvent) => {
       if (e.matches) {
         console.log('[PWA] Switched to standalone mode');
         setIsStandalone(true);
@@ -85,7 +92,7 @@ export default function PWAInstall() {
     // Add event listeners
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
     window.addEventListener('appinstalled', handleAppInstalled);
-    mql.addListener(handleDisplayModeChange);
+    mql.addEventListener('change', handleDisplayModeChange);
 
     // Show banner after a short delay to give browser time to trigger beforeinstallprompt
     const timer = setTimeout(() => {
@@ -99,7 +106,7 @@ export default function PWAInstall() {
     return () => {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
       window.removeEventListener('appinstalled', handleAppInstalled);
-      mql.removeListener(handleDisplayModeChange);
+      mql.removeEventListener('change', handleDisplayModeChange);
       clearTimeout(timer);
     };
   }, [deferredPrompt, isStandalone]);

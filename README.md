@@ -17,6 +17,8 @@ Built with Next.js (App Router), Firebase Firestore, and Cloudflare R2. Installa
 - [Routes](#routes)
   - [Pages](#pages)
   - [API endpoints](#api-endpoints)
+- [Supported file types](#supported-file-types)
+- [Security](#security)
 - [Environment variables](#environment-variables)
 - [Getting started](#getting-started)
 - [Firestore data model](#firestore-data-model)
@@ -148,6 +150,65 @@ Deletes all expired clips and their R2 objects (files **and** text). Intended to
 - **Behavior:** batches through documents where `expiresAt <= now`, deletes R2 objects first, then the Firestore document (so nothing is orphaned).
 - **Response:** `{ checked, deletedClips, deletedR2Objects, r2DeleteErrors }`.
 - **Schedule:** configured in [`vercel.json`](vercel.json) to run daily at `00:00 UTC`.
+
+## Supported file types
+
+Every file is capped at **10 MB**. The allow-list lives in one place — [`lib/allowedFiles.ts`](lib/allowedFiles.ts) — and is shared by the client validator, the upload API, and the file‑picker filter. A file is accepted by its **extension**, its **MIME type**, an exact **filename** (e.g. `Dockerfile`), any `.env*` dotfile, or when the browser reports **no MIME type** at all.
+
+**Preview legend** — 📝 opens **inline** as read‑only escaped text · 🖼️ inline image · 🔊 inline audio player · 🎬 inline video player · ⬇️ download‑only.
+
+> 🔒 **Nothing is ever executed.** Scripts (`.bat`, `.ps1`, `.sh`, …) and markup (`.html`, `.svg`) are shown as **escaped text** or rendered via `<img>`/`<video>` — the app has no code path that runs uploaded content. See the security note in [`lib/allowedFiles.ts`](lib/allowedFiles.ts).
+
+| Category | Preview | Formats |
+| -------- | :-----: | ------- |
+| 🌐 **Web & markup** | 📝 | `.html` `.htm` `.md` `.css` `.vue` `.svelte` `.astro` `.ejs` `.hbs` `.handlebars` `.pug` `.jade` `.njk` `.liquid` `.scss` `.sass` `.less` `.styl` `.pcss` |
+| 💻 **Programming languages** | 📝 | `.js` `.jsx` `.ts` `.tsx` `.mjs` `.cjs` `.py` `.sql` `.java` `.c` `.cpp` `.h` `.cs` `.php` `.rb` `.go` `.rs` `.swift` `.kt` `.dart` `.scala` `.r` `.lua` `.pl` `.pm` `.tcl` `.groovy` `.fs` `.fsx` `.f90` `.f95` `.asm` `.s` `.v` `.vh` `.sol` `.clj` `.cljs` `.ex` `.exs` `.erl` `.hrl` `.nim` `.zig` `.cr` `.ml` `.mli` `.cob` `.cobol` `.abap` `.m` `.mm` |
+| 🖥️ **Shell & scripts** | 📝 *(never run)* | `.sh` `.bash` `.zsh` `.fish` `.ps1` `.bat` `.cmd` |
+| ⚙️ **Config, data‑interchange & infra** | 📝 | `.json` `.json5` `.xml` `.yml` `.yaml` `.toml` `.ini` `.cfg` `.config` `.properties` `.env` `.conf` `.graphql` `.gql` `.tf` `.tfvars` `.hcl` `.nomad` `.kubeconfig` `.helm` `.gradle` `.lock` `.lockb` `.mod` `.sum` `.ansible` · dotfiles `.gitignore` `.gitattributes` `.gitmodules` `.dockerignore` `.editorconfig` `.eslintrc` `.prettierrc` `.stylelintrc` `.npmrc` `.yarnrc` `.babelrc` `.ignore` `.vagrantfile` |
+| 🧰 **Project / build files** | 📝 | `.sln` `.csproj` `.vbproj` `.vcxproj` `.props` `.targets` `.http` `.rest` `.code-workspace` `.dockerfile` · filenames `Dockerfile` `Gemfile` `Pipfile` `Vagrantfile` `Makefile` `Procfile` `Rakefile` `Brewfile` `Jenkinsfile` |
+| 📊 **Data & notebooks** | 📝 / ⬇️ | 📝 `.txt` `.csv` `.cvs` `.tsv` `.ndjson` `.geojson` `.ipynb` `.log` `.out` `.err` `.trace` · ⬇️ `.sqlite` `.sqlite3` `.db` `.db3` `.dump` `.bak` `.avro` `.parquet` `.feather` |
+| 🖼️ **Images** | 🖼️ / ⬇️ | 🖼️ `.png` `.jpg` `.jpeg` `.gif` `.webp` `.svg` `.ico` `.bmp` `.tiff` `.avif` `.heic` `.heif` · ⬇️ `.raw` `.cr2` `.nef` |
+| 🎨 **Design** | ⬇️ | `.psd` `.ai` `.xd` `.sketch` `.fig` `.figma` `.eps` `.indd` `.afdesign` |
+| 🔤 **Fonts** | ⬇️ | `.ttf` `.otf` `.woff` `.woff2` `.eot` |
+| 🔊 **Audio** | 🔊 | `.mp3` `.wav` `.ogg` `.oga` `.m4a` `.aac` `.flac` `.opus` `.weba` `.mid` `.midi` `.aiff` `.aif` `.amr` `.ac3` `.wma` |
+| 🎬 **Video** | 🎬 | `.mp4` `.webm` `.ogv` `.mov` `.avi` `.mkv` `.mpeg` `.mpg` `.3gp` `.flv` `.wmv` `.m4v` `.mts` `.m2ts` `.vob` `.rm` `.rmvb` `.f4v` |
+| 📄 **Documents** | ⬇️ | `.pdf` `.doc` `.docx` `.xls` `.xlsx` `.ppt` `.pptx` `.rtf` `.odt` `.ods` `.odp` `.pages` `.numbers` `.key` |
+| 📚 **E‑books** | ⬇️ | `.epub` `.mobi` `.azw` `.azw3` `.fb2` |
+| 🗜️ **Archives** | ⬇️ | `.zip` `.rar` `.tar` `.gz` `.tgz` `.7z` `.xz` `.bz2` |
+| 📱 **Mobile & native** | 📝 / ⬇️ | 📝 `.storyboard` `.xib` · ⬇️ `.apk` `.aab` `.ipa` |
+| 🎮 **Game engines** | 📝 / ⬇️ | 📝 `.gd` `.tscn` · ⬇️ `.unity` `.prefab` `.asset` |
+| 🤖 **ML models** | ⬇️ | `.onnx` `.pb` `.ckpt` `.pt` `.pth` |
+| 🔐 **Certificates & keys** | ⬇️ | `.pem` `.crt` `.csr` `.p12` `.pfx` |
+
+> **Not allowed:** native desktop executables such as `.exe`, `.msi`, `.dll`, `.com`, `.scr`, `.vbs`, `.jar`, `.lnk`, and `.app` are intentionally excluded from the allow‑list.
+
+## Security
+
+### Uploaded files never execute in the browser
+
+Potentially harmful files (scripts like `.bat`, `.ps1`, `.sh`; markup like `.html`, `.svg`) can be **shared**, but the app has **no code path that runs, `eval`s, or interprets uploaded content**. Every file is handled in exactly one of three safe ways:
+
+- **Code / text / scripts / HTML → shown as escaped text.** Content is rendered inside `<pre><code>{text}</code></pre>`, where React escapes it. It is displayed as characters, never parsed as markup or code.
+- **HTML is never injected into the DOM.** The app does **not** use `dangerouslySetInnerHTML`, `innerHTML`, `<iframe srcdoc>`, or any similar sink for uploaded content. An uploaded `.html` file is treated as plain text — its tags and `<script>`s are shown literally, not run.
+- **Images / audio / video → rendered via `<img>` / `<video>` / `<audio>`.** SVGs load through `<img>`, where browsers **disable scripting**, so a malicious `<script>` inside an SVG cannot run.
+- **Everything else → a download link.** No preview, no execution.
+
+### Origin isolation
+
+Even when a file is opened via its direct link, it can't reach the app:
+
+- **Inline files** are `data:` URLs, which modern browsers treat as an **opaque origin** (and top‑level `data:` navigation is blocked in Chrome/Firefox) — no access to the app's cookies, storage, or DOM.
+- **R2 files** are served from a **separate origin** (`pub‑…​.r2.dev`), so they are sandboxed from the app and from every other share by the same‑origin policy.
+
+### What we can't control (your device)
+
+Downloading a file just saves it to disk — nothing runs automatically. But if a recipient **deliberately** opens/executes a downloaded script or installer, that happens on **their** operating system, outside any web app's control (this is true of email, Drive, Dropbox, etc.). To reduce that risk, native desktop executables (`.exe`, `.msi`, `.dll`, `.com`, `.scr`, `.vbs`, `.jar`, `.lnk`, `.app`) are **not accepted** at all, and nothing is ever auto‑downloaded or auto‑run.
+
+### Other protections
+
+- **Auto‑expiry:** every share is deleted (document **and** R2 objects) 24 hours after creation by the cleanup cron.
+- **No enumeration secrets in the client:** clips are addressed by random codes; the app never trusts a client‑supplied path.
+- **Server‑enforced limits:** file type and the 10 MB per‑file cap are validated on the server, not just in the UI.
 
 ## Environment variables
 

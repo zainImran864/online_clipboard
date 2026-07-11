@@ -1,3 +1,5 @@
+import { isAllowedFile } from './allowedFiles';
+
 export type StorageProvider = 'firebase-inline' | 'r2';
 
 export interface FileUploadResult {
@@ -73,82 +75,6 @@ export async function uploadFile(file: File, code: string): Promise<FileUploadRe
  * @returns boolean - Whether the file is valid
  */
 export function validateFile(file: File): { valid: boolean; error?: string } {
-    const ALLOWED_TYPES = [
-        'text/plain',
-        'text/html',
-        'text/css',
-        'text/javascript',
-        'text/xml',
-        'text/csv',
-        'text/markdown',
-        'application/pdf',
-        'application/json',
-        'application/javascript',
-        'application/xml',
-        'application/x-javascript',
-        'application/x-python-code',
-        'application/zip',
-        'application/x-zip-compressed',
-        'multipart/x-zip',
-        'application/vnd.rar',
-        'application/x-rar-compressed',
-        'application/gzip',
-        'application/x-gzip',
-        'application/x-tar',
-        'application/x-gtar',
-        'application/x-compressed-tar',
-        'application/x-tgz',
-        'application/msword',
-        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-        'application/vnd.ms-excel',
-        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        'application/vnd.ms-powerpoint',
-        'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-        'image/jpeg',
-        'image/jpg',
-        'image/png',
-        'image/gif',
-        'image/webp',
-        'image/svg+xml',
-        'image/x-icon',
-        'image/vnd.microsoft.icon',
-        'audio/mpeg',
-        'audio/mp3',
-        'audio/wav',
-        'audio/x-wav',
-        'audio/ogg',
-        'audio/webm',
-        'audio/mp4',
-        'audio/x-m4a',
-        'audio/aac',
-        'audio/flac',
-        'audio/x-flac',
-        'audio/opus',
-        'audio/midi',
-        'audio/x-midi',
-        'video/mp4',
-        'video/webm',
-        'video/ogg',
-        'video/quicktime',
-        'video/x-msvideo',
-        'video/x-matroska',
-        'video/mpeg',
-        'video/3gpp',
-        'video/x-flv',
-        'video/x-ms-wmv',
-    ];
-
-    const ALLOWED_EXTENSIONS = [
-        '.txt', '.html', '.htm', '.css', '.js', '.jsx', '.ts', '.tsx',
-        '.json', '.xml', '.md', '.py', '.java', '.c', '.cpp', '.h',
-        '.cs', '.php', '.rb', '.go', '.rs', '.swift', '.kt', '.sql',
-        '.sh', '.bash', '.yml', '.yaml', '.env', '.gitignore', '.conf',
-        '.pdf', '.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg', '.ico', '.zip',
-        '.rar', '.tar', '.gz', '.tgz', '.csv', '.cvs', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx',
-        '.mp3', '.wav', '.ogg', '.oga', '.m4a', '.aac', '.flac', '.opus', '.weba', '.mid', '.midi',
-        '.mp4', '.webm', '.ogv', '.mov', '.avi', '.mkv', '.mpeg', '.mpg', '.3gp', '.flv', '.wmv', '.m4v'
-    ];
-
     if (file.size > MAX_FILE_SIZE) {
         return {
             valid: false,
@@ -156,12 +82,7 @@ export function validateFile(file: File): { valid: boolean; error?: string } {
         };
     }
 
-    const fileExt = '.' + file.name.split('.').pop()?.toLowerCase();
-    const isAllowedType = ALLOWED_TYPES.includes(file.type);
-    const isAllowedExt = ALLOWED_EXTENSIONS.includes(fileExt);
-    const isEmptyMimeType = !file.type || file.type === '';
-
-    if (!isAllowedType && !isAllowedExt && !isEmptyMimeType) {
+    if (!isAllowedFile(file.name, file.type)) {
         return {
             valid: false,
             error: 'File type not supported. Please upload text, code, archives, Office, PDF, image, audio, or video files.',
