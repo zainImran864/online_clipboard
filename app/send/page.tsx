@@ -2,9 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import QRCode from 'react-qr-code';
 import Logo from '@/components/Logo';
 import FileUpload from '@/components/FileUpload';
-import CodeDisplay from '@/components/CodeDisplay';
 import { useClipboard, Clip } from '@/hooks/useClipboard';
 import { uploadFile, FileUploadResult } from '@/lib/fileHandler';
 
@@ -18,6 +18,8 @@ export default function SendPage() {
     const [uploading, setUploading] = useState(false);
     const [sessionId] = useState(() => Math.random().toString(36).substring(7));
     const [activeTab, setActiveTab] = useState<'text' | 'files' | 'both'>('both');
+    const [copiedCode, setCopiedCode] = useState(false);
+    const [copiedLink, setCopiedLink] = useState(false);
 
     const DAILY_LIMIT_BYTES = 10 * 1024 * 1024;
     const selectedBytes = selectedFiles.reduce((sum, f) => sum + f.size, 0);
@@ -125,6 +127,33 @@ export default function SendPage() {
             } catch (err) {
                 console.error('Error updating clip:', err);
             }
+        }
+    };
+
+    const copyValue = async (text: string, which: 'code' | 'link') => {
+        try {
+            await navigator.clipboard.writeText(text);
+            if (which === 'code') {
+                setCopiedCode(true);
+                setTimeout(() => setCopiedCode(false), 2000);
+            } else {
+                setCopiedLink(true);
+                setTimeout(() => setCopiedLink(false), 2000);
+            }
+        } catch (err) {
+            console.error('Failed to copy:', err);
+        }
+    };
+
+    const shareLink = async (url: string, code: string) => {
+        try {
+            if (typeof navigator !== 'undefined' && navigator.share) {
+                await navigator.share({ title: 'DropCode', text: `View my shared content — code ${code}`, url });
+            } else {
+                await copyValue(url, 'link');
+            }
+        } catch {
+            /* user dismissed the share sheet — no-op */
         }
     };
 
@@ -304,106 +333,156 @@ export default function SendPage() {
                         </>
                     ) : (
                         <>
-                            {/* Code Display */}
-                            <CodeDisplay
-                                code={clip.code}
-                                shareUrl={`${window.location.origin}/view/${clip.code}`}
-                            />
+                            <div className="text-center">
+                                <h1 className="text-3xl font-extrabold tracking-tight text-gray-900 sm:text-4xl">
+                                    Your{' '}
+                                    <span className="bg-gradient-to-r from-blue-600 to-violet-600 bg-clip-text text-transparent">
+                                        share code
+                                    </span>
+                                    {' '}is ready 🎉
+                                </h1>
+                                <p className="mt-2 text-sm text-gray-500 sm:text-base">
+                                    Share the code or link — keep editing below, changes sync live.
+                                </p>
+                            </div>
 
-                            {/* Two-column grid: live-editable text on the left, files on the right */}
-                            <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 lg:items-start">
-                                {/* Editable Text Area - Always visible */}
-                                <div className="rounded-2xl bg-white p-6 shadow-lg">
-                                    <h3 className="mb-4 text-lg font-semibold text-gray-800">
-                                        📝 Text Content {(clip.type === 'text' || clip.type === 'both') && '(Editable in real-time)'}
-                                    </h3>
-                                    <textarea
-                                        value={textContent}
-                                        onChange={(e) => handleTextChange(e.target.value)}
-                                        placeholder={clip.type === 'file' ? 'Add text content here...' : ''}
-                                        className="h-64 w-full rounded-lg border-2 border-gray-200 p-4 text-gray-800 focus:border-blue-500 focus:outline-none"
-                                    />
-                                    {(clip.type === 'text' || clip.type === 'both') && (
-                                        <p className="mt-2 text-sm text-gray-500">
-                                            💡 Changes are saved automatically and updated in real-time
-                                        </p>
-                                    )}
-                                </div>
-
-                                {/* File Section - Always visible */}
-                                <div className="rounded-2xl bg-white p-6 shadow-lg">
-                                    <h3 className="mb-4 text-lg font-semibold text-gray-800">
-                                        📎 File Attachments
-                                    </h3>
-
-                                    {(clip.type === 'file' || clip.type === 'both') && clip.files && clip.files.length > 0 ? (
-                                        <div className="space-y-3">
-                                            <p className="text-sm text-gray-600">
-                                                {clip.files.length} {clip.files.length === 1 ? 'file' : 'files'} attached
+                            <div className="grid grid-cols-1 gap-5 lg:grid-cols-2 lg:items-start">
+                                {/* LEFT: keep editing */}
+                                <div className="space-y-4 lg:order-1">
+                                    {/* Editable Text */}
+                                    <div className="rounded-2xl border border-slate-100 bg-white p-5 shadow-lg sm:p-6">
+                                        <h3 className="mb-3 flex items-center gap-2 text-base font-extrabold text-gray-800">
+                                            📝 Text Content
+                                            {(clip.type === 'text' || clip.type === 'both') && (
+                                                <span className="rounded-full bg-green-100 px-2 py-0.5 text-[11px] font-bold text-green-700">● LIVE</span>
+                                            )}
+                                        </h3>
+                                        <textarea
+                                            value={textContent}
+                                            onChange={(e) => handleTextChange(e.target.value)}
+                                            placeholder={clip.type === 'file' ? 'Add text content here...' : ''}
+                                            className="h-48 w-full rounded-xl border-2 border-gray-200 p-4 text-gray-800 focus:border-blue-500 focus:outline-none"
+                                        />
+                                        {(clip.type === 'text' || clip.type === 'both') && (
+                                            <p className="mt-2 text-xs text-gray-400">
+                                                💡 Changes are saved automatically and updated in real-time
                                             </p>
-                                            <div className="max-h-60 space-y-2 overflow-y-auto">
+                                        )}
+                                    </div>
+
+                                    {/* Files */}
+                                    <div className="rounded-2xl border border-slate-100 bg-white p-5 shadow-lg sm:p-6">
+                                        <h3 className="mb-3 flex items-center gap-2 text-base font-extrabold text-gray-800">
+                                            📎 File Attachments
+                                        </h3>
+
+                                        {(clip.type === 'file' || clip.type === 'both') && clip.files && clip.files.length > 0 && (
+                                            <div className="mb-3 space-y-2">
                                                 {clip.files.map((file, index) => (
-                                                    <div key={index} className="flex items-center gap-3 rounded-lg bg-gray-50 p-3">
-                                                        <svg className="h-8 w-8 flex-shrink-0 text-blue-500" fill="currentColor" viewBox="0 0 24 24">
-                                                            <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6z" />
-                                                            <path d="M14 2v6h6" />
-                                                        </svg>
-                                                        <div className="min-w-0 flex-1">
-                                                            <p className="truncate font-semibold text-gray-700">{file.fileName}</p>
-                                                            <p className="text-xs text-gray-500">{file.fileType}</p>
+                                                    <div key={index} className="flex items-center gap-3 rounded-xl border border-slate-100 bg-slate-50 p-2.5">
+                                                        <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-blue-100 text-base">
+                                                            {fileEmoji(file.fileName)}
                                                         </div>
-                                                        <a
-                                                            href={file.url}
-                                                            target="_blank"
-                                                            rel="noopener noreferrer"
-                                                            className="flex-shrink-0 text-sm text-blue-500 hover:text-blue-700"
-                                                        >
+                                                        <div className="min-w-0 flex-1">
+                                                            <p className="truncate text-sm font-semibold text-gray-700">{file.fileName}</p>
+                                                            <p className="text-xs text-gray-400">{file.fileType || 'File'}</p>
+                                                        </div>
+                                                        <a href={file.url} target="_blank" rel="noopener noreferrer" className="flex-shrink-0 text-sm font-bold text-blue-600 hover:text-blue-700">
                                                             View
                                                         </a>
                                                     </div>
                                                 ))}
                                             </div>
-                                            {/* Upload more files */}
-                                            <div className="pt-3">
-                                                <p className="mb-2 text-sm text-gray-600">Upload more files:</p>
-                                                <FileUpload
-                                                    onFileSelect={handleFileUploadAfterGenerate}
-                                                    disabled={loading || uploading}
-                                                />
-                                            </div>
-                                        </div>
-                                    ) : (
-                                        <div>
-                                            <p className="mb-3 text-sm text-gray-600">No files attached yet. Upload to add to this share:</p>
-                                            <FileUpload
-                                                onFileSelect={handleFileUploadAfterGenerate}
-                                                disabled={loading || uploading}
-                                            />
-                                        </div>
-                                    )}
+                                        )}
 
-                                    {uploading && (
-                                        <div className="mt-3 text-center">
-                                            <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-blue-500 border-t-transparent"></div>
-                                            <p className="mt-2 text-sm text-gray-600">Uploading files...</p>
+                                        <FileUpload
+                                            variant="compact"
+                                            onFileSelect={handleFileUploadAfterGenerate}
+                                            disabled={loading || uploading}
+                                        />
+
+                                        {uploading && (
+                                            <div className="mt-3 text-center">
+                                                <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-blue-500 border-t-transparent"></div>
+                                                <p className="mt-2 text-sm text-gray-600">Uploading files...</p>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {/* Create Another */}
+                                    <button
+                                        onClick={() => {
+                                            setClip(null);
+                                            setTextContent('');
+                                            setSelectedFiles([]);
+                                            localStorage.removeItem('clipSessionId');
+                                            localStorage.removeItem('clipId');
+                                        }}
+                                        className="w-full rounded-2xl border-2 border-gray-200 bg-white px-6 py-3 font-bold text-gray-600 transition-all hover:border-gray-300 hover:bg-gray-50 active:scale-95"
+                                    >
+                                        ↻ Create Another Share
+                                    </button>
+                                </div>
+
+                                {/* RIGHT: share card */}
+                                <div className="rounded-3xl border border-slate-100 bg-gradient-to-b from-white to-blue-50/40 p-6 text-center shadow-[0_20px_50px_rgba(2,6,23,0.10)] lg:order-2 lg:sticky lg:top-6">
+                                    <p className="text-xs font-extrabold uppercase tracking-[0.14em] text-gray-400">Your code</p>
+
+                                    {/* QR code */}
+                                    <div className="mx-auto mt-4 w-fit rounded-2xl border border-slate-100 bg-white p-3 shadow-sm">
+                                        <QRCode
+                                            value={`${window.location.origin}/view/${clip.code}`}
+                                            size={132}
+                                            className="h-[132px] w-[132px]"
+                                        />
+                                    </div>
+
+                                    {/* Code digits + copy */}
+                                    <div className="mt-4 flex items-center justify-center gap-2 sm:gap-3">
+                                        <div className="flex gap-2 sm:gap-2.5">
+                                            {clip.code.split('').map((d, i) => (
+                                                <div key={i} className="flex h-14 w-11 items-center justify-center rounded-xl border border-indigo-200 bg-gradient-to-b from-indigo-50 to-indigo-100 font-mono text-2xl font-extrabold text-indigo-800 sm:h-16 sm:w-14 sm:text-3xl">
+                                                    {d}
+                                                </div>
+                                            ))}
                                         </div>
-                                    )}
+                                        <button
+                                            onClick={() => copyValue(clip.code, 'code')}
+                                            title="Copy code"
+                                            className="flex h-14 w-11 flex-shrink-0 items-center justify-center rounded-xl bg-blue-600 text-lg text-white transition-all hover:bg-blue-700 active:scale-95 sm:h-16"
+                                        >
+                                            {copiedCode ? '✓' : '📋'}
+                                        </button>
+                                    </div>
+                                    <p className="mt-3 text-xs text-gray-400">🔒 Expires in 24h · anyone with the code can view</p>
+
+                                    {/* Divider */}
+                                    <div className="my-5 flex items-center gap-3 text-[11px] font-bold text-gray-300">
+                                        <span className="h-px flex-1 bg-gray-200" /> OR SHARE LINK <span className="h-px flex-1 bg-gray-200" />
+                                    </div>
+
+                                    {/* Link + copy */}
+                                    <div className="flex gap-2">
+                                        <div className="min-w-0 flex-1 truncate rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-left text-xs text-gray-600">
+                                            {`${window.location.origin}/view/${clip.code}`}
+                                        </div>
+                                        <button
+                                            onClick={() => copyValue(`${window.location.origin}/view/${clip.code}`, 'link')}
+                                            className="flex-shrink-0 rounded-xl border border-indigo-100 bg-indigo-50 px-4 text-sm font-bold text-indigo-700 transition-colors hover:bg-indigo-100"
+                                        >
+                                            {copiedLink ? '✓ Copied' : '📋 Copy'}
+                                        </button>
+                                    </div>
+
+                                    {/* Share */}
+                                    <button
+                                        onClick={() => shareLink(`${window.location.origin}/view/${clip.code}`, clip.code)}
+                                        className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 px-4 py-3 text-sm font-extrabold text-white shadow-lg shadow-blue-500/30 transition-all hover:brightness-105 active:scale-95"
+                                    >
+                                        🔗 Share
+                                    </button>
                                 </div>
                             </div>
-
-                            {/* Create Another */}
-                            <button
-                                onClick={() => {
-                                    setClip(null);
-                                    setTextContent('');
-                                    setSelectedFiles([]);
-                                    localStorage.removeItem('clipSessionId');
-                                    localStorage.removeItem('clipId');
-                                }}
-                                className="w-full rounded-lg border-2 border-gray-300 px-6 py-3 font-semibold text-gray-700 transition-all hover:border-gray-400 hover:bg-gray-50 active:scale-95"
-                            >
-                                Create Another Share
-                            </button>
                         </>
                     )}
                 </div>

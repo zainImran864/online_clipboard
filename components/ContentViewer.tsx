@@ -1,522 +1,362 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Clip } from '@/hooks/useClipboard';
+import { Clip, SharedFile } from '@/hooks/useClipboard';
 
 interface ContentViewerProps {
     clip: Clip;
 }
 
-// Helper component to display code files
-function CodeFilePreview({ url, fileName, fileType }: { url: string; fileName: string; fileType: string }) {
-    const [content, setContent] = useState<string>('');
-    const [copied, setCopied] = useState(false);
+/* ---------- file classification ---------- */
+
+const CODE_EXTENSIONS = [
+    'html', 'htm', 'css', 'js', 'jsx', 'ts', 'tsx', 'json', 'xml', 'py', 'java',
+    'c', 'cpp', 'h', 'cs', 'php', 'rb', 'go', 'rs', 'swift', 'kt', 'sql', 'sh',
+    'bash', 'yml', 'yaml', 'md', 'txt', 'conf', 'csv', 'cvs',
+];
+const IMAGE_EXTENSIONS = ['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg'];
+const VIDEO_EXTENSIONS = ['mp4', 'webm', 'ogv', 'mov', 'avi', 'mkv', 'mpeg', 'mpg', '3gp', 'flv', 'wmv', 'm4v'];
+const AUDIO_EXTENSIONS = ['mp3', 'wav', 'ogg', 'oga', 'm4a', 'aac', 'flac', 'opus', 'weba', 'mid', 'midi'];
+
+const ext = (name: string) => name.split('.').pop()?.toLowerCase() || '';
+
+const isImage = (f: SharedFile) => f.fileType?.startsWith('image/') || IMAGE_EXTENSIONS.includes(ext(f.fileName));
+const isVideo = (f: SharedFile) => f.fileType?.startsWith('video/') || VIDEO_EXTENSIONS.includes(ext(f.fileName));
+const isAudio = (f: SharedFile) => f.fileType?.startsWith('audio/') || AUDIO_EXTENSIONS.includes(ext(f.fileName));
+const isMedia = (f: SharedFile) => isImage(f) || isVideo(f) || isAudio(f);
+// Code / text files render inline on the platform, so they get the dedicated
+// full-width "Live Preview" section instead of the two-column area.
+const isCodeFile = (f: SharedFile) =>
+    CODE_EXTENSIONS.includes(ext(f.fileName)) ||
+    f.fileType?.startsWith('text/') ||
+    f.fileType?.includes('javascript') ||
+    f.fileType?.includes('json');
+
+function languageLabel(fileName: string) {
+    const labels: Record<string, string> = {
+        js: 'JavaScript', jsx: 'React JSX', ts: 'TypeScript', tsx: 'React TSX',
+        py: 'Python', html: 'HTML', htm: 'HTML', css: 'CSS', json: 'JSON', xml: 'XML',
+        java: 'Java', c: 'C', cpp: 'C++', cs: 'C#', php: 'PHP', rb: 'Ruby', go: 'Go',
+        rs: 'Rust', swift: 'Swift', kt: 'Kotlin', sql: 'SQL', sh: 'Shell', bash: 'Shell',
+        yml: 'YAML', yaml: 'YAML', md: 'Markdown', txt: 'Text', csv: 'CSV', conf: 'Config',
+    };
+    return labels[ext(fileName)] || 'Text';
+}
+
+function documentLabel(f: SharedFile) {
+    const e = ext(f.fileName);
+    if (['doc', 'docx'].includes(e) || f.fileType?.includes('wordprocessingml') || f.fileType === 'application/msword') return 'Word Document';
+    if (['xls', 'xlsx'].includes(e) || f.fileType?.includes('spreadsheetml') || f.fileType === 'application/vnd.ms-excel') return 'Excel Spreadsheet';
+    if (['ppt', 'pptx'].includes(e) || f.fileType?.includes('presentationml') || f.fileType === 'application/vnd.ms-powerpoint') return 'PowerPoint Presentation';
+    if (['tar', 'gz', 'tgz'].includes(e) || f.fileType?.includes('tar') || f.fileType?.includes('gzip')) return 'TAR/GZ Archive';
+    if (e === 'rar' || f.fileType?.includes('rar')) return 'RAR Archive';
+    if (e === 'zip' || f.fileType?.includes('zip')) return 'ZIP Archive';
+    if (e === 'pdf' || f.fileType === 'application/pdf') return 'PDF Document';
+    return f.fileType || 'File';
+}
+
+function fileEmoji(f: SharedFile) {
+    const e = ext(f.fileName);
+    if (['zip', 'rar', 'tar', 'gz', 'tgz'].includes(e)) return '🗜️';
+    if (e === 'pdf') return '📕';
+    if (['doc', 'docx'].includes(e)) return '📘';
+    if (['xls', 'xlsx'].includes(e)) return '📗';
+    if (['ppt', 'pptx'].includes(e)) return '📙';
+    return '📄';
+}
+
+function formatBytes(bytes?: number) {
+    if (!bytes || bytes <= 0) return '';
+    if (bytes >= 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+    if (bytes >= 1024) return `${(bytes / 1024).toFixed(0)} KB`;
+    return `${bytes} B`;
+}
+
+function triggerDownload(url: string, fileName: string) {
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = fileName || 'download';
+    link.target = '_blank';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+/* ---------- Live Preview (code / text opens here) ---------- */
+
+// Fetches and shows one code/text file in a bounded, scrollable dark pane.
+function CodePane({ file }: { file: SharedFile }) {
+    const [content, setContent] = useState('');
     const [loading, setLoading] = useState(true);
+    const [copied, setCopied] = useState(false);
 
     useEffect(() => {
-        // Fetch and decode base64 content
-        const fetchContent = async () => {
+        let cancelled = false;
+        const load = async () => {
+            setLoading(true);
             try {
-                if (url.startsWith('data:')) {
-                    // Extract base64 part
-                    const base64Data = url.split(',')[1];
-                    const decodedContent = atob(base64Data);
-                    setContent(decodedContent);
+                let text: string;
+                if (file.url.startsWith('data:')) {
+                    text = atob(file.url.split(',')[1] || '');
                 } else {
-                    const response = await fetch(url);
-                    const text = await response.text();
-                    setContent(text);
+                    text = await (await fetch(file.url)).text();
                 }
-            } catch (error) {
-                console.error('Failed to load file content:', error);
-                setContent('// Failed to load file content');
+                if (!cancelled) setContent(text);
+            } catch {
+                if (!cancelled) setContent('// Failed to load file content');
             } finally {
-                setLoading(false);
+                if (!cancelled) setLoading(false);
             }
         };
+        load();
+        return () => { cancelled = true; };
+    }, [file.url]);
 
-        fetchContent();
-    }, [url]);
-
-    const copyCode = async () => {
+    const copy = async () => {
         try {
             await navigator.clipboard.writeText(content);
             setCopied(true);
             setTimeout(() => setCopied(false), 2000);
-        } catch (err) {
-            console.error('Failed to copy:', err);
-        }
+        } catch { /* ignore */ }
     };
-
-    const getLanguageLabel = () => {
-        const ext = fileName.split('.').pop()?.toLowerCase();
-        const labels: Record<string, string> = {
-            js: 'JavaScript',
-            jsx: 'React JSX',
-            ts: 'TypeScript',
-            tsx: 'React TSX',
-            py: 'Python',
-            html: 'HTML',
-            css: 'CSS',
-            json: 'JSON',
-            xml: 'XML',
-            java: 'Java',
-            c: 'C',
-            cpp: 'C++',
-            cs: 'C#',
-            php: 'PHP',
-            rb: 'Ruby',
-            go: 'Go',
-            rs: 'Rust',
-            swift: 'Swift',
-            kt: 'Kotlin',
-            sql: 'SQL',
-            sh: 'Shell',
-            yml: 'YAML',
-            yaml: 'YAML',
-            md: 'Markdown',
-        };
-        return labels[ext || ''] || 'Code';
-    };
-
-    if (loading) {
-        return (
-            <div className="flex items-center justify-center rounded-lg bg-gray-100 p-8">
-                <p className="text-gray-500">Loading file...</p>
-            </div>
-        );
-    }
 
     return (
-        <div className="space-y-2">
-            {/* File Header */}
-            <div className="flex items-center justify-between rounded-t-lg bg-gray-800 px-4 py-2">
-                <div className="flex items-center gap-2">
-                    <svg className="h-5 w-5 text-gray-400" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6z" />
-                        <path d="M14 2v6h6M16 13H8m8 4H8m2-8H8" />
-                    </svg>
-                    <span className="text-sm font-semibold text-white">{fileName}</span>
-                    <span className="rounded bg-gray-700 px-2 py-0.5 text-xs text-gray-300">
-                        {getLanguageLabel()}
-                    </span>
+        <div>
+            {/* Bar: filename + actions */}
+            <div className="flex items-center justify-between border-b border-slate-700/60 bg-slate-900 px-4 py-2.5">
+                <div className="flex min-w-0 items-center gap-2 text-sm font-semibold text-slate-100">
+                    <span className="truncate">{file.fileName}</span>
+                    <span className="flex-shrink-0 text-xs font-normal text-slate-500">· opened on DropCode</span>
                 </div>
-                <button
-                    onClick={copyCode}
-                    className="rounded bg-gray-700 px-3 py-1 text-xs text-white transition-colors hover:bg-gray-600"
-                >
-                    {copied ? '✓ Copied' : 'Copy'}
-                </button>
+                <div className="flex flex-shrink-0 gap-2">
+                    <button onClick={copy} className="rounded-lg bg-slate-700 px-3 py-1.5 text-xs font-bold text-slate-200 transition-colors hover:bg-slate-600">
+                        {copied ? '✓ Copied' : '📋 Copy'}
+                    </button>
+                    <button onClick={() => triggerDownload(file.url, file.fileName)} className="rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-bold text-white transition-colors hover:bg-blue-500">
+                        ⬇ Download
+                    </button>
+                </div>
             </div>
-
-            {/* Code Content */}
-            <div className="overflow-hidden rounded-b-lg bg-gray-900">
-                <div className="max-h-96 overflow-auto">
-                    <pre className="p-4 text-sm">
-                        <code className="text-gray-100 font-mono">{content}</code>
+            {/* Bounded, scrollable body keeps large files from breaking the layout */}
+            <div className="max-h-[360px] overflow-auto bg-slate-900 p-4">
+                {loading ? (
+                    <p className="text-sm text-slate-500">Loading…</p>
+                ) : (
+                    <pre className="whitespace-pre font-mono text-[13px] leading-relaxed text-slate-100">
+                        <code>{content}</code>
                     </pre>
-                </div>
+                )}
             </div>
-
-            {/* Line count info */}
-            <p className="text-xs text-gray-500">
-                {content.split('\n').length} lines • {Math.round(content.length / 1024)} KB
-            </p>
         </div>
     );
 }
 
-export default function ContentViewer({ clip }: ContentViewerProps) {
-    const [copied, setCopied] = useState(false);
+function LivePreview({ files }: { files: SharedFile[] }) {
+    const [active, setActive] = useState(0);
+    const current = files[Math.min(active, files.length - 1)];
 
-    const copyToClipboard = async (text: string) => {
-        try {
-            await navigator.clipboard.writeText(text);
-            setCopied(true);
-            setTimeout(() => setCopied(false), 2000);
-        } catch (err) {
-            console.error('Failed to copy:', err);
-        }
-    };
-
-    const downloadFile = (fileUrl?: string, fileName?: string) => {
-        const link = document.createElement('a');
-        link.href = fileUrl || clip.content;
-        link.download = fileName || clip.fileName || 'download';
-        link.target = '_blank';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-    };
-
-    const downloadAllFiles = () => {
-        if (clip.files && clip.files.length > 1) {
-            clip.files.forEach((file, index) => {
-                setTimeout(() => {
-                    downloadFile(file.url, file.fileName);
-                }, index * 300); // Stagger downloads
-            });
-        } else {
-            downloadFile();
-        }
-    };
-
-    const downloadTextAsFile = () => {
-        const textContent = clip.type === 'text' ? clip.content : clip.textContent;
-        if (!textContent) {
-            console.error('No text content to download');
-            return;
-        }
-        const element = document.createElement('a');
-        element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(textContent));
-        element.setAttribute('download', clip.fileName || 'clipboard-content.txt');
-        element.style.display = 'none';
-        document.body.appendChild(element);
-        element.click();
-        document.body.removeChild(element);
-    };
-
-    const renderContent = () => {
-        // Handle 'both' type - show both text and file
-        if (clip.type === 'both') {
-            return (
-                <div className="space-y-4">
-                    {/* Text Content */}
-                    {clip.textContent && (
-                        <div>
-                            <h4 className="mb-2 text-sm font-semibold text-gray-700">📝 Text Content</h4>
-                            <div className="rounded-lg bg-gray-50 p-6">
-                                <pre className="whitespace-pre-wrap break-words font-sans text-gray-800">
-                                    {clip.textContent}
-                                </pre>
-                            </div>
-                        </div>
-                    )}
-
-                    {/* File Content */}
-                    <div>
-                        <h4 className="mb-2 text-sm font-semibold text-gray-700">📎 Attached File</h4>
-                        {renderFilePreview()}
-                    </div>
-                </div>
-            );
-        }
-
-        // Handle text-only type
-        if (clip.type === 'text') {
-            return (
-                <div className="rounded-lg bg-gray-50 p-6">
-                    <pre className="whitespace-pre-wrap break-words font-sans text-gray-800">
-                        {clip.content}
-                    </pre>
-                </div>
-            );
-        }
-
-        // Handle file-only type
-        return renderFilePreview();
-    };
-
-    const renderFilePreview = () => {
-        const files = clip.files || [];
-        
-        if (files.length === 0) return null;
-
-        // Multiple files - show grid
-        if (files.length > 1) {
-            return (
-                <div className="space-y-4">
-                    <p className="text-sm font-semibold text-gray-700">
-                        📎 {files.length} files attached
-                    </p>
-                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                        {files.map((file, index) => (
-                            <div
-                                key={index}
-                                className="group relative overflow-hidden rounded-lg bg-gray-50 p-4 transition-all hover:bg-gray-100 hover:shadow-md"
-                            >
-                                {renderSingleFile(file)}
-                                {/* Hover Download Button */}
-                                <button
-                                    onClick={() => downloadFile(file.url, file.fileName)}
-                                    className="absolute right-2 top-2 flex items-center gap-1 rounded-lg bg-blue-600 px-3 py-2 text-xs font-semibold text-white opacity-0 shadow-lg transition-opacity hover:bg-blue-700 group-hover:opacity-100"
-                                >
-                                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                            strokeWidth={2}
-                                            d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
-                                        />
-                                    </svg>
-                                    Download
-                                </button>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            );
-        }
-
-        // Single file - show large preview
-        return renderSingleFile(files[0]);
-    };
-
-    const getDocumentLabel = (fileExt: string, fileType?: string) => {
-        if (['doc', 'docx'].includes(fileExt) || fileType?.includes('wordprocessingml') || fileType === 'application/msword') {
-            return 'Word Document';
-        }
-        if (['xls', 'xlsx'].includes(fileExt) || fileType?.includes('spreadsheetml') || fileType === 'application/vnd.ms-excel') {
-            return 'Excel Spreadsheet';
-        }
-        if (['ppt', 'pptx'].includes(fileExt) || fileType?.includes('presentationml') || fileType === 'application/vnd.ms-powerpoint') {
-            return 'PowerPoint Presentation';
-        }
-        if (fileExt === 'rar' || fileType?.includes('rar')) {
-            return 'RAR Archive';
-        }
-        if (fileExt === 'zip' || fileType?.includes('zip')) {
-            return 'ZIP Archive';
-        }
-        if (['tar', 'gz', 'tgz'].includes(fileExt) || fileType?.includes('tar') || fileType?.includes('gzip')) {
-            return 'TAR/GZ Archive';
-        }
-        return fileType || 'File';
-    };
-
-    const renderDocumentFile = (file: { url: string; fileName: string; fileType: string }, fileExt: string) => {
-        return (
-            <div className="flex items-center gap-3 rounded-lg bg-gray-50 p-4 text-gray-700">
-                <svg className="h-12 w-12 flex-shrink-0 text-blue-600" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6z" />
-                    <path d="M14 2v6h6" />
-                </svg>
-                <div className="min-w-0 flex-1">
-                    <p className="truncate font-semibold">{file.fileName}</p>
-                    <p className="text-sm text-gray-500">{getDocumentLabel(fileExt, file.fileType)}</p>
-                    <p className="mt-1 text-xs text-gray-500">
-                        Preview is not available for this file type. Download it to view the original document.
-                    </p>
-                </div>
-                <button
-                    onClick={() => downloadFile(file.url, file.fileName)}
-                    className="flex-shrink-0 rounded-lg bg-blue-600 px-3 py-2 text-xs font-semibold text-white transition-colors hover:bg-blue-700"
-                >
-                    Download
-                </button>
-            </div>
-        );
-    };
-
-    const renderSingleFile = (file: { url: string; fileName: string; fileType: string }) => {
-        const fileExt = file.fileName.split('.').pop()?.toLowerCase() || '';
-
-        const binaryDocumentExtensions = ['doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'rar', 'zip', 'tar', 'gz', 'tgz'];
-        const binaryDocumentTypes = [
-            'application/msword',
-            'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-            'application/vnd.ms-excel',
-            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-            'application/vnd.ms-powerpoint',
-            'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-            'application/vnd.rar',
-            'application/x-rar-compressed',
-            'application/zip',
-            'application/x-zip-compressed',
-            'application/gzip',
-            'application/x-gzip',
-            'application/x-tar',
-            'application/x-gtar',
-            'application/x-compressed-tar',
-            'application/x-tgz',
-        ];
-        const isBinaryDocument = binaryDocumentExtensions.includes(fileExt) || binaryDocumentTypes.includes(file.fileType);
-
-        // Code file extensions
-        const codeExtensions = ['html', 'htm', 'css', 'js', 'jsx', 'ts', 'tsx', 'json', 'xml', 'py', 'java', 'c', 'cpp', 'h', 'cs', 'php', 'rb', 'go', 'rs', 'swift', 'kt', 'sql', 'sh', 'bash', 'yml', 'yaml', 'md'];
-        const isCodeFile = codeExtensions.includes(fileExt) || file.fileType?.startsWith('text/') || file.fileType?.includes('javascript') || file.fileType?.includes('json') || file.fileType?.includes('xml');
-
-        if (isBinaryDocument) {
-            return renderDocumentFile(file, fileExt);
-        }
-
-        // Image file
-        if (file.fileType?.startsWith('image/')) {
-            return (
-                <div className="flex justify-center rounded-lg bg-gray-50 p-6">
-                    <img
-                        src={file.url}
-                        alt={file.fileName || 'Shared image'}
-                        className="max-h-96 rounded-lg shadow-md"
-                    />
-                </div>
-            );
-        }
-
-        // Code files - display with syntax
-        if (isCodeFile) {
-            return (
-                <CodeFilePreview url={file.url} fileName={file.fileName} fileType={file.fileType} />
-            );
-        }
-
-        // Video file
-        const videoExtensions = ['mp4', 'webm', 'ogv', 'mov', 'avi', 'mkv', 'mpeg', 'mpg', '3gp', 'flv', 'wmv', 'm4v'];
-        if (file.fileType?.startsWith('video/') || videoExtensions.includes(fileExt)) {
-            return (
-                <div className="flex flex-col gap-3 rounded-lg bg-gray-50 p-4">
-                    <video controls src={file.url} className="max-h-96 w-full rounded-lg bg-black">
-                        Your browser does not support the video element.
-                    </video>
-                    <p className="truncate text-sm text-gray-600">{file.fileName}</p>
-                </div>
-            );
-        }
-
-        // Audio file
-        const audioExtensions = ['mp3', 'wav', 'ogg', 'oga', 'm4a', 'aac', 'flac', 'opus', 'weba', 'mid', 'midi'];
-        if (file.fileType?.startsWith('audio/') || audioExtensions.includes(fileExt)) {
-            return (
-                <div className="flex flex-col gap-3 rounded-lg bg-gray-50 p-6">
-                    <div className="flex items-center gap-3 text-gray-700">
-                        <svg className="h-12 w-12 flex-shrink-0 text-purple-500" fill="currentColor" viewBox="0 0 24 24">
-                            <path d="M9 18V5l12-2v13" />
-                            <circle cx="6" cy="18" r="3" />
-                            <circle cx="18" cy="16" r="3" />
-                        </svg>
-                        <div className="min-w-0 flex-1">
-                            <p className="truncate font-semibold">{file.fileName}</p>
-                            <p className="text-sm text-gray-500">Audio File</p>
-                        </div>
-                    </div>
-                    <audio controls src={file.url} className="w-full">
-                        Your browser does not support the audio element.
-                    </audio>
-                </div>
-            );
-        }
-
-        // PDF file
-        if (file.fileType === 'application/pdf') {
-            return (
-                <div className="flex items-center gap-3 text-gray-700">
-                    <svg className="h-12 w-12 flex-shrink-0 text-red-500" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6z" />
-                        <path d="M14 2v6h6" />
-                    </svg>
-                    <div className="min-w-0 flex-1">
-                        <p className="truncate font-semibold">{file.fileName}</p>
-                        <p className="text-sm text-gray-500">PDF Document</p>
-                    </div>
-                </div>
-            );
-        }
-
-        // Other file types
-        return (
-            <div className="flex items-center gap-3 text-gray-700">
-                <svg className="h-12 w-12 flex-shrink-0 text-blue-500" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6z" />
-                    <path d="M14 2v6h6M16 13H8m8 4H8m2-8H8" />
-                </svg>
-                <div className="min-w-0 flex-1">
-                    <p className="truncate font-semibold">{file.fileName}</p>
-                    <p className="text-sm text-gray-500">{file.fileType || 'File'}</p>
-                </div>
-            </div>
-        );
+    const downloadAll = () => {
+        files.forEach((f, i) => setTimeout(() => triggerDownload(f.url, f.fileName), i * 300));
     };
 
     return (
-        <div className="w-full space-y-4">
-            {/* Content Display */}
-            <div className="rounded-2xl bg-white p-4 shadow-lg sm:p-6">{renderContent()}</div>
-
-            {/* Action Buttons */}
-            <div className="flex flex-col gap-3 sm:flex-row">
-                {/* Copy Text Button - for text or both types */}
-                {(clip.type === 'text' || clip.type === 'both') && (
+        <div>
+            {/* Section heading */}
+            <div className="mb-3 flex flex-wrap items-center gap-x-2.5 gap-y-1">
+                <span className="rounded-full border border-indigo-100 bg-indigo-50 px-2.5 py-0.5 text-[11px] font-extrabold tracking-wide text-indigo-700">
+                    OPENS HERE
+                </span>
+                <h2 className="text-base font-extrabold text-gray-800">🖥️ Live Preview</h2>
+                <p className="text-xs text-gray-400">· Code &amp; text files render right here — switch tabs to view each</p>
+                {files.length > 1 && (
                     <button
-                        onClick={() => copyToClipboard(clip.type === 'text' ? clip.content : clip.textContent || '')}
-                        className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-blue-500 px-4 py-3 text-sm font-semibold text-white transition-all hover:bg-blue-600 active:scale-95 sm:px-6 sm:text-base"
+                        onClick={downloadAll}
+                        className="ml-auto flex-shrink-0 rounded-lg border border-indigo-100 bg-indigo-50 px-3 py-1.5 text-xs font-bold text-indigo-700 transition-colors hover:bg-indigo-100"
                     >
-                        {copied ? (
-                            <>
-                                <svg className="h-4 w-4 sm:h-5 sm:w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth={2}
-                                        d="M5 13l4 4L19 7"
-                                    />
-                                </svg>
-                                Copied!
-                            </>
-                        ) : (
-                            <>
-                                <svg className="h-4 w-4 sm:h-5 sm:w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth={2}
-                                        d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
-                                    />
-                                </svg>
-                                Copy Text
-                            </>
+                        ⬇ Download all ({files.length})
+                    </button>
+                )}
+            </div>
+
+            <div className="overflow-hidden rounded-2xl border border-slate-800 bg-slate-900 shadow-[0_20px_46px_rgba(2,6,23,0.28)]">
+                {/* Tabs */}
+                <div className="flex flex-wrap items-center gap-1 bg-slate-950/60 px-2.5 pt-2">
+                    {files.map((f, i) => (
+                        <button
+                            key={i}
+                            onClick={() => setActive(i)}
+                            className={`flex items-center gap-2 rounded-t-lg px-3.5 py-2 text-xs transition-colors ${i === active
+                                ? 'bg-slate-900 font-bold text-slate-100'
+                                : 'text-slate-400 hover:text-slate-200'
+                                }`}
+                        >
+                            <span className="max-w-[160px] truncate">📄 {f.fileName}</span>
+                            <span className="rounded-full bg-slate-700 px-2 py-0.5 text-[10px] text-blue-300">{languageLabel(f.fileName)}</span>
+                        </button>
+                    ))}
+                </div>
+                <CodePane key={current.url} file={current} />
+                <div className="bg-slate-950/60 py-1.5 text-center text-[11px] text-slate-500">
+                    ↕ scroll to see more · bounded height keeps the page tidy
+                </div>
+            </div>
+        </div>
+    );
+}
+
+/* ---------- media preview (image / video / audio) ---------- */
+
+function MediaPreview({ file }: { file: SharedFile }) {
+    if (isImage(file)) {
+        return (
+            <div className="overflow-hidden rounded-xl border border-slate-100 bg-slate-50">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={file.url} alt={file.fileName} className="max-h-80 w-full object-contain" />
+                <div className="flex items-center justify-between gap-2 px-3 py-2">
+                    <p className="truncate text-sm font-semibold text-gray-700">{file.fileName}</p>
+                    <button onClick={() => triggerDownload(file.url, file.fileName)} className="flex-shrink-0 text-sm font-bold text-blue-600 hover:text-blue-700">⬇ Download</button>
+                </div>
+            </div>
+        );
+    }
+    if (isVideo(file)) {
+        return (
+            <div className="overflow-hidden rounded-xl border border-slate-100 bg-slate-50 p-2">
+                <video controls src={file.url} className="max-h-80 w-full rounded-lg bg-black">Your browser does not support video.</video>
+                <div className="flex items-center justify-between gap-2 px-1 pt-2">
+                    <p className="truncate text-sm font-semibold text-gray-700">{file.fileName}</p>
+                    <button onClick={() => triggerDownload(file.url, file.fileName)} className="flex-shrink-0 text-sm font-bold text-blue-600 hover:text-blue-700">⬇ Download</button>
+                </div>
+            </div>
+        );
+    }
+    // audio
+    return (
+        <div className="rounded-xl border border-slate-100 bg-slate-50 p-4">
+            <div className="mb-2 flex items-center justify-between gap-2">
+                <p className="truncate text-sm font-semibold text-gray-700">🎵 {file.fileName}</p>
+                <button onClick={() => triggerDownload(file.url, file.fileName)} className="flex-shrink-0 text-sm font-bold text-blue-600 hover:text-blue-700">⬇ Download</button>
+            </div>
+            <audio controls src={file.url} className="w-full">Your browser does not support audio.</audio>
+        </div>
+    );
+}
+
+/* ---------- main ---------- */
+
+export default function ContentViewer({ clip }: ContentViewerProps) {
+    const [copied, setCopied] = useState(false);
+
+    const files = clip.files || [];
+    const codeFiles = files.filter((f) => !isMedia(f) && isCodeFile(f));
+    const mediaFiles = files.filter(isMedia);
+    const downloadFiles = files.filter((f) => !isMedia(f) && !isCodeFile(f));
+
+    const sharedText = clip.type === 'text' ? clip.content : clip.textContent;
+    const hasText = !!(sharedText && sharedText.trim().length > 0);
+    const hasRightColumn = mediaFiles.length > 0 || downloadFiles.length > 0;
+    const twoCol = hasText && hasRightColumn;
+
+    const copyText = async () => {
+        try {
+            await navigator.clipboard.writeText(sharedText || '');
+            setCopied(true);
+            setTimeout(() => setCopied(false), 2000);
+        } catch { /* ignore */ }
+    };
+
+    const downloadText = () => {
+        if (!sharedText) return;
+        triggerDownload('data:text/plain;charset=utf-8,' + encodeURIComponent(sharedText), 'clipboard-content.txt');
+    };
+
+    // Files shown in the right-hand card (media previews + download-only rows).
+    // Code/text files have their own Live Preview section with its own download-all.
+    const cardFiles = [...mediaFiles, ...downloadFiles];
+    const downloadAll = () => {
+        cardFiles.forEach((f, i) => setTimeout(() => triggerDownload(f.url, f.fileName), i * 300));
+    };
+
+    return (
+        <div className="space-y-5 sm:space-y-6">
+            {/* Full-width Live Preview for code / text */}
+            {codeFiles.length > 0 && <LivePreview files={codeFiles} />}
+
+            {/* Text + files */}
+            <div className={twoCol ? 'grid grid-cols-1 gap-5 lg:grid-cols-2 lg:items-start' : 'space-y-5'}>
+                {/* Shared text */}
+                {hasText && (
+                    <div className="rounded-2xl border border-slate-100 bg-white p-5 shadow-lg sm:p-6">
+                        <h3 className="mb-3 flex items-center gap-2 text-base font-extrabold text-gray-800">📝 Shared Text</h3>
+                        <div className="max-h-96 overflow-auto rounded-xl border border-slate-100 bg-slate-50 p-4">
+                            <pre className="whitespace-pre-wrap break-words font-sans text-sm text-gray-800">{sharedText}</pre>
+                        </div>
+                        <div className="mt-4 flex gap-3">
+                            <button onClick={copyText} className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-blue-500 px-4 py-2.5 text-sm font-bold text-white transition-all hover:bg-blue-600 active:scale-95">
+                                {copied ? '✓ Copied' : '📋 Copy Text'}
+                            </button>
+                            <button onClick={downloadText} className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-green-500 px-4 py-2.5 text-sm font-bold text-white transition-all hover:bg-green-600 active:scale-95">
+                                ⬇ Download Text
+                            </button>
+                        </div>
+                    </div>
+                )}
+
+                {/* Files: media previews + download-only list */}
+                {hasRightColumn && (
+                    <div className="rounded-2xl border border-slate-100 bg-white p-5 shadow-lg sm:p-6">
+                        <h3 className="mb-1 flex items-center gap-2 text-base font-extrabold text-gray-800">
+                            📎 Files
+                            {downloadFiles.length > 0 && mediaFiles.length === 0 && (
+                                <span className="text-xs font-medium text-gray-400">· not previewable here</span>
+                            )}
+                        </h3>
+                        <p className="mb-4 text-xs text-gray-400">
+                            {cardFiles.length} {cardFiles.length === 1 ? 'file' : 'files'} attached
+                        </p>
+
+                        <div className="space-y-3">
+                            {/* Media previews */}
+                            {mediaFiles.map((f, i) => <MediaPreview key={`m${i}`} file={f} />)}
+
+                            {/* Download-only rows */}
+                            {downloadFiles.map((f, i) => (
+                                <div key={`d${i}`} className="flex items-center gap-3 rounded-xl border border-slate-100 bg-slate-50 p-3">
+                                    <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-blue-100 text-lg">
+                                        {fileEmoji(f)}
+                                    </div>
+                                    <div className="min-w-0 flex-1">
+                                        <p className="truncate text-sm font-bold text-gray-700">{f.fileName}</p>
+                                        <p className="text-xs text-gray-400">
+                                            {documentLabel(f)}{formatBytes(f.fileSize) && ` · ${formatBytes(f.fileSize)}`}
+                                        </p>
+                                    </div>
+                                    <button
+                                        onClick={() => triggerDownload(f.url, f.fileName)}
+                                        className="flex-shrink-0 rounded-lg border border-indigo-100 bg-indigo-50 px-3.5 py-2 text-xs font-bold text-indigo-700 transition-colors hover:bg-indigo-100"
+                                    >
+                                        ⬇ Download
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+
+                        {cardFiles.length > 1 && (
+                            <button
+                                onClick={downloadAll}
+                                className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 px-4 py-3 text-sm font-extrabold text-white shadow-lg shadow-violet-500/30 transition-all hover:brightness-105 active:scale-95"
+                            >
+                                ⬇ Download all ({cardFiles.length} files)
+                            </button>
                         )}
-                    </button>
-                )}
-
-                {/* Download Text Button - for text or both types */}
-                {(clip.type === 'text' || clip.type === 'both') && (
-                    <button
-                        onClick={downloadTextAsFile}
-                        className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-green-500 px-4 py-3 text-sm font-semibold text-white transition-all hover:bg-green-600 active:scale-95 sm:px-6 sm:text-base"
-                    >
-                        <svg className="h-4 w-4 sm:h-5 sm:w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
-                            />
-                        </svg>
-                        Download Text
-                    </button>
-                )}
-
-                {/* Download File Button - for file or both types */}
-                {(clip.type === 'file' || clip.type === 'both') && (
-                    <button
-                        onClick={downloadAllFiles}
-                        className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-purple-500 px-4 py-3 text-sm font-semibold text-white transition-all hover:bg-purple-600 active:scale-95 sm:px-6 sm:text-base"
-                    >
-                        <svg className="h-4 w-4 sm:h-5 sm:w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
-                            />
-                        </svg>
-                        {clip.files && clip.files.length > 1 ? `Download All (${clip.files.length})` : 'Download File'}
-                    </button>
+                    </div>
                 )}
             </div>
 
             {/* Metadata */}
-            <div className="rounded-lg bg-gray-50 p-3 text-xs text-gray-600 sm:p-4 sm:text-sm">
-                <p>
-                    <span className="font-semibold">Created:</span>{' '}
-                    {clip.createdAt.toLocaleString()}
-                </p>
-                {clip.expiresAt && (
-                    <p>
-                        <span className="font-semibold">Expires:</span>{' '}
-                        {clip.expiresAt.toLocaleString()}
-                    </p>
-                )}
+            <div className="rounded-xl bg-white/60 p-3 text-xs text-gray-500 sm:p-4 sm:text-sm">
+                <p><span className="font-semibold">Created:</span> {clip.createdAt.toLocaleString()}</p>
+                {clip.expiresAt && <p><span className="font-semibold">Expires:</span> {clip.expiresAt.toLocaleString()}</p>}
             </div>
         </div>
     );
