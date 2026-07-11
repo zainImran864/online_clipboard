@@ -35,14 +35,14 @@ Built with Next.js (App Router), Firebase Firestore, and Cloudflare R2. Installa
 - 🔴 **Real‑time updates** — the recipient can enable "live mode" to see the sender's edits as they type (powered by Firestore snapshots).
 - ⏳ **Auto‑expiry** — every clip expires 24 hours after creation and is cleaned up (including its R2 objects) by a daily cron.
 - 🗂️ **Smart storage** — small payloads live inline in Firestore; large files and large text are offloaded to Cloudflare R2.
-- 🛡️ **Daily upload quota** — 10 MB/day per user, enforced server‑side and resistant to clearing browser storage.
+- 🛡️ **Per‑file size limit** — up to 10 MB per file, enforced client‑side and server‑side. No daily/total quota.
 - 📱 **PWA** — installable on mobile/desktop with offline‑ready service worker and app manifest.
 - 🔓 **No accounts** — nothing to sign up for; no personal data collected.
 
 ## How it works
 
 1. **Send** — On `/send`, the user types text and/or selects files, then clicks *Generate Share Code*.
-   - Files are uploaded through `POST /api/files/upload`, which enforces type/size validation and the daily quota, then stores each file either inline (base64 in Firestore) or in R2 depending on size.
+   - Files are uploaded through `POST /api/files/upload`, which enforces type and per‑file size (10 MB) validation, then stores each file either inline (base64 in Firestore) or in R2 depending on size.
    - A `clips` document is created in Firestore with a unique 6‑digit `code` and a 24‑hour `expiresAt`.
    - Text larger than ~900 KB is offloaded to R2 via `POST /api/text/upload` (Firestore documents are capped at ~1 MiB).
 2. **Share** — The sender shares the 6‑digit code or the link `…/view/<code>`.
@@ -73,7 +73,7 @@ my-clipboard/
 │   ├── layout.tsx                  # Root layout, metadata, PWA tags
 │   ├── globals.css                 # Tailwind + global styles
 │   └── api/
-│       ├── files/upload/route.ts   # POST — validate, quota, store file (inline or R2)
+│       ├── files/upload/route.ts   # POST — validate, store file (inline or R2)
 │       ├── text/upload/route.ts    # POST — store oversized text in R2
 │       └── cron/cleanup/route.ts   # GET  — delete expired clips + R2 objects
 ├── components/
@@ -111,10 +111,9 @@ All API routes run on the Node.js runtime.
 #### `POST /api/files/upload`
 Uploads a single file.
 - **Body:** `multipart/form-data` with a `file` field.
-- **Validation:** allowed MIME types / extensions (text, code, PDF, images, Office, zip/rar); max **10 MB** per file.
-- **Quota:** enforces a **10 MB/day** limit per request "subject" (a hash of IP + User‑Agent). Returns `429` when exceeded, with `remainingBytes`.
-- **Storage:** files ≤ 800 KB are returned as an inline base64 `data:` URL (stored in Firestore); larger files are streamed to R2 and a public URL is returned.
-- **Response:** `{ url, fileName, fileType, fileSize, storageProvider, storageKey?, remainingBytes }`.
+- **Validation:** allowed MIME types / extensions (text, code, PDF, images, Office, zip/rar/tar/gz); max **10 MB** per file. There is no daily/total quota.
+- **Storage:** files whose base64 payload is ≤ ~500 KB are returned as an inline `data:` URL (stored in Firestore); larger files are streamed to R2 and a public URL is returned.
+- **Response:** `{ url, fileName, fileType, fileSize, storageProvider, storageKey? }`.
 
 #### `POST /api/text/upload`
 Stores oversized clip text in R2 (Firestore documents are capped at ~1 MiB; there is **no** size limit on text).
@@ -223,34 +222,18 @@ Everything lives in a single **`clips`** collection, which stores two kinds of d
 | `createdAt`           | Timestamp                | Creation time                                                |
 | `expiresAt`           | Timestamp                | Creation + 24h; used for expiry and cleanup                  |
 
-### Quota document (`_quota_<UTC-day>_<hash>`)
-
-| Field       | Type      | Notes                                        |
-| ----------- | --------- | -------------------------------------------- |
-| `type`      | `'quota'` | Marks the doc as a quota record              |
-| `ipHash`    | string    | Hash of the quota subject (IP + User‑Agent)  |
-| `day`       | string    | UTC day, `YYYY-MM-DD`                         |
-| `usedBytes` | number    | Bytes uploaded so far today                  |
-| `createdAt` / `updatedAt` / `expiresAt` | Timestamp | 24h TTL |
-
-> Quota documents share the `clips` collection and also carry `expiresAt`, so the cleanup cron removes them too.
-
 ## Storage tiers & limits
 
 | Payload                     | Threshold            | Where it's stored                       |
 | --------------------------- | -------------------- | --------------------------------------- |
-| File ≤ 800 KB               | `INLINE_FIRESTORE_LIMIT` | Inline base64 `data:` URL in Firestore |
-| File > 800 KB, ≤ 10 MB      | —                    | Cloudflare R2                           |
-| Text ≤ ~900 KB              | `TEXT_INLINE_LIMIT`  | Inline string in Firestore              |
-| Text > ~900 KB              | —                    | Cloudflare R2                           |
+| File (base64 ≤ ~500 KB)     | `INLINE_FIRESTORE_LIMIT` | Inline base64 `data:` URL in Firestore |
+| File (larger), ≤ 10 MB      | —                    | Cloudflare R2                           |
+| Text ≤ ~400 KB              | `TEXT_INLINE_LIMIT`  | Inline string in Firestore              |
+| Text > ~400 KB              | —                    | Cloudflare R2                           |
 | **Per file**                | **10 MB** max        | Rejected above the limit                |
-| **Per user / day**          | **10 MB** total      | Enforced by quota (`429` when exceeded) |
 | **Clip lifetime**           | **24 hours**         | Then deleted by the cron                |
 
-**About the daily quota.** The 10 MB/day limit is keyed on a server‑side hash of **IP + User‑Agent**, not on anything stored in the browser. This means:
-- Clearing site data / cookies / localStorage does **not** reset the limit.
-- Different devices/browsers behind the same shared IP get their **own** 10 MB (so one user maxing out doesn't block everyone on the network).
-- It is a heuristic, not authentication: identical device+browser on the same IP share a bucket, and a determined user could spoof the User‑Agent. For hard guarantees you'd add accounts.
+There is **no** daily or total upload quota — only the 10 MB per‑file limit above. Text has no size limit (offloaded to R2 when large).
 
 ## Deployment
 

@@ -182,7 +182,7 @@ export default function FileUpload({ onFileSelect, disabled = false, multiple = 
                             Drop your files here or click to browse
                         </p>
                         <p className="mt-1 text-sm text-gray-500">
-                            Supports: Text, archives, Office, PDF, Images • 10MB daily limit
+                            Supports: Text, archives, Office, PDF, Images • up to 10MB per file
                         </p>
                     </div>
                 </div>

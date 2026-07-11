@@ -312,6 +312,11 @@ export default function ContentViewer({ clip }: ContentViewerProps) {
         downloadFiles.forEach((f, i) => setTimeout(() => triggerDownload(f.url, f.fileName), i * 300));
     };
 
+    // Grand total: every attached file across all sections.
+    const downloadEverything = () => {
+        files.forEach((f, i) => setTimeout(() => triggerDownload(f.url, f.fileName), i * 300));
+    };
+
     return (
         <div className="space-y-5 sm:space-y-6">
             {/* On-site previews: code/text on the left, media on the right.
@@ -388,6 +393,16 @@ export default function ContentViewer({ clip }: ContentViewerProps) {
                     </div>
                 )}
             </div>
+
+            {/* Download everything (all files across every section) */}
+            {files.length > 1 && (
+                <button
+                    onClick={downloadEverything}
+                    className="flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 px-4 py-4 text-sm font-extrabold text-white shadow-lg shadow-blue-500/30 transition-all hover:brightness-105 active:scale-95 sm:text-base"
+                >
+                    ⬇ Download all files ({files.length})
+                </button>
+            )}
 
             {/* Metadata */}
             <div className="rounded-xl bg-white/60 p-3 text-xs text-gray-500 sm:p-4 sm:text-sm">

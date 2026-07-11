@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Logo from '@/components/Logo';
 import ContentViewer from '@/components/ContentViewer';
-import { useClipboard } from '@/hooks/useClipboard';
+import { useClipboard, Clip } from '@/hooks/useClipboard';
 
 export default function ViewPage() {
     const params = useParams();
@@ -12,15 +12,30 @@ export default function ViewPage() {
     const code = params.code as string;
 
     const { fetchClipByCode, subscribeToClip, loading } = useClipboard();
-    const [clip, setClip] = useState<any>(null);
+    const [clip, setClip] = useState<Clip | null>(null);
     const [notFound, setNotFound] = useState(false);
     const [isLiveMode, setIsLiveMode] = useState(false);
 
     useEffect(() => {
-        if (code) {
-            loadClip();
-        }
-    }, [code]);
+        if (!code) return;
+        let cancelled = false;
+        (async () => {
+            try {
+                const fetchedClip = await fetchClipByCode(code);
+                if (cancelled) return;
+                if (fetchedClip) {
+                    setClip(fetchedClip);
+                } else {
+                    setNotFound(true);
+                }
+            } catch (err) {
+                if (cancelled) return;
+                console.error('Error fetching clip:', err);
+                setNotFound(true);
+            }
+        })();
+        return () => { cancelled = true; };
+    }, [code, fetchClipByCode]);
 
     // Subscribe to real-time updates when live mode is enabled
     useEffect(() => {
@@ -35,21 +50,6 @@ export default function ViewPage() {
 
     const toggleLiveMode = () => {
         setIsLiveMode(!isLiveMode);
-    };
-
-    const loadClip = async () => {
-        try {
-            const fetchedClip = await fetchClipByCode(code);
-
-            if (fetchedClip) {
-                setClip(fetchedClip);
-            } else {
-                setNotFound(true);
-            }
-        } catch (err) {
-            console.error('Error fetching clip:', err);
-            setNotFound(true);
-        }
     };
 
     if (loading) {
