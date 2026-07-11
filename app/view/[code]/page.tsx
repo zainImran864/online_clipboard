@@ -118,7 +118,7 @@ export default function ViewPage() {
 
             {/* Main Content */}
             <main className="flex min-h-[calc(100vh-100px)] items-start justify-center px-4 py-6 sm:min-h-[calc(100vh-120px)]">
-                <div className="w-full max-w-4xl space-y-4 sm:space-y-6">
+                <div className="w-full max-w-6xl space-y-4 sm:space-y-6">
                     <div className="text-center">
                         <h1 className="text-3xl font-extrabold tracking-tight text-gray-900 sm:text-4xl">
                             Read{' '}

@@ -266,7 +266,7 @@ function MediaSection({ files }: { files: SharedFile[] }) {
                     </button>
                 )}
             </div>
-            <div className={files.length > 1 ? 'grid grid-cols-1 gap-4 sm:grid-cols-2' : ''}>
+            <div className="space-y-4">
                 {files.map((f, i) => (
                     <div key={i} className="rounded-2xl border border-slate-100 bg-white p-3 shadow-lg">
                         <MediaPreview file={f} />
@@ -314,11 +314,14 @@ export default function ContentViewer({ clip }: ContentViewerProps) {
 
     return (
         <div className="space-y-5 sm:space-y-6">
-            {/* Full-width Live Preview for code / text */}
-            {codeFiles.length > 0 && <LivePreview files={codeFiles} />}
-
-            {/* Full-width Media Preview for images / video / audio */}
-            {mediaFiles.length > 0 && <MediaSection files={mediaFiles} />}
+            {/* On-site previews: code/text on the left, media on the right.
+                Side-by-side (not stacked) so they don't add extra scroll. */}
+            {(codeFiles.length > 0 || mediaFiles.length > 0) && (
+                <div className={codeFiles.length > 0 && mediaFiles.length > 0 ? 'grid grid-cols-1 gap-5 lg:grid-cols-2 lg:items-start' : ''}>
+                    {codeFiles.length > 0 && <LivePreview files={codeFiles} />}
+                    {mediaFiles.length > 0 && <MediaSection files={mediaFiles} />}
+                </div>
+            )}
 
             {/* Text + download-only files */}
             <div className={twoCol ? 'grid grid-cols-1 gap-5 lg:grid-cols-2 lg:items-start' : 'space-y-5'}>
