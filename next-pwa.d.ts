@@ -23,7 +23,7 @@ declare module 'next-pwa' {
     dynamicStartUrlRedirect?: string;
     publicExcludes?: string[];
     buildExcludes?: string[] | ((excludes: string[]) => string[]);
-    runtimeCaching?: any[];
+    runtimeCaching?: unknown[];
     cacheStartUrl?: boolean;
     cleanupOutdatedCaches?: boolean;
     clientsClaim?: boolean;
