@@ -211,7 +211,7 @@ function MediaPreview({ file }: { file: SharedFile }) {
         return (
             <div className="overflow-hidden rounded-xl border border-slate-100 bg-slate-50">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={file.url} alt={file.fileName} className="max-h-80 w-full object-contain" />
+                <img src={file.url} alt={file.fileName} className="max-h-[460px] w-full object-contain" />
                 <div className="flex items-center justify-between gap-2 px-3 py-2">
                     <p className="truncate text-sm font-semibold text-gray-700">{file.fileName}</p>
                     <button onClick={() => triggerDownload(file.url, file.fileName)} className="flex-shrink-0 text-sm font-bold text-blue-600 hover:text-blue-700">⬇ Download</button>
@@ -222,7 +222,7 @@ function MediaPreview({ file }: { file: SharedFile }) {
     if (isVideo(file)) {
         return (
             <div className="overflow-hidden rounded-xl border border-slate-100 bg-slate-50 p-2">
-                <video controls src={file.url} className="max-h-80 w-full rounded-lg bg-black">Your browser does not support video.</video>
+                <video controls src={file.url} className="max-h-[460px] w-full rounded-lg bg-black">Your browser does not support video.</video>
                 <div className="flex items-center justify-between gap-2 px-1 pt-2">
                     <p className="truncate text-sm font-semibold text-gray-700">{file.fileName}</p>
                     <button onClick={() => triggerDownload(file.url, file.fileName)} className="flex-shrink-0 text-sm font-bold text-blue-600 hover:text-blue-700">⬇ Download</button>
@@ -242,6 +242,41 @@ function MediaPreview({ file }: { file: SharedFile }) {
     );
 }
 
+// Full-width section for media that opens on-site (images/video/audio), so wide
+// content isn't cramped into the narrow files column and can't break the layout.
+function MediaSection({ files }: { files: SharedFile[] }) {
+    const downloadAll = () => {
+        files.forEach((f, i) => setTimeout(() => triggerDownload(f.url, f.fileName), i * 300));
+    };
+
+    return (
+        <div>
+            <div className="mb-3 flex flex-wrap items-center gap-x-2.5 gap-y-1">
+                <span className="rounded-full border border-indigo-100 bg-indigo-50 px-2.5 py-0.5 text-[11px] font-extrabold tracking-wide text-indigo-700">
+                    OPENS HERE
+                </span>
+                <h2 className="text-base font-extrabold text-gray-800">🖼️ Media Preview</h2>
+                <p className="text-xs text-gray-400">· Images, video &amp; audio open right here</p>
+                {files.length > 1 && (
+                    <button
+                        onClick={downloadAll}
+                        className="ml-auto flex-shrink-0 rounded-lg border border-indigo-100 bg-indigo-50 px-3 py-1.5 text-xs font-bold text-indigo-700 transition-colors hover:bg-indigo-100"
+                    >
+                        ⬇ Download all ({files.length})
+                    </button>
+                )}
+            </div>
+            <div className={files.length > 1 ? 'grid grid-cols-1 gap-4 sm:grid-cols-2' : ''}>
+                {files.map((f, i) => (
+                    <div key={i} className="rounded-2xl border border-slate-100 bg-white p-3 shadow-lg">
+                        <MediaPreview file={f} />
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+}
+
 /* ---------- main ---------- */
 
 export default function ContentViewer({ clip }: ContentViewerProps) {
@@ -254,8 +289,10 @@ export default function ContentViewer({ clip }: ContentViewerProps) {
 
     const sharedText = clip.type === 'text' ? clip.content : clip.textContent;
     const hasText = !!(sharedText && sharedText.trim().length > 0);
-    const hasRightColumn = mediaFiles.length > 0 || downloadFiles.length > 0;
-    const twoCol = hasText && hasRightColumn;
+    // Media now gets its own full-width section; the right card holds only
+    // download-only files (archives, Office, PDF, …).
+    const hasDownloads = downloadFiles.length > 0;
+    const twoCol = hasText && hasDownloads;
 
     const copyText = async () => {
         try {
@@ -270,11 +307,9 @@ export default function ContentViewer({ clip }: ContentViewerProps) {
         triggerDownload('data:text/plain;charset=utf-8,' + encodeURIComponent(sharedText), 'clipboard-content.txt');
     };
 
-    // Files shown in the right-hand card (media previews + download-only rows).
-    // Code/text files have their own Live Preview section with its own download-all.
-    const cardFiles = [...mediaFiles, ...downloadFiles];
+    // Download-only files (media & code each have their own full-width section).
     const downloadAll = () => {
-        cardFiles.forEach((f, i) => setTimeout(() => triggerDownload(f.url, f.fileName), i * 300));
+        downloadFiles.forEach((f, i) => setTimeout(() => triggerDownload(f.url, f.fileName), i * 300));
     };
 
     return (
@@ -282,7 +317,10 @@ export default function ContentViewer({ clip }: ContentViewerProps) {
             {/* Full-width Live Preview for code / text */}
             {codeFiles.length > 0 && <LivePreview files={codeFiles} />}
 
-            {/* Text + files */}
+            {/* Full-width Media Preview for images / video / audio */}
+            {mediaFiles.length > 0 && <MediaSection files={mediaFiles} />}
+
+            {/* Text + download-only files */}
             <div className={twoCol ? 'grid grid-cols-1 gap-5 lg:grid-cols-2 lg:items-start' : 'space-y-5'}>
                 {/* Shared text */}
                 {hasText && (
@@ -302,23 +340,18 @@ export default function ContentViewer({ clip }: ContentViewerProps) {
                     </div>
                 )}
 
-                {/* Files: media previews + download-only list */}
-                {hasRightColumn && (
+                {/* Download-only files (archives, Office, PDF, …) */}
+                {hasDownloads && (
                     <div className="rounded-2xl border border-slate-100 bg-white p-5 shadow-lg sm:p-6">
                         <h3 className="mb-1 flex items-center gap-2 text-base font-extrabold text-gray-800">
                             📎 Files
-                            {downloadFiles.length > 0 && mediaFiles.length === 0 && (
-                                <span className="text-xs font-medium text-gray-400">· not previewable here</span>
-                            )}
+                            <span className="text-xs font-medium text-gray-400">· not previewable here</span>
                         </h3>
                         <p className="mb-4 text-xs text-gray-400">
-                            {cardFiles.length} {cardFiles.length === 1 ? 'file' : 'files'} attached
+                            {downloadFiles.length} {downloadFiles.length === 1 ? 'file' : 'files'} attached
                         </p>
 
                         <div className="space-y-3">
-                            {/* Media previews */}
-                            {mediaFiles.map((f, i) => <MediaPreview key={`m${i}`} file={f} />)}
-
                             {/* Download-only rows */}
                             {downloadFiles.map((f, i) => (
                                 <div key={`d${i}`} className="flex items-center gap-3 rounded-xl border border-slate-100 bg-slate-50 p-3">
@@ -341,12 +374,12 @@ export default function ContentViewer({ clip }: ContentViewerProps) {
                             ))}
                         </div>
 
-                        {cardFiles.length > 1 && (
+                        {downloadFiles.length > 1 && (
                             <button
                                 onClick={downloadAll}
                                 className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 px-4 py-3 text-sm font-extrabold text-white shadow-lg shadow-violet-500/30 transition-all hover:brightness-105 active:scale-95"
                             >
-                                ⬇ Download all ({cardFiles.length} files)
+                                ⬇ Download all ({downloadFiles.length} files)
                             </button>
                         )}
                     </div>
