@@ -206,7 +206,7 @@ export default function SendPage() {
 
             {/* Main Content */}
             <main className="flex min-h-[calc(100vh-100px)] items-start justify-center px-4 py-6 sm:min-h-[calc(100vh-120px)]">
-                <div className="w-full max-w-3xl space-y-4 sm:space-y-6">
+                <div className={`w-full space-y-4 transition-[max-width] duration-300 sm:space-y-6 ${clip ? 'max-w-5xl' : 'max-w-3xl'}`}>
                     {!clip ? (
                         <>
                             <div className="text-center">
