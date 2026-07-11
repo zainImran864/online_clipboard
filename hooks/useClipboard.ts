@@ -25,6 +25,28 @@ function getTextByteSize(text: string) {
     return new TextEncoder().encode(text).length;
 }
 
+/**
+ * Maps a raw error to a user-safe message. Firestore rejects any document
+ * write over ~1 MiB and embeds the full database path (project id, collection,
+ * doc id) in its message — that must never reach the UI. Known-safe messages
+ * are passed through; anything that looks like a Firestore internal error is
+ * replaced with the given fallback.
+ */
+function getSafeClipError(err: unknown, fallback: string): string {
+    const raw = err instanceof Error ? err.message : '';
+
+    if (/maximum allowed size/i.test(raw) || /exceeds the maximum/i.test(raw)) {
+        return 'This file is too large to share. Please try a smaller file.';
+    }
+
+    // Drop anything that leaks an internal database path or Firebase error code.
+    if (/databases\/\(default\)|projects\/[^/]+\/databases|FirebaseError|\[code=/i.test(raw)) {
+        return fallback;
+    }
+
+    return raw || fallback;
+}
+
 async function uploadTextToR2(text: string): Promise<{ url: string; storageKey: string }> {
     const response = await fetch('/api/text/upload', {
         method: 'POST',
@@ -185,10 +207,10 @@ export function useClipboard() {
                     expiresAt: expiresAt.toDate(),
                 } as Clip;
             } catch (err) {
-                const errorMessage = err instanceof Error ? err.message : 'Failed to create clip';
+                const errorMessage = getSafeClipError(err, 'Failed to create clip. Please try again.');
                 setError(errorMessage);
                 setLoading(false);
-                throw err;
+                throw new Error(errorMessage);
             }
         },
         []
@@ -228,10 +250,10 @@ export function useClipboard() {
 
             setLoading(false);
         } catch (err) {
-            const errorMessage = err instanceof Error ? err.message : 'Failed to update clip';
+            const errorMessage = getSafeClipError(err, 'Failed to update clip. Please try again.');
             setError(errorMessage);
             setLoading(false);
-            throw err;
+            throw new Error(errorMessage);
         }
     }, []);
 
@@ -286,10 +308,10 @@ export function useClipboard() {
                 expiresAt: data.expiresAt?.toDate(),
             } as Clip;
         } catch (err) {
-            const errorMessage = err instanceof Error ? err.message : 'Failed to fetch clip';
+            const errorMessage = getSafeClipError(err, 'Failed to fetch clip. Please try again.');
             setError(errorMessage);
             setLoading(false);
-            throw err;
+            throw new Error(errorMessage);
         }
     }, []);
 
@@ -393,10 +415,10 @@ export function useClipboard() {
 
                 setLoading(false);
             } catch (err) {
-                const errorMessage = err instanceof Error ? err.message : 'Failed to update clip with file';
+                const errorMessage = getSafeClipError(err, 'Failed to attach file. Please try again.');
                 setError(errorMessage);
                 setLoading(false);
-                throw err;
+                throw new Error(errorMessage);
             }
         },
         []
