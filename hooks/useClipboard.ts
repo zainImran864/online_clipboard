@@ -18,8 +18,10 @@ import { generateUniqueCode } from '@/lib/codeGenerator';
 export type StorageProvider = 'firebase-inline' | 'r2';
 
 // Text larger than this (UTF-8 bytes) is offloaded to R2 instead of being
-// written inline, since a Firestore document is capped at ~1 MiB total.
-const TEXT_INLINE_LIMIT = 900 * 1024;
+// written inline, since a Firestore document is capped at ~1 MiB total. Kept
+// low enough that an inline file (≤500 KiB encoded) plus inline text on a
+// 'both' clip still fits comfortably under the cap.
+const TEXT_INLINE_LIMIT = 400 * 1024;
 
 function getTextByteSize(text: string) {
     return new TextEncoder().encode(text).length;
@@ -186,6 +188,11 @@ export function useClipboard() {
 
                 if (files && files.length > 0) {
                     clipData.files = files;
+                    // The file payload lives in `files[]`. Don't also copy it
+                    // into `content` — for an inline (base64 data URL) file that
+                    // would store the payload twice and can push the Firestore
+                    // document past its 1 MiB cap. Readers use `files[]`.
+                    clipData.content = '';
                     // Keep legacy fields for backward compatibility (first file)
                     clipData.fileName = files[0].fileName;
                     clipData.fileType = files[0].fileType;
@@ -383,11 +390,14 @@ export function useClipboard() {
                     const existingFiles = clipData.files || [];
                     const allFiles = [...existingFiles, ...newFiles];
 
+                    // File payload lives in `files[]` only. Keep `content`
+                    // empty for file/both clips so an inline data URL isn't
+                    // stored twice and can't overflow the 1 MiB document cap.
                     if (clipData.type === 'text' && hasText) {
                         // Convert text-only to both
                         await updateDoc(clipRef, {
                             type: 'both',
-                            content: allFiles[0].url, // Keep first file URL in content for backward compatibility
+                            content: '',
                             ...(await buildTextFields(currentTextContent as string, 'textContent')),
                             files: allFiles,
                             fileName: allFiles[0].fileName,
@@ -396,7 +406,7 @@ export function useClipboard() {
                     } else if (clipData.type === 'file' || clipData.type === 'both') {
                         // Update existing files or add more
                         await updateDoc(clipRef, {
-                            content: allFiles[0].url,
+                            content: '',
                             files: allFiles,
                             fileName: allFiles[0].fileName,
                             fileType: allFiles[0].fileType,
@@ -405,7 +415,7 @@ export function useClipboard() {
                         // Text-only with no text content, convert to file-only
                         await updateDoc(clipRef, {
                             type: 'file',
-                            content: allFiles[0].url,
+                            content: '',
                             files: allFiles,
                             fileName: allFiles[0].fileName,
                             fileType: allFiles[0].fileType,
