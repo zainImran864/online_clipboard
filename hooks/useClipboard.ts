@@ -434,12 +434,69 @@ export function useClipboard() {
         []
     );
 
+    /**
+     * Remove a single file from a clip (live). Updates the `files` array and
+     * legacy fields, and downgrades the clip type when the last file is removed.
+     * The real-time subscription pushes the change to any open viewers.
+     */
+    const removeFileFromClip = useCallback(async (clipId: string, fileUrl: string) => {
+        setLoading(true);
+        setError(null);
+
+        try {
+            const clipRef = doc(db, 'clips', clipId);
+            const clipSnap = await getDoc(clipRef);
+            if (!clipSnap.exists()) {
+                setLoading(false);
+                return;
+            }
+
+            const data = clipSnap.data();
+            const remaining = (data.files || []).filter((f: SharedFile) => f.url !== fileUrl);
+
+            const updates: Record<string, unknown> = { files: remaining };
+
+            if (remaining.length > 0) {
+                // Keep legacy first-file fields in sync.
+                updates.fileName = remaining[0].fileName;
+                updates.fileType = remaining[0].fileType;
+                if (data.type === 'file' || data.type === 'both') {
+                    updates.content = remaining[0].url;
+                }
+            } else {
+                // No files left — drop legacy fields and downgrade the type.
+                updates.fileName = deleteField();
+                updates.fileType = deleteField();
+
+                if (data.type === 'both') {
+                    // Text stays; move it into `content` (works for inline and
+                    // R2-offloaded text, whose markers already point at it).
+                    updates.type = 'text';
+                    updates.content = data.textContent ?? '';
+                    updates.textContent = deleteField();
+                } else if (data.type === 'file') {
+                    updates.type = 'text';
+                    updates.content = '';
+                }
+            }
+
+            await updateDoc(clipRef, updates);
+            setLoading(false);
+        } catch (err) {
+            const errorMessage = getSafeClipError(err, 'Failed to remove file. Please try again.');
+            setError(errorMessage);
+            setLoading(false);
+            throw new Error(errorMessage);
+        }
+    }, []);
+
     return {
         loading,
         error,
         createClip,
         updateClip,
         updateClipWithFile,
+        removeFileFromClip,
         fetchClipByCode,
         subscribeToClip,
     };

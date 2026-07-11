@@ -10,7 +10,7 @@ import { uploadFile, FileUploadResult } from '@/lib/fileHandler';
 
 export default function SendPage() {
     const router = useRouter();
-    const { createClip, updateClip, updateClipWithFile, subscribeToClip, loading, error } = useClipboard();
+    const { createClip, updateClip, updateClipWithFile, removeFileFromClip, subscribeToClip, loading, error } = useClipboard();
 
     const [textContent, setTextContent] = useState('');
     const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
@@ -155,6 +155,17 @@ export default function SendPage() {
             }
         } catch {
             /* user dismissed the share sheet — no-op */
+        }
+    };
+
+    const handleRemoveFile = async (fileUrl: string) => {
+        if (!clip) return;
+        try {
+            // Live removal — the real-time subscription refreshes the list.
+            await removeFileFromClip(clip.id, fileUrl);
+        } catch (err) {
+            const message = err instanceof Error ? err.message : 'Failed to remove file. Please try again.';
+            alert(message);
         }
     };
 
@@ -391,6 +402,17 @@ export default function SendPage() {
                                                         <a href={file.url} target="_blank" rel="noopener noreferrer" className="flex-shrink-0 text-sm font-bold text-blue-600 hover:text-blue-700">
                                                             View
                                                         </a>
+                                                        <button
+                                                            onClick={() => handleRemoveFile(file.url)}
+                                                            disabled={loading || uploading}
+                                                            title="Remove file"
+                                                            aria-label={`Remove ${file.fileName}`}
+                                                            className="flex-shrink-0 text-gray-300 transition-colors hover:text-red-500 disabled:opacity-40"
+                                                        >
+                                                            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                                            </svg>
+                                                        </button>
                                                     </div>
                                                 ))}
                                             </div>
