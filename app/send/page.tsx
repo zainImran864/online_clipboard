@@ -21,7 +21,8 @@ export default function SendPage() {
     const [copiedCode, setCopiedCode] = useState(false);
     const [copiedLink, setCopiedLink] = useState(false);
 
-    const DAILY_LIMIT_BYTES = 10 * 1024 * 1024;
+    // Reference max for the size meter (the per-file limit). Not a daily quota.
+    const SIZE_METER_MAX_BYTES = 10 * 1024 * 1024;
     const selectedBytes = selectedFiles.reduce((sum, f) => sum + f.size, 0);
     const showText = activeTab === 'text' || activeTab === 'both';
     const showFiles = activeTab === 'files' || activeTab === 'both';
@@ -308,7 +309,7 @@ export default function SendPage() {
                                         <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-slate-200">
                                             <div
                                                 className="h-full rounded-full bg-gradient-to-r from-blue-600 to-violet-600 transition-all"
-                                                style={{ width: `${showFiles ? Math.min(100, (selectedBytes / DAILY_LIMIT_BYTES) * 100) : 0}%` }}
+                                                style={{ width: `${showFiles ? Math.min(100, (selectedBytes / SIZE_METER_MAX_BYTES) * 100) : 0}%` }}
                                             />
                                         </div>
                                     </div>

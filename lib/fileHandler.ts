@@ -38,7 +38,7 @@ async function uploadFileThroughServer(file: File): Promise<FileUploadResult> {
         throw new Error(MAX_FILE_SIZE_MESSAGE);
     }
 
-    let result: { error?: string; remainingBytes?: number } & Partial<FileUploadResult>;
+    let result: { error?: string } & Partial<FileUploadResult>;
     try {
         result = await response.json();
     } catch {
@@ -50,11 +50,7 @@ async function uploadFileThroughServer(file: File): Promise<FileUploadResult> {
     }
 
     if (!response.ok) {
-        const remainingBytes =
-            typeof result.remainingBytes === 'number'
-                ? ` ${Math.max(0, result.remainingBytes / (1024 * 1024)).toFixed(2)}MB remaining today.`
-                : '';
-        throw new Error(`${result.error || 'Failed to upload file'}${remainingBytes}`);
+        throw new Error(result.error || 'Failed to upload file');
     }
 
     return result as FileUploadResult;

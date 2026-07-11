@@ -1,7 +1,4 @@
 import { NextResponse } from 'next/server';
-import { createHash } from 'crypto';
-import { doc, increment, runTransaction, serverTimestamp, Timestamp } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
 import { createR2StorageKey, getR2PublicUrl, uploadToR2 } from '@/lib/r2Storage';
 
 export const runtime = 'nodejs';
@@ -13,8 +10,8 @@ export const runtime = 'nodejs';
 // rest of the document (metadata, and any inline text on a 'both' clip).
 // Anything larger is offloaded to R2 so the advertised 10MB limit always holds.
 const INLINE_FIRESTORE_LIMIT = 500 * 1024;
-const DAILY_UPLOAD_LIMIT = 10 * 1024 * 1024;
-const QUOTA_COLLECTION = 'clips';
+// Per-file hard limit. There is no daily/total quota — only this per-upload cap.
+const MAX_FILE_SIZE = 10 * 1024 * 1024;
 
 const ALLOWED_TYPES = [
     'text/plain',
@@ -90,45 +87,6 @@ const ALLOWED_EXTENSIONS = [
     '.mp4', '.webm', '.ogv', '.mov', '.avi', '.mkv', '.mpeg', '.mpg', '.3gp', '.flv', '.wmv', '.m4v',
 ];
 
-function getClientIp(request: Request) {
-    const forwardedFor = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim();
-    return (
-        request.headers.get('cf-connecting-ip') ||
-        request.headers.get('x-real-ip') ||
-        forwardedFor ||
-        'unknown'
-    );
-}
-
-/**
- * Identifier the daily quota is scoped to.
- *
- * Derived purely server-side from the request (IP + User-Agent), never from
- * anything stored in the browser. This means clearing site data / localStorage
- * / cookies cannot reset the quota, while still giving different devices or
- * browsers behind the same shared IP their own 10MB allowance (different
- * User-Agent → different bucket).
- */
-function getQuotaSubject(request: Request) {
-    const ip = getClientIp(request);
-    const userAgent = request.headers.get('user-agent')?.trim() || 'unknown-agent';
-    return `ip:${ip}|ua:${userAgent}`;
-}
-
-function getQuotaHash(subject: string) {
-    const secret =
-        process.env.QUOTA_HASH_SECRET ||
-        process.env.CRON_SECRET ||
-        process.env.R2_SECRET_ACCESS_KEY ||
-        'local-dev-quota-secret';
-
-    return createHash('sha256').update(`${secret}:${subject}`).digest('hex');
-}
-
-function getUtcDay() {
-    return new Date().toISOString().slice(0, 10);
-}
-
 function validateFile(file: File) {
     const fileExt = `.${file.name.split('.').pop()?.toLowerCase()}`;
     const isAllowedType = ALLOWED_TYPES.includes(file.type);
@@ -136,69 +94,6 @@ function validateFile(file: File) {
     const isEmptyMimeType = !file.type || file.type === '';
 
     return isAllowedType || isAllowedExt || isEmptyMimeType;
-}
-
-async function reserveDailyQuota(request: Request, fileSize: number) {
-    const day = getUtcDay();
-    const ipHash = getQuotaHash(getQuotaSubject(request));
-    const quotaRef = doc(db, QUOTA_COLLECTION, `_quota_${day}_${ipHash}`);
-    const expiresAt = Timestamp.fromDate(new Date(Date.now() + 24 * 60 * 60 * 1000));
-
-    return runTransaction(db, async (transaction) => {
-        const quotaDoc = await transaction.get(quotaRef);
-        const usedBytes = quotaDoc.exists() ? Number(quotaDoc.data()?.usedBytes || 0) : 0;
-        const remainingBytes = Math.max(0, DAILY_UPLOAD_LIMIT - usedBytes);
-
-        if (fileSize > DAILY_UPLOAD_LIMIT) {
-            return { allowed: false, usedBytes, remainingBytes };
-        }
-
-        if (usedBytes + fileSize > DAILY_UPLOAD_LIMIT) {
-            return { allowed: false, usedBytes, remainingBytes };
-        }
-
-        const nextUsedBytes = usedBytes + fileSize;
-
-        if (quotaDoc.exists()) {
-            transaction.update(quotaRef, {
-                usedBytes: increment(fileSize),
-                updatedAt: serverTimestamp(),
-            });
-        } else {
-            transaction.set(quotaRef, {
-                type: 'quota',
-                ipHash,
-                day,
-                usedBytes: nextUsedBytes,
-                createdAt: serverTimestamp(),
-                updatedAt: serverTimestamp(),
-                expiresAt,
-            });
-        }
-
-        return {
-            allowed: true,
-            usedBytes: nextUsedBytes,
-            remainingBytes: DAILY_UPLOAD_LIMIT - nextUsedBytes,
-        };
-    });
-}
-
-async function refundDailyQuota(request: Request, fileSize: number) {
-    const day = getUtcDay();
-    const ipHash = getQuotaHash(getQuotaSubject(request));
-    const quotaRef = doc(db, QUOTA_COLLECTION, `_quota_${day}_${ipHash}`);
-
-    await runTransaction(db, async (transaction) => {
-        const quotaDoc = await transaction.get(quotaRef);
-        if (!quotaDoc.exists()) return;
-
-        const usedBytes = Number(quotaDoc.data()?.usedBytes || 0);
-        transaction.update(quotaRef, {
-            usedBytes: Math.max(0, usedBytes - fileSize),
-            updatedAt: serverTimestamp(),
-        });
-    });
 }
 
 function arrayBufferToDataUrl(arrayBuffer: ArrayBuffer, contentType: string) {
@@ -222,20 +117,8 @@ export async function POST(request: Request) {
             );
         }
 
-        if (file.size > DAILY_UPLOAD_LIMIT) {
+        if (file.size > MAX_FILE_SIZE) {
             return NextResponse.json({ error: "You can't upload files larger than 10MB." }, { status: 400 });
-        }
-
-        const quota = await reserveDailyQuota(request, file.size);
-
-        if (!quota.allowed) {
-            return NextResponse.json(
-                {
-                    error: 'Daily upload limit exceeded. You can upload up to 10MB per day.',
-                    remainingBytes: quota.remainingBytes,
-                },
-                { status: 429 }
-            );
         }
 
         const arrayBuffer = await file.arrayBuffer();
@@ -252,22 +135,16 @@ export async function POST(request: Request) {
                 fileType,
                 fileSize: file.size,
                 storageProvider: 'firebase-inline',
-                remainingBytes: quota.remainingBytes,
             });
         }
 
         const storageKey = createR2StorageKey(file.name);
 
-        try {
-            await uploadToR2({
-                storageKey,
-                body: Buffer.from(arrayBuffer),
-                contentType: fileType,
-            });
-        } catch (error) {
-            await refundDailyQuota(request, file.size);
-            throw error;
-        }
+        await uploadToR2({
+            storageKey,
+            body: Buffer.from(arrayBuffer),
+            contentType: fileType,
+        });
 
         return NextResponse.json({
             url: getR2PublicUrl(storageKey),
@@ -276,7 +153,6 @@ export async function POST(request: Request) {
             fileSize: file.size,
             storageProvider: 'r2',
             storageKey,
-            remainingBytes: quota.remainingBytes,
         });
     } catch (error) {
         console.error('File upload failed:', error);

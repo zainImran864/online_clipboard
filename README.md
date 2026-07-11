@@ -35,7 +35,7 @@ Built with Next.js (App Router), Firebase Firestore, and Cloudflare R2. Installa
 - 🔴 **Real‑time updates** — the recipient can enable "live mode" to see the sender's edits as they type (powered by Firestore snapshots).
 - ⏳ **Auto‑expiry** — every clip expires 24 hours after creation and is cleaned up (including its R2 objects) by a daily cron.
 - 🗂️ **Smart storage** — small payloads live inline in Firestore; large files and large text are offloaded to Cloudflare R2.
-- 🛡️ **Daily upload quota** — 10 MB/day per user, enforced server‑side and resistant to clearing browser storage.
+- 🛡️ **Per‑file size limit** — up to 10 MB per file, enforced client‑side and server‑side. No daily/total quota.
 - 📱 **PWA** — installable on mobile/desktop with offline‑ready service worker and app manifest.
 - 🔓 **No accounts** — nothing to sign up for; no personal data collected.
 
