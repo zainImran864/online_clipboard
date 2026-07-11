@@ -2,9 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import QRCode from 'react-qr-code';
 import Logo from '@/components/Logo';
 import FileUpload from '@/components/FileUpload';
-import CodeDisplay from '@/components/CodeDisplay';
 import { useClipboard, Clip } from '@/hooks/useClipboard';
 import { uploadFile, FileUploadResult } from '@/lib/fileHandler';
 
@@ -427,6 +427,15 @@ export default function SendPage() {
                                 {/* RIGHT: share card */}
                                 <div className="rounded-3xl border border-slate-100 bg-gradient-to-b from-white to-blue-50/40 p-6 text-center shadow-[0_20px_50px_rgba(2,6,23,0.10)] lg:order-2 lg:sticky lg:top-6">
                                     <p className="text-xs font-extrabold uppercase tracking-[0.14em] text-gray-400">Your code</p>
+
+                                    {/* QR code */}
+                                    <div className="mx-auto mt-4 w-fit rounded-2xl border border-slate-100 bg-white p-3 shadow-sm">
+                                        <QRCode
+                                            value={`${window.location.origin}/view/${clip.code}`}
+                                            size={132}
+                                            className="h-[132px] w-[132px]"
+                                        />
+                                    </div>
 
                                     {/* Code digits + copy */}
                                     <div className="mt-4 flex items-center justify-center gap-2 sm:gap-3">
