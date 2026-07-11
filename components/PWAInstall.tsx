@@ -65,7 +65,7 @@ export default function PWAInstall() {
     const handleBeforeInstallPrompt = (e: Event) => {
       console.log('[PWA] beforeinstallprompt event fired');
       e.preventDefault();
-      setDeferredPrompt(e);
+      setDeferredPrompt(e as BeforeInstallPromptEvent);
       // Don't re-show if the user already dismissed/installed this session.
       if (!dismissedThisSession) {
         setShowInstallBanner(true);
