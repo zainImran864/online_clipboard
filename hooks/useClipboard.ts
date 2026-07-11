@@ -18,11 +18,35 @@ import { generateUniqueCode } from '@/lib/codeGenerator';
 export type StorageProvider = 'firebase-inline' | 'r2';
 
 // Text larger than this (UTF-8 bytes) is offloaded to R2 instead of being
-// written inline, since a Firestore document is capped at ~1 MiB total.
-const TEXT_INLINE_LIMIT = 900 * 1024;
+// written inline, since a Firestore document is capped at ~1 MiB total. Kept
+// low enough that an inline file (≤500 KiB encoded) plus inline text on a
+// 'both' clip still fits comfortably under the cap.
+const TEXT_INLINE_LIMIT = 400 * 1024;
 
 function getTextByteSize(text: string) {
     return new TextEncoder().encode(text).length;
+}
+
+/**
+ * Maps a raw error to a user-safe message. Firestore rejects any document
+ * write over ~1 MiB and embeds the full database path (project id, collection,
+ * doc id) in its message — that must never reach the UI. Known-safe messages
+ * are passed through; anything that looks like a Firestore internal error is
+ * replaced with the given fallback.
+ */
+function getSafeClipError(err: unknown, fallback: string): string {
+    const raw = err instanceof Error ? err.message : '';
+
+    if (/maximum allowed size/i.test(raw) || /exceeds the maximum/i.test(raw)) {
+        return 'This file is too large to share. Please try a smaller file.';
+    }
+
+    // Drop anything that leaks an internal database path or Firebase error code.
+    if (/databases\/\(default\)|projects\/[^/]+\/databases|FirebaseError|\[code=/i.test(raw)) {
+        return fallback;
+    }
+
+    return raw || fallback;
 }
 
 async function uploadTextToR2(text: string): Promise<{ url: string; storageKey: string }> {
@@ -164,6 +188,11 @@ export function useClipboard() {
 
                 if (files && files.length > 0) {
                     clipData.files = files;
+                    // The file payload lives in `files[]`. Don't also copy it
+                    // into `content` — for an inline (base64 data URL) file that
+                    // would store the payload twice and can push the Firestore
+                    // document past its 1 MiB cap. Readers use `files[]`.
+                    clipData.content = '';
                     // Keep legacy fields for backward compatibility (first file)
                     clipData.fileName = files[0].fileName;
                     clipData.fileType = files[0].fileType;
@@ -185,10 +214,10 @@ export function useClipboard() {
                     expiresAt: expiresAt.toDate(),
                 } as Clip;
             } catch (err) {
-                const errorMessage = err instanceof Error ? err.message : 'Failed to create clip';
+                const errorMessage = getSafeClipError(err, 'Failed to create clip. Please try again.');
                 setError(errorMessage);
                 setLoading(false);
-                throw err;
+                throw new Error(errorMessage);
             }
         },
         []
@@ -228,10 +257,10 @@ export function useClipboard() {
 
             setLoading(false);
         } catch (err) {
-            const errorMessage = err instanceof Error ? err.message : 'Failed to update clip';
+            const errorMessage = getSafeClipError(err, 'Failed to update clip. Please try again.');
             setError(errorMessage);
             setLoading(false);
-            throw err;
+            throw new Error(errorMessage);
         }
     }, []);
 
@@ -286,10 +315,10 @@ export function useClipboard() {
                 expiresAt: data.expiresAt?.toDate(),
             } as Clip;
         } catch (err) {
-            const errorMessage = err instanceof Error ? err.message : 'Failed to fetch clip';
+            const errorMessage = getSafeClipError(err, 'Failed to fetch clip. Please try again.');
             setError(errorMessage);
             setLoading(false);
-            throw err;
+            throw new Error(errorMessage);
         }
     }, []);
 
@@ -361,11 +390,14 @@ export function useClipboard() {
                     const existingFiles = clipData.files || [];
                     const allFiles = [...existingFiles, ...newFiles];
 
+                    // File payload lives in `files[]` only. Keep `content`
+                    // empty for file/both clips so an inline data URL isn't
+                    // stored twice and can't overflow the 1 MiB document cap.
                     if (clipData.type === 'text' && hasText) {
                         // Convert text-only to both
                         await updateDoc(clipRef, {
                             type: 'both',
-                            content: allFiles[0].url, // Keep first file URL in content for backward compatibility
+                            content: '',
                             ...(await buildTextFields(currentTextContent as string, 'textContent')),
                             files: allFiles,
                             fileName: allFiles[0].fileName,
@@ -374,7 +406,7 @@ export function useClipboard() {
                     } else if (clipData.type === 'file' || clipData.type === 'both') {
                         // Update existing files or add more
                         await updateDoc(clipRef, {
-                            content: allFiles[0].url,
+                            content: '',
                             files: allFiles,
                             fileName: allFiles[0].fileName,
                             fileType: allFiles[0].fileType,
@@ -383,7 +415,7 @@ export function useClipboard() {
                         // Text-only with no text content, convert to file-only
                         await updateDoc(clipRef, {
                             type: 'file',
-                            content: allFiles[0].url,
+                            content: '',
                             files: allFiles,
                             fileName: allFiles[0].fileName,
                             fileType: allFiles[0].fileType,
@@ -393,10 +425,10 @@ export function useClipboard() {
 
                 setLoading(false);
             } catch (err) {
-                const errorMessage = err instanceof Error ? err.message : 'Failed to update clip with file';
+                const errorMessage = getSafeClipError(err, 'Failed to attach file. Please try again.');
                 setError(errorMessage);
                 setLoading(false);
-                throw err;
+                throw new Error(errorMessage);
             }
         },
         []
