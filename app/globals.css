@@ -52,6 +52,22 @@ body {
   animation: slideUp 0.4s ease-out forwards;
 }
 
+/* Subtle transition when switching composer tabs. */
+@keyframes tabIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-tab-in {
+  animation: tabIn 0.22s ease-out;
+}
+
 /* Splash: paper plane flies from the bottom-left corner to the top-right corner
    and off screen, leading the reveal of the home page beneath. */
 @keyframes planeFly {
