@@ -117,53 +117,51 @@ export default function ViewPage() {
             </header>
 
             {/* Main Content */}
-            <main className="flex min-h-[calc(100vh-100px)] items-center justify-center px-4 py-6 sm:min-h-[calc(100vh-120px)]">
-                <div className="w-full max-w-2xl space-y-4 sm:space-y-6">
+            <main className="flex min-h-[calc(100vh-100px)] items-start justify-center px-4 py-6 sm:min-h-[calc(100vh-120px)]">
+                <div className="w-full max-w-4xl space-y-4 sm:space-y-6">
                     <div className="text-center">
-                        <h1 className="text-2xl font-bold text-gray-800 sm:text-3xl md:text-4xl">Shared Content</h1>
-                        <p className="mt-2 text-sm text-gray-600 sm:text-base">
-                            Code: <span className="font-mono font-bold">{code}</span>
+                        <h1 className="text-3xl font-extrabold tracking-tight text-gray-900 sm:text-4xl">
+                            Read{' '}
+                            <span className="bg-gradient-to-r from-blue-600 to-violet-600 bg-clip-text text-transparent">
+                                live
+                            </span>
+                            {' '}content
+                        </h1>
+                        <p className="mt-2 text-sm text-gray-500 sm:text-base">
+                            Viewing code <span className="font-mono font-bold tracking-widest text-blue-800">{code}</span>
+                            {clip?.expiresAt && <> · expires {clip.expiresAt.toLocaleString()}</>}
                         </p>
                     </div>
 
                     {clip && (
                         <>
-                            {/* Live Mode Toggle */}
-                            <div className="rounded-2xl bg-white p-4 shadow-lg sm:p-6">
-                                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                                    <div className="flex-1">
-                                        <h3 className="text-base font-semibold text-gray-800 sm:text-lg">
-                                            Real-Time Updates
+                            {/* Live Mode Banner */}
+                            <div className="flex items-center justify-between gap-4 rounded-2xl border border-slate-100 bg-white p-4 shadow-lg sm:p-5">
+                                <div className="flex items-center gap-3">
+                                    <span className={`h-2.5 w-2.5 flex-shrink-0 rounded-full ${isLiveMode ? 'animate-pulse bg-green-500 ring-4 ring-green-500/20' : 'bg-gray-300'}`} />
+                                    <div>
+                                        <h3 className="text-sm font-bold text-gray-700 sm:text-base">
+                                            Real-Time Updates {isLiveMode && '· Live'}
                                         </h3>
-                                        <p className="mt-1 text-xs text-gray-600 sm:text-sm">
+                                        <p className="text-xs text-gray-400 sm:text-sm">
                                             {isLiveMode
-                                                ? '🟢 Live mode active - Content updates automatically'
+                                                ? 'Text & previews refresh automatically as the sender edits'
                                                 : 'Enable to see changes as the sender edits'}
                                         </p>
                                     </div>
-                                    <button
-                                        onClick={toggleLiveMode}
-                                        className={`w-full rounded-lg px-4 py-2.5 text-sm font-semibold transition-all active:scale-95 sm:w-auto sm:px-6 sm:py-3 ${isLiveMode
-                                            ? 'bg-green-600 text-white hover:bg-green-700'
-                                            : 'bg-blue-600 text-white hover:bg-blue-700'
-                                            }`}
-                                    >
-                                        {isLiveMode ? '✓ Live' : 'Enable Live'}
-                                    </button>
                                 </div>
+                                <button
+                                    onClick={toggleLiveMode}
+                                    className={`flex-shrink-0 rounded-xl px-4 py-2.5 text-sm font-bold text-white transition-all active:scale-95 sm:px-6 ${isLiveMode
+                                        ? 'bg-green-600 hover:bg-green-700'
+                                        : 'bg-blue-600 hover:bg-blue-700'
+                                        }`}
+                                >
+                                    {isLiveMode ? '✓ Live' : 'Enable Live'}
+                                </button>
                             </div>
 
                             <ContentViewer clip={clip} />
-
-                            {/* Real-time Update Indicator */}
-                            {isLiveMode && (
-                                <div className="rounded-lg bg-green-50 p-4 text-center text-sm text-green-700">
-                                    <div className="flex items-center justify-center gap-2">
-                                        <div className="h-2 w-2 animate-pulse rounded-full bg-green-500"></div>
-                                        <span>This content updates in real-time</span>
-                                    </div>
-                                </div>
-                            )}
                         </>
                     )}
                 </div>
