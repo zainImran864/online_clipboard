@@ -12,8 +12,11 @@ import {
     getDocs,
     onSnapshot,
     Timestamp,
+    type DocumentData,
 } from 'firebase/firestore';
 import { generateUniqueCode } from '@/lib/codeGenerator';
+
+const EXPIRATION_MS = 24 * 60 * 60 * 1000;
 
 export type StorageProvider = 'firebase-inline' | 'r2';
 
@@ -92,7 +95,7 @@ async function buildTextFields(text: string, fieldName: 'content' | 'textContent
  * Resolves the actual text of a clip, fetching it from R2 when it was offloaded.
  * Keeps `content` / `textContent` as plain strings for the rest of the app.
  */
-async function resolveTextFromStorage(data: any): Promise<{ content: string; textContent?: string }> {
+async function resolveTextFromStorage(data: DocumentData): Promise<{ content: string; textContent?: string }> {
     let content = data.content;
     let textContent = data.textContent;
 
@@ -140,7 +143,6 @@ export interface Clip {
 export function useClipboard() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const EXPIRATION_MS = 24 * 60 * 60 * 1000;
 
     /**
      * Create a new clip
@@ -161,7 +163,7 @@ export function useClipboard() {
                 // Keep this field for Firestore TTL (configure TTL on `expiresAt`).
                 const expiresAt = Timestamp.fromDate(new Date(Date.now() + EXPIRATION_MS));
 
-                const clipData: any = {
+                const clipData: DocumentData = {
                     code,
                     type,
                     content,
