@@ -81,7 +81,7 @@ export default function PWAInstall() {
 
     // Listen for display mode changes
     const mql = window.matchMedia('(display-mode: standalone)');
-    const handleDisplayModeChange = (e: any) => {
+    const handleDisplayModeChange = (e: MediaQueryListEvent) => {
       if (e.matches) {
         console.log('[PWA] Switched to standalone mode');
         setIsStandalone(true);
@@ -92,7 +92,7 @@ export default function PWAInstall() {
     // Add event listeners
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
     window.addEventListener('appinstalled', handleAppInstalled);
-    mql.addListener(handleDisplayModeChange);
+    mql.addEventListener('change', handleDisplayModeChange);
 
     // Show banner after a short delay to give browser time to trigger beforeinstallprompt
     const timer = setTimeout(() => {
@@ -106,7 +106,7 @@ export default function PWAInstall() {
     return () => {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
       window.removeEventListener('appinstalled', handleAppInstalled);
-      mql.removeListener(handleDisplayModeChange);
+      mql.removeEventListener('change', handleDisplayModeChange);
       clearTimeout(timer);
     };
   }, [deferredPrompt, isStandalone]);
