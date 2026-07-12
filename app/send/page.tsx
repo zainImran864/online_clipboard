@@ -8,7 +8,52 @@ import ShareCodeCard from '@/components/ShareCodeCard';
 import { useClipboard, Clip } from '@/hooks/useClipboard';
 import { uploadFile, FileUploadResult } from '@/lib/fileHandler';
 import { showToast, startNavigation } from '@/lib/appEvents';
+interface UploadProgressLineProps {
+    progress?: number;
+}
 
+function UploadProgressLine({ progress }: UploadProgressLineProps) {
+    if (typeof progress !== 'number') return null;
+
+    return (
+        <div className="mt-2">
+            <div className="flex items-center justify-between text-[11px] font-semibold text-blue-700">
+                <span>{progress >= 100 ? 'Uploaded' : 'Uploading'}</span>
+                <span>{progress}%</span>
+            </div>
+            <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-blue-100">
+                <div
+                    className="h-full rounded-full bg-gradient-to-r from-blue-600 to-cyan-500 transition-[width] duration-200"
+                    style={{ width: `${progress}%` }}
+                />
+            </div>
+        </div>
+    );
+}
+
+interface GenerateProgressPanelProps {
+    progress: number;
+    label: string;
+}
+
+function GenerateProgressPanel({ progress, label }: GenerateProgressPanelProps) {
+    return (
+        <div className="border-t border-slate-100 px-3 pb-4 sm:px-4">
+            <div className="rounded-2xl border border-blue-100 bg-blue-50 p-4">
+                <div className="flex items-center justify-between text-xs font-bold text-blue-800">
+                    <span>{label}</span>
+                    <span>{progress}%</span>
+                </div>
+                <div className="mt-2 h-2 overflow-hidden rounded-full bg-white">
+                    <div
+                        className="h-full rounded-full bg-gradient-to-r from-blue-600 via-cyan-500 to-indigo-600 transition-[width] duration-300"
+                        style={{ width: `${progress}%` }}
+                    />
+                </div>
+            </div>
+        </div>
+    );
+}
 export default function SendPage() {
     const router = useRouter();
     const { createClip, updateClip, updateClipWithFile, removeFileFromClip, subscribeToClip, loading, error } = useClipboard();
@@ -21,6 +66,9 @@ export default function SendPage() {
     const [activeTab, setActiveTab] = useState<'text' | 'files' | 'both'>('both');
     const [copiedCode, setCopiedCode] = useState(false);
     const [copiedLink, setCopiedLink] = useState(false);
+    const [uploadProgress, setUploadProgress] = useState<Record<string, number>>({});
+    const [liveUploadingFiles, setLiveUploadingFiles] = useState<File[]>([]);
+    const [generateProgress, setGenerateProgress] = useState<{ value: number; label: string } | null>(null);
 
     // Reference max for the size meter (the per-file limit). Not a daily quota.
     const SIZE_METER_MAX_BYTES = 10 * 1024 * 1024;
@@ -32,6 +80,11 @@ export default function SendPage() {
         if (bytes >= 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
         if (bytes >= 1024) return `${(bytes / 1024).toFixed(0)} KB`;
         return `${bytes} B`;
+    };
+    const getFileKey = (file: File, index: number) => `${file.name}-${file.size}-${file.lastModified}-${index}`;
+
+    const updateUploadProgress = (key: string, progress: number) => {
+        setUploadProgress((current) => ({ ...current, [key]: progress }));
     };
 
     // Icon shown on a selected-file pill, picked from its extension.
@@ -79,16 +132,39 @@ export default function SendPage() {
         }
 
         setUploading(true);
+        setUploadProgress({});
+        setGenerateProgress({ value: 8, label: 'Preparing your share...' });
 
         try {
             let uploadedFiles: FileUploadResult[] = [];
 
             // Upload all selected files
             if (hasFiles) {
-                const uploadPromises = selectedFiles.map(file => uploadFile(file, 'temp'));
+                const progressValues: Record<string, number> = {};
+                setGenerateProgress({ value: 18, label: 'Uploading files...' });
+                const uploadPromises = selectedFiles.map((file, index) => {
+                    const key = getFileKey(file, index);
+                    return uploadFile(file, 'temp', {
+                        onProgress: (progress) => {
+                            progressValues[key] = progress;
+                            updateUploadProgress(key, progress);
+                            const average = Math.round(
+                                selectedFiles.reduce((sum, currentFile, currentIndex) => {
+                                    return sum + (progressValues[getFileKey(currentFile, currentIndex)] || 0);
+                                }, 0) / selectedFiles.length
+                            );
+                            setGenerateProgress({
+                                value: Math.min(78, 18 + Math.round(average * 0.6)),
+                                label: 'Uploading files...',
+                            });
+                        },
+                    });
+                });
                 const results = await Promise.all(uploadPromises);
                 uploadedFiles = results;
             }
+
+            setGenerateProgress({ value: 84, label: 'Generating share code...' });
 
             // Determine type and create clip
             let newClip;
@@ -108,19 +184,22 @@ export default function SendPage() {
                 newClip = await createClip(textContent, 'text');
             }
 
+            setGenerateProgress({ value: 100, label: 'Share code ready' });
             setClip(newClip);
             localStorage.setItem('lastShare', JSON.stringify({
                 code: newClip.code,
-                url: `${window.location.origin}/view/${newClip.code}`,
+                url: window.location.origin + '/view/' + newClip.code,
                 createdAt: new Date().toISOString(),
             }));
             setSelectedFiles([]); // Clear file selection after upload
+            setUploadProgress({});
         } catch (err) {
             console.error('Error creating clip:', err);
             const message = err instanceof Error ? err.message : 'Failed to create clip. Please try again.';
             alert(message);
         } finally {
             setUploading(false);
+            setTimeout(() => setGenerateProgress(null), 500);
         }
     };
 
@@ -180,8 +259,15 @@ export default function SendPage() {
         if (!clip || files.length === 0) return;
 
         setUploading(true);
+        setLiveUploadingFiles(files);
+        setUploadProgress({});
         try {
-            const uploadPromises = files.map(file => uploadFile(file, 'temp'));
+            const uploadPromises = files.map((file, index) => {
+                const key = getFileKey(file, index);
+                return uploadFile(file, 'temp', {
+                    onProgress: (progress) => updateUploadProgress(key, progress),
+                });
+            });
             const results = await Promise.all(uploadPromises);
 
             // Update the clip with new files
@@ -194,6 +280,10 @@ export default function SendPage() {
             alert(message);
         } finally {
             setUploading(false);
+            setTimeout(() => {
+                setLiveUploadingFiles([]);
+                setUploadProgress({});
+            }, 600);
         }
     };
 
@@ -293,11 +383,13 @@ export default function SendPage() {
                                                     </div>
                                                     <div className="min-w-0 flex-1">
                                                         <p className="truncate text-sm font-semibold text-gray-700">{file.name}</p>
-                                                        <p className="text-xs text-gray-400">{formatBytes(file.size)} · ready</p>
+                                                        <p className="text-xs text-gray-400">{formatBytes(file.size)} · {typeof uploadProgress[getFileKey(file, index)] === 'number' ? 'uploading' : 'ready'}</p>
+                                                        <UploadProgressLine progress={uploadProgress[getFileKey(file, index)]} />
                                                     </div>
                                                     <button
                                                         onClick={() => setSelectedFiles(selectedFiles.filter((_, i) => i !== index))}
-                                                        className="ml-1 flex-shrink-0 text-gray-300 transition-colors hover:text-red-500"
+                                                        disabled={uploading}
+                                                        className="ml-1 flex-shrink-0 text-gray-300 transition-colors hover:text-red-500 disabled:opacity-40"
                                                         aria-label={`Remove ${file.name}`}
                                                     >
                                                         <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -342,6 +434,9 @@ export default function SendPage() {
                                         {loading || uploading ? 'Generating...' : 'Generate Share Code'}
                                     </button>
                                 </div>
+                                {generateProgress && (
+                                    <GenerateProgressPanel progress={generateProgress.value} label={generateProgress.label} />
+                                )}
                             </div>
 
                             {error && (
@@ -432,11 +527,22 @@ export default function SendPage() {
                                             onFileSelect={handleFileUploadAfterGenerate}
                                             disabled={loading || uploading}
                                         />
-
-                                        {uploading && (
-                                            <div className="mt-3 text-center">
-                                                <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-blue-500 border-t-transparent"></div>
-                                                <p className="mt-2 text-sm text-gray-600">Uploading files...</p>
+                                        {liveUploadingFiles.length > 0 && (
+                                            <div className="mt-3 space-y-2">
+                                                {liveUploadingFiles.map((file, index) => (
+                                                    <div key={getFileKey(file, index)} className="rounded-xl border border-blue-100 bg-blue-50 p-3">
+                                                        <div className="flex items-center gap-3">
+                                                            <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-blue-100 text-base">
+                                                                {fileEmoji(file.name)}
+                                                            </div>
+                                                            <div className="min-w-0 flex-1">
+                                                                <p className="truncate text-sm font-semibold text-gray-700">{file.name}</p>
+                                                                <p className="text-xs text-gray-400">{formatBytes(file.size)} · uploading</p>
+                                                                <UploadProgressLine progress={uploadProgress[getFileKey(file, index)] || 1} />
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                ))}
                                             </div>
                                         )}
                                     </div>
