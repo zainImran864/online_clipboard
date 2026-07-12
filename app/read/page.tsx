@@ -29,7 +29,7 @@ export default function ReadPage() {
 
             if (fetchedClip) {
                 startNavigation();
-                router.push(/view/);
+                router.push(`/view/${code}`);
             } else {
                 setNotFound(true);
             }
