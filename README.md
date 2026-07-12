@@ -85,7 +85,8 @@ my-clipboard/
 ├── components/
 │   ├── ContentViewer.tsx           # Renders text/file/both clips (code preview, images, docs)
 │   ├── FileUpload.tsx              # Drag‑and‑drop file picker with validation
-│   ├── CodeDisplay.tsx            # Shows the generated code + share link
+│   ├── ShareCodeCard.tsx           # Reusable generated code + QR + share-link card
+│   ├── CodeDisplay.tsx             # Legacy generated-code display component
 │   ├── Logo.tsx, SplashScreen.tsx, PWAInstall.tsx
 ├── hooks/
 │   └── useClipboard.ts             # create/read/update/subscribe clips; text↔R2 offload
