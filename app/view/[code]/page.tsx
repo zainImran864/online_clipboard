@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import Logo from '@/components/Logo';
 import ContentViewer from '@/components/ContentViewer';
 import { useClipboard, Clip } from '@/hooks/useClipboard';
+import { startNavigation } from '@/lib/appEvents';
 
 export default function ViewPage() {
     const params = useParams();
@@ -90,9 +91,23 @@ export default function ViewPage() {
                                 This link is invalid or the content has expired.
                             </p>
                         </div>
+                        <div className="grid gap-3 sm:grid-cols-2">
+                            <button
+                                onClick={() => { startNavigation(); router.push('/read'); }}
+                                className="rounded-lg bg-blue-600 px-6 py-3 font-semibold text-white transition-all hover:bg-blue-700 active:scale-95"
+                            >
+                                Try Another Code
+                            </button>
+                            <button
+                                onClick={() => { startNavigation(); router.push('/send'); }}
+                                className="rounded-lg border border-blue-100 bg-white px-6 py-3 font-semibold text-blue-700 shadow-sm transition-all hover:bg-blue-50 active:scale-95"
+                            >
+                                Create New Share
+                            </button>
+                        </div>
                         <button
-                            onClick={() => router.push('/')}
-                            className="w-full rounded-lg bg-blue-600 px-6 py-3 font-semibold text-white transition-all hover:bg-blue-700 active:scale-95"
+                            onClick={() => { startNavigation(); router.push('/'); }}
+                            className="w-full rounded-lg bg-slate-100 px-6 py-3 font-semibold text-slate-600 transition-all hover:bg-slate-200 active:scale-95"
                         >
                             Go to Home
                         </button>
@@ -109,7 +124,7 @@ export default function ViewPage() {
                 <Logo size={40} className="sm:hidden" />
                 <Logo size={50} className="hidden sm:flex" />
                 <button
-                    onClick={() => router.push('/')}
+                    onClick={() => { startNavigation(); router.push('/'); }}
                     className="rounded-lg bg-white px-3 py-2 text-xs font-semibold text-gray-700 shadow-md transition-all hover:bg-gray-50 active:scale-95 sm:px-4 sm:text-sm"
                 >
                     ← Back

@@ -97,6 +97,19 @@ textarea:disabled {
   animation: tabIn 0.22s ease-out;
 }
 
+@keyframes routeProgress {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(220%);
+  }
+}
+
+.animate-route-progress {
+  animation: routeProgress 1s ease-in-out infinite;
+}
+
 /* Splash: paper plane flies from the bottom-left corner to the top-right corner
    and off screen, leading the reveal of the home page beneath. */
 @keyframes planeFly {

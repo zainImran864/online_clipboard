@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Logo from '@/components/Logo';
+import { showToast, startNavigation } from '@/lib/appEvents';
 import {
     ACCESS_CODE_LENGTH,
     SEND_CODE_LENGTH,
@@ -83,6 +84,7 @@ export default function SecurePage() {
     const copySendCode = () => {
         if (!sendCode) return;
         navigator.clipboard.writeText(sendCode);
+        showToast('Send code copied');
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
     };
@@ -101,7 +103,7 @@ export default function SecurePage() {
                 <Logo size={40} className="sm:hidden" />
                 <Logo size={50} className="hidden sm:flex" />
                 <button
-                    onClick={() => router.push('/')}
+                    onClick={() => { startNavigation(); router.push('/'); }}
                     className="rounded-lg bg-white px-3 py-2 text-xs font-semibold text-gray-700 shadow-md transition-all hover:bg-gray-50 active:scale-95 sm:px-4 sm:text-sm"
                 >
                     ← Back

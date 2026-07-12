@@ -7,6 +7,7 @@ import FileUpload from '@/components/FileUpload';
 import ShareCodeCard from '@/components/ShareCodeCard';
 import { useClipboard, Clip } from '@/hooks/useClipboard';
 import { uploadFile, FileUploadResult } from '@/lib/fileHandler';
+import { showToast, startNavigation } from '@/lib/appEvents';
 
 export default function SendPage() {
     const router = useRouter();
@@ -108,6 +109,11 @@ export default function SendPage() {
             }
 
             setClip(newClip);
+            localStorage.setItem('lastShare', JSON.stringify({
+                code: newClip.code,
+                url: `${window.location.origin}/view/${newClip.code}`,
+                createdAt: new Date().toISOString(),
+            }));
             setSelectedFiles([]); // Clear file selection after upload
         } catch (err) {
             console.error('Error creating clip:', err);
@@ -134,6 +140,7 @@ export default function SendPage() {
     const copyValue = async (text: string, which: 'code' | 'link') => {
         try {
             await navigator.clipboard.writeText(text);
+            showToast(which === 'code' ? 'Share code copied' : 'Share link copied');
             if (which === 'code') {
                 setCopiedCode(true);
                 setTimeout(() => setCopiedCode(false), 2000);
@@ -208,7 +215,7 @@ export default function SendPage() {
                         <span className={clip ? 'text-gray-700' : 'text-gray-400'}>Get code</span>
                     </div>
                     <button
-                        onClick={() => router.push('/')}
+                        onClick={() => { startNavigation(); router.push('/'); }}
                         className="rounded-lg bg-white px-3 py-2 text-xs font-semibold text-gray-700 shadow-md transition-all hover:bg-gray-50 active:scale-95 sm:px-4 sm:text-sm"
                     >
                         ← Back
