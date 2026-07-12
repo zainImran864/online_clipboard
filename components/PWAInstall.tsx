@@ -30,7 +30,6 @@ export default function PWAInstall() {
   useEffect(() => {
     // Already installed/standalone (detected in the initial state) — nothing to set up.
     if (isStandalone) {
-      console.log('[PWA] App is running as PWA');
       return;
     }
 
@@ -43,7 +42,7 @@ export default function PWAInstall() {
           const registration = await navigator.serviceWorker.register(swUrl, {
             scope: '/',
           });
-          console.log('[PWA] Service Worker registered successfully:', registration);
+          void registration;
         } catch (error) {
           console.error('[PWA] Service Worker registration failed:', error);
         }
@@ -63,7 +62,6 @@ export default function PWAInstall() {
 
     // Listen for beforeinstallprompt event
     const handleBeforeInstallPrompt = (e: Event) => {
-      console.log('[PWA] beforeinstallprompt event fired');
       e.preventDefault();
       setDeferredPrompt(e as BeforeInstallPromptEvent);
       // Don't re-show if the user already dismissed/installed this session.
@@ -74,7 +72,6 @@ export default function PWAInstall() {
 
     // Listen for app installed event
     const handleAppInstalled = () => {
-      console.log('[PWA] App was installed');
       setShowInstallBanner(false);
       setDeferredPrompt(null);
     };
@@ -83,7 +80,6 @@ export default function PWAInstall() {
     const mql = window.matchMedia('(display-mode: standalone)');
     const handleDisplayModeChange = (e: MediaQueryListEvent) => {
       if (e.matches) {
-        console.log('[PWA] Switched to standalone mode');
         setIsStandalone(true);
         setShowInstallBanner(false);
       }
@@ -94,33 +90,21 @@ export default function PWAInstall() {
     window.addEventListener('appinstalled', handleAppInstalled);
     mql.addEventListener('change', handleDisplayModeChange);
 
-    // Show banner after a short delay to give browser time to trigger beforeinstallprompt
-    const timer = setTimeout(() => {
-      if (!deferredPrompt && !isStandalone) {
-        // Fallback: show banner anyway if beforeinstallprompt didn't fire
-        // but only if not on a page that explicitly handles it
-        console.log('[PWA] No beforeinstallprompt, showing fallback banner');
-      }
-    }, 3000);
-
     return () => {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
       window.removeEventListener('appinstalled', handleAppInstalled);
       mql.removeEventListener('change', handleDisplayModeChange);
-      clearTimeout(timer);
     };
   }, [deferredPrompt, isStandalone]);
 
   const handleInstallClick = async () => {
     if (!deferredPrompt) {
-      console.warn('[PWA] No deferred prompt available');
       return;
     }
 
     try {
       deferredPrompt.prompt();
       const { outcome } = await deferredPrompt.userChoice;
-      console.log(`[PWA] User response to install prompt: ${outcome}`);
 
       if (outcome === 'accepted') {
         dismissedThisSession = true;
