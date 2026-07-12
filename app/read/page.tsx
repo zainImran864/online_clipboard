@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Logo from '@/components/Logo';
 import { useClipboard } from '@/hooks/useClipboard';
+import { startNavigation } from '@/lib/appEvents';
 
 export default function ReadPage() {
     const router = useRouter();
@@ -27,6 +28,7 @@ export default function ReadPage() {
             const fetchedClip = await fetchClipByCode(code);
 
             if (fetchedClip) {
+                startNavigation();
                 router.push(`/view/${code}`);
             } else {
                 setNotFound(true);
@@ -50,7 +52,7 @@ export default function ReadPage() {
                 <Logo size={40} className="sm:hidden" />
                 <Logo size={50} className="hidden sm:flex" />
                 <button
-                    onClick={() => router.push('/')}
+                    onClick={() => { startNavigation(); router.push('/'); }}
                     className="rounded-lg bg-white px-3 py-2 text-xs font-semibold text-gray-700 shadow-md transition-all hover:bg-gray-50 active:scale-95 sm:px-4 sm:text-sm"
                 >
                     ← Back

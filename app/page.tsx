@@ -5,6 +5,13 @@ import type { ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import SplashScreen from '@/components/SplashScreen';
 import Logo from '@/components/Logo';
+import { showToast, startNavigation } from '@/lib/appEvents';
+
+interface LastShare {
+  code: string;
+  url: string;
+  createdAt: string;
+}
 
 interface ActionCard {
   title: string;
@@ -73,10 +80,23 @@ const cards: ActionCard[] = [
     ),
   },
 ];
+function getStoredLastShare(): LastShare | null {
+  if (typeof window === 'undefined') return null;
 
+  const stored = localStorage.getItem('lastShare');
+  if (!stored) return null;
+
+  try {
+    return JSON.parse(stored) as LastShare;
+  } catch {
+    localStorage.removeItem('lastShare');
+    return null;
+  }
+}
 export default function Home() {
   const [showSplash, setShowSplash] = useState(true);
   const [pendingHref, setPendingHref] = useState<string | null>(null);
+  const [lastShare] = useState<LastShare | null>(getStoredLastShare);
   const router = useRouter();
 
   const features = [
@@ -94,6 +114,7 @@ export default function Home() {
     if (pendingHref) return;
 
     setPendingHref(href);
+    startNavigation();
     router.push(href);
   };
 
@@ -174,7 +195,35 @@ export default function Home() {
               </button>
             ))}
           </div>
-
+          {lastShare && (
+            <div className="mx-auto max-w-xl rounded-2xl border border-blue-100 bg-white p-4 text-left shadow-sm sm:p-5">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="min-w-0">
+                  <p className="text-xs font-extrabold uppercase tracking-[0.14em] text-slate-400">Last share</p>
+                  <p className="mt-1 font-mono text-lg font-extrabold tracking-widest text-blue-800">{lastShare.code}</p>
+                  <p className="truncate text-xs text-slate-500">{lastShare.url}</p>
+                </div>
+                <div className="flex flex-shrink-0 gap-2">
+                  <button
+                    onClick={async () => {
+                      await navigator.clipboard.writeText(lastShare.url);
+                      showToast('Last share link copied');
+                    }}
+                    className="rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-xs font-bold text-blue-700 transition-colors hover:bg-blue-100"
+                  >
+                    Copy
+                  </button>
+                  <button
+                    onClick={() => handleCardClick(`/view/${lastShare.code}`)}
+                    disabled={pendingHref !== null}
+                    className="rounded-xl bg-blue-600 px-3 py-2 text-xs font-bold text-white transition-colors hover:bg-blue-700 disabled:opacity-60"
+                  >
+                    Open
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
           {/* Feature strip */}
           <div className="mx-auto flex max-w-3xl flex-wrap items-center justify-center gap-x-6 gap-y-3 rounded-2xl border border-slate-200 bg-white px-6 py-4 text-sm text-slate-700 shadow-sm">
             {features.map((feature) => (

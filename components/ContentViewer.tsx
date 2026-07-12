@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Clip, SharedFile } from '@/hooks/useClipboard';
+import { showToast } from '@/lib/appEvents';
 
 interface ContentViewerProps {
     clip: Clip;
@@ -129,6 +130,7 @@ function CodePane({ file }: { file: SharedFile }) {
     const copy = async () => {
         try {
             await navigator.clipboard.writeText(content);
+            showToast('Text copied');
             setCopied(true);
             setTimeout(() => setCopied(false), 2000);
         } catch { /* ignore */ }
@@ -311,6 +313,7 @@ export default function ContentViewer({ clip }: ContentViewerProps) {
     const copyText = async () => {
         try {
             await navigator.clipboard.writeText(sharedText || '');
+            showToast('Text copied');
             setCopied(true);
             setTimeout(() => setCopied(false), 2000);
         } catch { /* ignore */ }
