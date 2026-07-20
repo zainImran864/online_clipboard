@@ -13,6 +13,8 @@ interface LastShare {
   createdAt: string;
 }
 
+const LAST_SHARE_TTL_MS = 24 * 60 * 60 * 1000;
+
 interface ActionCard {
   title: string;
   description: string;
@@ -87,7 +89,15 @@ function getStoredLastShare(): LastShare | null {
   if (!stored) return null;
 
   try {
-    return JSON.parse(stored) as LastShare;
+    const lastShare = JSON.parse(stored) as LastShare;
+    const createdAt = new Date(lastShare.createdAt).getTime();
+
+    if (!lastShare.code || !lastShare.url || Number.isNaN(createdAt) || Date.now() - createdAt >= LAST_SHARE_TTL_MS) {
+      localStorage.removeItem('lastShare');
+      return null;
+    }
+
+    return lastShare;
   } catch {
     localStorage.removeItem('lastShare');
     return null;
@@ -96,7 +106,7 @@ function getStoredLastShare(): LastShare | null {
 export default function Home() {
   const [showSplash, setShowSplash] = useState(true);
   const [pendingHref, setPendingHref] = useState<string | null>(null);
-  const [lastShare] = useState<LastShare | null>(getStoredLastShare);
+  const [lastShare, setLastShare] = useState<LastShare | null>(getStoredLastShare);
   const router = useRouter();
 
   const features = [
@@ -109,6 +119,18 @@ export default function Home() {
   useEffect(() => {
     cards.forEach((card) => router.prefetch(card.href));
   }, [router]);
+
+  useEffect(() => {
+    if (!lastShare) return;
+
+    const remainingTime = LAST_SHARE_TTL_MS - (Date.now() - new Date(lastShare.createdAt).getTime());
+    const timeout = window.setTimeout(() => {
+      localStorage.removeItem('lastShare');
+      setLastShare(null);
+    }, Math.max(0, remainingTime));
+
+    return () => window.clearTimeout(timeout);
+  }, [lastShare]);
 
   const handleCardClick = (href: string) => {
     if (pendingHref) return;
