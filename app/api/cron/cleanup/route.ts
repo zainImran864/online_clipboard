@@ -66,7 +66,7 @@ export async function GET(request: Request) {
                     await deleteFromR2(storageKey);
                     deletedR2Objects += 1;
                 } catch (error) {
-                    console.error(`Failed to delete R2 object ${storageKey}:`, error);
+                    console.error("Failed to delete R2 object:", storageKey, error);
                     r2DeleteErrors += 1;
                     clipHadDeleteError = true;
                 }
@@ -105,7 +105,7 @@ export async function GET(request: Request) {
                     await deleteFromR2(storageKey);
                     deletedR2Objects += 1;
                 } catch (error) {
-                    console.error(`Failed to delete R2 object ${storageKey}:`, error);
+                    console.error("Failed to delete R2 object:", storageKey, error);
                     r2DeleteErrors += 1;
                     hadDeleteError = true;
                 }
