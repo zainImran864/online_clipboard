@@ -5,18 +5,41 @@ import { useParams, useRouter } from 'next/navigation';
 import Logo from '@/components/Logo';
 import Footer from '@/components/Footer';
 import ContentViewer from '@/components/ContentViewer';
+import ClipboardMiniGame from '@/components/ClipboardMiniGame';
 import { useClipboard, Clip } from '@/hooks/useClipboard';
-import { startNavigation } from '@/lib/appEvents';
+import { showToast, startNavigation } from '@/lib/appEvents';
+
+function formatRemainingTime(ms: number): string {
+    if (ms <= 0) return 'Expired';
+    const totalSeconds = Math.floor(ms / 1000);
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+
+    if (hours > 0) {
+        return `${hours}h ${minutes}m ${seconds}s`;
+    }
+    if (minutes > 0) {
+        return `${minutes}m ${seconds}s`;
+    }
+    return `${seconds}s`;
+}
 
 export default function ViewPage() {
     const params = useParams();
     const router = useRouter();
     const code = params.code as string;
 
-    const { fetchClipByCode, subscribeToClip, loading } = useClipboard();
+    const { fetchClipByCode, subscribeToClip, destroyClip, loading } = useClipboard();
     const [clip, setClip] = useState<Clip | null>(null);
     const [notFound, setNotFound] = useState(false);
+    const [isExpired, setIsExpired] = useState(false);
     const [isLiveMode, setIsLiveMode] = useState(false);
+    const [remainingMs, setRemainingMs] = useState<number | null>(null);
+    const [isDestroying, setIsDestroying] = useState(false);
+    const [showPinModal, setShowPinModal] = useState(false);
+    const [enteredPin, setEnteredPin] = useState('');
+    const [pinError, setPinError] = useState<string | null>(null);
 
     useEffect(() => {
         if (!code) return;
@@ -26,7 +49,12 @@ export default function ViewPage() {
                 const fetchedClip = await fetchClipByCode(code);
                 if (cancelled) return;
                 if (fetchedClip) {
-                    setClip(fetchedClip);
+                    if (fetchedClip.expiresAt && fetchedClip.expiresAt.getTime() <= Date.now()) {
+                        setIsExpired(true);
+                        setClip(null);
+                    } else {
+                        setClip(fetchedClip);
+                    }
                 } else {
                     setNotFound(true);
                 }
@@ -39,10 +67,35 @@ export default function ViewPage() {
         return () => { cancelled = true; };
     }, [code, fetchClipByCode]);
 
+    // Countdown timer & auto-expiration enforcement
+    useEffect(() => {
+        if (!clip?.expiresAt) return;
+
+        const updateCountdown = () => {
+            const diff = clip.expiresAt!.getTime() - Date.now();
+            if (diff <= 0) {
+                setRemainingMs(0);
+                setIsExpired(true);
+                setClip(null);
+            } else {
+                setRemainingMs(diff);
+            }
+        };
+
+        updateCountdown();
+        const interval = setInterval(updateCountdown, 1000);
+        return () => clearInterval(interval);
+    }, [clip?.expiresAt]);
+
     // Subscribe to real-time updates when live mode is enabled
     useEffect(() => {
         if (clip?.id && isLiveMode) {
             const unsubscribe = subscribeToClip(clip.id, (updatedClip) => {
+                if (updatedClip.expiresAt && updatedClip.expiresAt.getTime() <= Date.now()) {
+                    setIsExpired(true);
+                    setClip(null);
+                    return;
+                }
                 setClip(updatedClip);
             });
 
@@ -54,7 +107,47 @@ export default function ViewPage() {
         setIsLiveMode(!isLiveMode);
     };
 
-    if (loading) {
+    const handleConfirmDestruction = async () => {
+        if (!code) return;
+
+        setIsDestroying(true);
+        setPinError(null);
+
+        const creatorToken = typeof window !== 'undefined' ? localStorage.getItem('creatorToken_' + code) || undefined : undefined;
+
+        try {
+            await destroyClip(code, enteredPin.trim() || undefined, creatorToken);
+            showToast('Share permanently destroyed and wiped');
+            setShowPinModal(false);
+            setIsExpired(true);
+            setClip(null);
+            if (typeof window !== 'undefined') {
+                localStorage.removeItem('creatorToken_' + code);
+                localStorage.removeItem('lastShare');
+            }
+        } catch (err) {
+            const msg = err instanceof Error ? err.message : 'Incorrect PIN or failed to destroy share.';
+            setPinError(msg);
+        } finally {
+            setIsDestroying(false);
+        }
+    };
+
+    const openDestructionFlow = () => {
+        const creatorToken = typeof window !== 'undefined' ? localStorage.getItem('creatorToken_' + code) : null;
+        if (creatorToken || !clip?.hasDeletePin) {
+            const confirmWipe = window.confirm(
+                'Are you sure you want to self-destruct and immediately wipe this share? All content and files will be permanently deleted.'
+            );
+            if (confirmWipe) {
+                void handleConfirmDestruction();
+            }
+        } else {
+            setShowPinModal(true);
+        }
+    };
+
+    if (loading && !clip && !notFound && !isExpired) {
         return (
             <div className="flex min-h-screen items-center justify-center bg-blue-50">
                 <div className="text-center">
@@ -65,14 +158,58 @@ export default function ViewPage() {
         );
     }
 
+    if (isExpired) {
+        return (
+            <div className="flex min-h-screen flex-col bg-slate-50">
+                <header className="p-6">
+                    <Logo size={50} />
+                </header>
+                <main className="flex flex-1 items-center justify-center px-4 py-8">
+                    <div className="w-full max-w-lg space-y-6 text-center">
+                        <div className="rounded-3xl border border-amber-200 bg-white p-8 shadow-xl">
+                            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-amber-100 text-3xl">
+                                ⏳
+                            </div>
+                            <h1 className="mb-2 text-2xl font-extrabold text-slate-800">Share Expired or Revoked</h1>
+                            <p className="text-sm leading-relaxed text-slate-600">
+                                This paste has reached its expiration limit or was manually self-destructed.
+                                In accordance with Pasteport privacy standards, all files and text have been permanently purged from storage.
+                            </p>
+                        </div>
+                        <div className="grid gap-3 sm:grid-cols-2">
+                            <button
+                                onClick={() => { startNavigation(); router.push('/send'); }}
+                                className="rounded-xl bg-blue-600 px-6 py-3.5 font-bold text-white shadow-md transition-all hover:bg-blue-700 active:scale-95"
+                            >
+                                Create New Share
+                            </button>
+                            <button
+                                onClick={() => { startNavigation(); router.push('/'); }}
+                                className="rounded-xl border border-slate-200 bg-white px-6 py-3.5 font-bold text-slate-700 shadow-sm transition-all hover:bg-slate-50 active:scale-95"
+                            >
+                                Go to Home
+                            </button>
+                        </div>
+
+                        {/* Interactive mini-game */}
+                        <div className="pt-2">
+                            <ClipboardMiniGame />
+                        </div>
+                    </div>
+                </main>
+                <Footer />
+            </div>
+        );
+    }
+
     if (notFound) {
         return (
             <div className="flex min-h-screen flex-col bg-blue-50">
                 <header className="p-6">
                     <Logo size={50} />
                 </header>
-                <main className="flex flex-1 items-center justify-center px-4">
-                    <div className="w-full max-w-md space-y-6 text-center">
+                <main className="flex flex-1 items-center justify-center px-4 py-8">
+                    <div className="w-full max-w-lg space-y-6 text-center">
                         <div className="rounded-2xl bg-white p-8 shadow-lg">
                             <svg
                                 className="mx-auto mb-4 h-20 w-20 text-red-500"
@@ -112,6 +249,11 @@ export default function ViewPage() {
                         >
                             Go to Home
                         </button>
+
+                        {/* Interactive mini-game */}
+                        <div className="pt-2">
+                            <ClipboardMiniGame />
+                        </div>
                     </div>
                 </main>
                 <Footer />
@@ -121,16 +263,72 @@ export default function ViewPage() {
 
     return (
         <div className="flex min-h-screen flex-col overflow-x-clip bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
+            {/* PIN Entry Modal for Self-Destruct */}
+            {showPinModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-xs animate-fadeIn">
+                    <div className="w-full max-w-sm rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl space-y-4">
+                        <div className="flex items-center justify-between">
+                            <h3 className="text-lg font-bold text-slate-900">💥 Self-Destruct Share</h3>
+                            <button
+                                onClick={() => setShowPinModal(false)}
+                                className="text-slate-400 hover:text-slate-600"
+                            >
+                                ✕
+                            </button>
+                        </div>
+                        <p className="text-xs text-slate-600 leading-relaxed">
+                            Enter the Self-Destruct PIN configured by the creator to immediately wipe this share from Firestore and R2 storage.
+                        </p>
+                        <input
+                            type="password"
+                            value={enteredPin}
+                            onChange={(e) => setEnteredPin(e.target.value)}
+                            placeholder="Enter Deletion PIN"
+                            className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm font-mono text-slate-900 focus:border-red-500 focus:outline-none"
+                            autoFocus
+                        />
+                        {pinError && (
+                            <p className="text-xs font-semibold text-red-600">{pinError}</p>
+                        )}
+                        <div className="flex gap-2 pt-2">
+                            <button
+                                onClick={() => setShowPinModal(false)}
+                                className="flex-1 rounded-xl border border-slate-200 bg-slate-50 py-2.5 text-xs font-bold text-slate-700 hover:bg-slate-100"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={handleConfirmDestruction}
+                                disabled={isDestroying || !enteredPin.trim()}
+                                className="flex-1 rounded-xl bg-red-600 py-2.5 text-xs font-bold text-white shadow-md hover:bg-red-700 active:scale-95 disabled:opacity-50"
+                            >
+                                {isDestroying ? 'Wiping...' : 'Destroy Now'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* Header */}
             <header className="flex flex-wrap items-center justify-between gap-3 p-4 sm:p-6">
                 <Logo size={40} className="sm:hidden" />
                 <Logo size={50} className="hidden sm:flex" />
-                <button
-                    onClick={() => { startNavigation(); router.push('/'); }}
-                    className="rounded-lg bg-white px-3 py-2 text-xs font-semibold text-gray-700 shadow-md transition-all hover:bg-gray-50 active:scale-95 sm:px-4 sm:text-sm"
-                >
-                    ← Back
-                </button>
+                <div className="flex items-center gap-2 sm:gap-3">
+                    <button
+                        onClick={openDestructionFlow}
+                        disabled={isDestroying}
+                        className="inline-flex items-center gap-1.5 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs font-bold text-red-600 shadow-xs transition-all hover:bg-red-100 active:scale-95 sm:text-sm"
+                        title="Manually destroy this paste"
+                    >
+                        💥 Self-Destruct
+                    </button>
+                    <button
+                        onClick={() => { startNavigation(); router.push('/'); }}
+                        className="rounded-xl bg-white px-3 py-2 text-xs font-semibold text-gray-700 shadow-md transition-all hover:bg-gray-50 active:scale-95 sm:px-4 sm:text-sm"
+                    >
+                        ← Back
+                    </button>
+                </div>
             </header>
 
             {/* Main Content */}
@@ -146,7 +344,11 @@ export default function ViewPage() {
                         </h1>
                         <p className="mt-2 text-sm text-gray-500 sm:text-base">
                             Viewing code <span className="font-mono font-bold tracking-widest text-blue-800">{code}</span>
-                            {clip?.expiresAt && <> · expires {clip.expiresAt.toLocaleString()}</>}
+                            {remainingMs !== null && (
+                                <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-bold text-blue-800">
+                                    ⏳ {formatRemainingTime(remainingMs)}
+                                </span>
+                            )}
                         </p>
                     </div>
 

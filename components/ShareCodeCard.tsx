@@ -9,6 +9,10 @@ interface ShareCodeCardProps {
     onCopyCode: () => void;
     onCopyLink: (url: string) => void;
     onShare: (url: string, code: string) => void;
+    expirationHours?: number;
+    hasDeletePin?: boolean;
+    onDestroy?: () => void;
+    isDestroying?: boolean;
 }
 
 export default function ShareCodeCard({
@@ -18,8 +22,12 @@ export default function ShareCodeCard({
     onCopyCode,
     onCopyLink,
     onShare,
+    expirationHours = 24,
+    hasDeletePin = false,
+    onDestroy,
+    isDestroying = false,
 }: ShareCodeCardProps) {
-    const shareUrl = `${window.location.origin}/view/${code}`;
+    const shareUrl = typeof window !== 'undefined' ? `${window.location.origin}/view/${code}` : `/view/${code}`;
 
     return (
         <div className="order-1 rounded-3xl border border-slate-100 bg-gradient-to-b from-white to-blue-50/40 p-6 text-center shadow-[0_20px_50px_rgba(2,6,23,0.10)] lg:order-2 lg:sticky lg:top-6">
@@ -49,7 +57,9 @@ export default function ShareCodeCard({
                     {copiedCode ? '✓' : '📋'}
                 </button>
             </div>
-            <p className="mt-3 text-xs text-gray-400">🔒 Expires in 24h · anyone with the code can view</p>
+            <p className="mt-3 text-xs text-gray-500 font-medium">
+                ⏳ Expires in {expirationHours}h {hasDeletePin ? '· 🔐 PIN protected' : ''}
+            </p>
 
             {/* Divider */}
             <div className="my-5 flex items-center gap-3 text-[11px] font-bold text-gray-300">
@@ -76,6 +86,21 @@ export default function ShareCodeCard({
             >
                 🔗 Share
             </button>
+
+            {onDestroy && (
+                <div className="mt-5 border-t border-slate-100 pt-4">
+                    <button
+                        onClick={onDestroy}
+                        disabled={isDestroying}
+                        className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-red-200 bg-red-50/60 px-3.5 py-2.5 text-xs font-bold text-red-600 transition-colors hover:bg-red-100/80 active:scale-95 disabled:opacity-50"
+                    >
+                        {isDestroying ? 'Wiping Share...' : '💥 Self-Destruct / Revoke Now'}
+                    </button>
+                    <p className="mt-1.5 text-[10px] text-slate-400">
+                        Instantly deletes all files and text from server storage
+                    </p>
+                </div>
+            )}
         </div>
     );
 }
