@@ -35,23 +35,30 @@ Built with Next.js (App Router), Firebase Firestore, and Cloudflare R2. Installa
 - 📋 **Share text and/or files** — send plain text, code, PDFs, images, Office docs, archives, or any combination.
 - 🔢 **6‑digit share codes** — recipients open content by code or by pasting the share link.
 - 🔴 **Real‑time updates** — the recipient can enable "live mode" to see the sender's edits as they type (powered by Firestore snapshots).
-- 📋 **Ctrl + V & Drop anywhere** — paste screenshots directly from clipboard or drag & drop files anywhere on the page.
-- ⏳ **Custom Expiry (1h–24h)** — customize the auto-deletion window from 1 to 24 hours. Access is revoked immediately upon expiry.
-- 💥 **Self-Destruct PIN / Duress Wipe** — set an optional deletion key to manually revoke and wipe clips and R2 storage at any moment before expiry.
-- 🗂️ **Smart storage** — small payloads live inline in Firestore; large files and large text are offloaded to Cloudflare R2.
+- 📋 **Drop-to-Upload & Clipboard Paste (`Ctrl + V` anywhere)** — paste screenshots or copied text directly from clipboard anywhere on the page, or drag & drop files onto the global drop zone.
+- ⏳ **Custom Lifespan (1h–24h)** — customize the auto-deletion window (1h, 3h, 6h, 12h, 24h) with live countdown timers and instant access revocation upon expiry.
+- 💥 **Self-Destruct PIN / Duress Wipe** — set an optional deletion PIN or use creator tokens to manually destroy and wipe clips and R2 storage objects immediately.
+- 🕹️ **Interactive Error Mini-Game** — retro paper-plane canvas glider game on 404, invalid code, and expired link pages.
+- 🧰 **Developer Utilities Suite (100% Client-Side)**:
+  - **JSON Formatter & Tree Inspector (`/json`)** — format, minify, validate, and inspect JSON tree nodes.
+  - **Diff Checker (`/diff`)** — side-by-side and unified text/code comparison with change counters.
+  - **JWT Debugger & Decoder (`/jwt`)** — decode header and payload claims locally with live expiration countdowns.
+  - **Base64 / URL Encoder & Decoder (`/encode`)** — convert strings, tokens, and binary files/images directly to Data URIs.
+  - **Markdown Live Preview & Exporter (`/markdown`)** — split-screen editor with table/checklist support, PDF export, HTML export, `.md` download, and one-click Pasteport sharing.
+- 🗂️ **Cloudflare R2 Object Storage** — all binary files and large text payloads (>100 KB) are stored directly in Cloudflare R2, keeping Firestore documents ultra-lightweight (<2 KB).
 - 🛡️ **Per‑file size limit** — up to 10 MB per file, enforced client‑side and server‑side. No daily/total quota.
 - 📱 **PWA** — installable on mobile/desktop with offline‑ready service worker and app manifest.
-- 🔓 **No accounts** — nothing to sign up for; no personal data collected.
+- 🔓 **No accounts** — nothing to sign up for; zero personal data collected.
 
 ## How it works
 
-1. **Send** — On `/send`, the user types text and/or selects files, then clicks *Generate Share Code*.
-   - Files are uploaded through `POST /api/files/upload`, which enforces type and per‑file size (10 MB) validation, then stores each file either inline (base64 in Firestore) or in R2 depending on size.
-   - A `clips` document is created in Firestore with a unique 6‑digit `code` and a 24‑hour `expiresAt`.
-   - Text larger than ~900 KB is offloaded to R2 via `POST /api/text/upload` (Firestore documents are capped at ~1 MiB).
+1. **Send** — On `/send`, the user types text and/or selects files, picks a lifespan (1h–24h) and optional PIN, then clicks *Generate Share Code*.
+   - Files are uploaded through `POST /api/files/upload` directly to Cloudflare R2.
+   - Text larger than 100 KB is offloaded to R2 via `POST /api/text/upload`.
+   - A `clips` document is created in Firestore with a unique 6‑digit `code`, timestamps, and R2 metadata.
 2. **Share** — The sender shares the 6‑digit code or the link `…/view/<code>`.
 3. **Read** — On `/read` or `/view/<code>`, the recipient fetches the clip by code. Optionally they enable *live mode* to subscribe to real‑time updates.
-4. **Expire** — A daily Vercel Cron hits `GET /api/cron/cleanup`, which deletes expired clip documents **and** their associated R2 objects (files and text).
+4. **Expire / Wipe** — Creators can trigger a Self-Destruct wipe at any time via `POST /api/clips/delete`. Otherwise, a daily Vercel Cron hits `GET /api/cron/cleanup`, deleting expired clip documents **and** their associated R2 objects (files and text).
 
 ## Tech stack
 
@@ -312,25 +319,27 @@ Everything lives in a single **`clips`** collection, which stores two kinds of d
 | --------------------- | ------------------------ | ------------------------------------------------------------ |
 | `code`                | string                   | Unique 6‑digit share code                                    |
 | `type`                | `'text' \| 'file' \| 'both'` | What the clip contains                                   |
-| `content`             | string                   | Text (for `text`), or the first file's URL/data‑URL          |
-| `textContent`         | string?                  | Text body for `both` clips                                   |
-| `files`               | array?                   | `{ url, fileName, fileType, fileSize, storageProvider, storageKey? }` |
+| `content`             | string                   | Text (for `text`), or R2 file URL                            |
+| `textContent`         | string?                  | Text body for `both` clips (or R2 URL if offloaded)          |
+| `files`               | array?                   | `{ url, fileName, fileType, fileSize, storageProvider: 'r2', storageKey }` |
 | `textStorageProvider` | `'r2'`?                  | Present when the text was offloaded to R2                    |
 | `textStorageKey`      | string?                  | R2 object key for offloaded text                             |
-| `fileName`,`fileType` | string?                  | Legacy fields (first file), kept for backward compatibility  |
-| `createdAt`           | Timestamp                | Creation time                                                |
-| `expiresAt`           | Timestamp                | Creation + 24h; used for expiry and cleanup                  |
+| `hasDeletePin`        | boolean?                 | True if creator configured a Self-Destruct PIN               |
+| `deletePin`           | string?                  | PIN for manual duress wipe / revocation                      |
+| `creatorToken`        | string?                  | Creator session token for one-click manual deletion          |
+| `expirationHours`     | number                   | Selected lifespan (1 to 24 hours)                            |
+| `createdAt`           | Timestamp                | Creation timestamp                                           |
+| `expiresAt`           | Timestamp                | Expiry timestamp (now + expirationHours)                     |
 
 ## Storage tiers & limits
 
 | Payload                     | Threshold            | Where it's stored                       |
 | --------------------------- | -------------------- | --------------------------------------- |
-| File (base64 ≤ ~500 KB)     | `INLINE_FIRESTORE_LIMIT` | Inline base64 `data:` URL in Firestore |
-| File (larger), ≤ 10 MB      | —                    | Cloudflare R2                           |
-| Text ≤ ~400 KB              | `TEXT_INLINE_LIMIT`  | Inline string in Firestore              |
-| Text > ~400 KB              | —                    | Cloudflare R2                           |
+| Uploaded Files (≤ 10 MB)    | Default              | Cloudflare R2 (`storageProvider: 'r2'`) |
+| Text ≤ 100 KB               | `TEXT_INLINE_LIMIT`  | Inline string in Firestore              |
+| Text > 100 KB               | —                    | Cloudflare R2 (`/api/text/upload`)      |
 | **Per file**                | **10 MB** max        | Rejected above the limit                |
-| **Clip lifetime**           | **24 hours**         | Then deleted by the cron                |
+| **Clip lifetime**           | **1h – 24h**         | Configured per clip, swept by cron      |
 
 There is **no** daily or total upload quota — only the 10 MB per‑file limit above. Text has no size limit (offloaded to R2 when large).
 
