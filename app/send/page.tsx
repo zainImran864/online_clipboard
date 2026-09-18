@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Logo from '@/components/Logo';
+import Footer from '@/components/Footer';
 import FileUpload from '@/components/FileUpload';
 import ShareCodeCard from '@/components/ShareCodeCard';
 import { useClipboard, Clip } from '@/hooks/useClipboard';
@@ -288,7 +289,7 @@ export default function SendPage() {
     };
 
     return (
-        <div className="min-h-screen overflow-x-clip bg-[radial-gradient(1000px_500px_at_15%_-10%,#dbeafe_0%,transparent_55%),radial-gradient(900px_500px_at_100%_0%,#ede9fe_0%,transparent_50%)] bg-slate-50">
+        <div className="flex min-h-screen flex-col overflow-x-clip bg-[radial-gradient(1000px_500px_at_15%_-10%,#dbeafe_0%,transparent_55%),radial-gradient(900px_500px_at_100%_0%,#ede9fe_0%,transparent_50%)] bg-slate-50">
             {/* Header */}
             <header className="flex flex-wrap items-center justify-between gap-3 p-4 sm:p-6">
                 <Logo size={40} className="sm:hidden" />
@@ -576,6 +577,7 @@ export default function SendPage() {
                     )}
                 </div>
             </main>
+            <Footer />
         </div>
     );
 }

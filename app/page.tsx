@@ -5,6 +5,7 @@ import type { ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import SplashScreen from '@/components/SplashScreen';
 import Logo from '@/components/Logo';
+import Footer from '@/components/Footer';
 import { showToast, startNavigation } from '@/lib/appEvents';
 
 interface LastShare {
@@ -265,9 +266,7 @@ export default function Home() {
       </main>
 
       {/* Footer */}
-      <footer className="pb-6 text-center text-xs text-slate-400">
-        Pasteport — share anything, instantly.
-      </footer>
+      <Footer />
     </div>
   );
 }

@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Logo from '@/components/Logo';
+import Footer from '@/components/Footer';
 import ContentViewer from '@/components/ContentViewer';
 import { useClipboard, Clip } from '@/hooks/useClipboard';
 import { startNavigation } from '@/lib/appEvents';
@@ -66,11 +67,11 @@ export default function ViewPage() {
 
     if (notFound) {
         return (
-            <div className="min-h-screen bg-blue-50">
+            <div className="flex min-h-screen flex-col bg-blue-50">
                 <header className="p-6">
                     <Logo size={50} />
                 </header>
-                <main className="flex min-h-[calc(100vh-120px)] items-center justify-center px-4">
+                <main className="flex flex-1 items-center justify-center px-4">
                     <div className="w-full max-w-md space-y-6 text-center">
                         <div className="rounded-2xl bg-white p-8 shadow-lg">
                             <svg
@@ -113,12 +114,13 @@ export default function ViewPage() {
                         </button>
                     </div>
                 </main>
+                <Footer />
             </div>
         );
     }
 
     return (
-        <div className="min-h-screen overflow-x-clip bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
+        <div className="flex min-h-screen flex-col overflow-x-clip bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
             {/* Header */}
             <header className="flex flex-wrap items-center justify-between gap-3 p-4 sm:p-6">
                 <Logo size={40} className="sm:hidden" />
@@ -132,7 +134,7 @@ export default function ViewPage() {
             </header>
 
             {/* Main Content */}
-            <main className="flex min-h-[calc(100vh-100px)] items-start justify-center px-4 py-6 sm:min-h-[calc(100vh-120px)]">
+            <main className="flex min-h-[calc(100vh-100px)] flex-1 items-start justify-center px-4 py-6 sm:min-h-[calc(100vh-120px)]">
                 <div className="w-full max-w-6xl space-y-4 sm:space-y-6">
                     <div className="text-center">
                         <h1 className="text-3xl font-extrabold tracking-tight text-gray-900 sm:text-4xl">
@@ -181,6 +183,7 @@ export default function ViewPage() {
                     )}
                 </div>
             </main>
+            <Footer />
         </div>
     );
 }

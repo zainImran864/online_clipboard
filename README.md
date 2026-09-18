@@ -113,6 +113,8 @@ my-clipboard/
 | `/read`        | Enter a 6‑digit code **or** paste a share link to view content.             |
 | `/view/[code]` | Direct deep link to a clip; the `[code]` segment is the 6‑digit code.       |
 | `/secure`      | Secret share: upload a large file directly to R2 with a one‑time access code, or download by send code. |
+| `/privacy`     | Privacy Policy: data handling, 24h retention, logs, and third-party services.|
+| `/terms`       | Terms of Service: Acceptable Use Policy, takedown process, and disclaimers.  |
 
 ### API endpoints
 
