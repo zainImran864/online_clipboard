@@ -10,23 +10,31 @@ export async function generateUniqueCode(): Promise<string> {
         return Math.floor(100000 + Math.random() * 900000).toString();
     };
 
-    let code = generateCode();
-    let isUnique = false;
+    let attempts = 0;
+    while (attempts < 3) {
+        const code = generateCode();
+        attempts++;
+        try {
+            const clipsRef = collection(db, 'clips');
+            const q = query(clipsRef, where('code', '==', code));
 
-    // Keep generating until we find a unique code
-    while (!isUnique) {
-        const clipsRef = collection(db, 'clips');
-        const q = query(clipsRef, where('code', '==', code));
-        const querySnapshot = await getDocs(q);
+            const querySnapshot = await Promise.race([
+                getDocs(q),
+                new Promise<never>((_, reject) =>
+                    setTimeout(() => reject(new Error('Timeout checking code uniqueness')), 2000)
+                ),
+            ]);
 
-        if (querySnapshot.empty) {
-            isUnique = true;
-        } else {
-            code = generateCode();
+            if (querySnapshot.empty) {
+                return code;
+            }
+        } catch {
+            // If offline, slow connection or timeout, return the random code safely
+            return code;
         }
     }
 
-    return code;
+    return generateCode();
 }
 
 /**

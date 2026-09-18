@@ -19,10 +19,9 @@ import { generateUniqueCode } from '@/lib/codeGenerator';
 export type StorageProvider = 'firebase-inline' | 'r2';
 
 // Text larger than this (UTF-8 bytes) is offloaded to R2 instead of being
-// written inline, since a Firestore document is capped at ~1 MiB total. Kept
-// low enough that an inline file (≤500 KiB encoded) plus inline text on a
-// 'both' clip still fits comfortably under the cap.
-const TEXT_INLINE_LIMIT = 400 * 1024;
+// written inline, keeping Firestore documents feather-light (<100KB) and storing
+// large content safely in Cloudflare R2 storage.
+const TEXT_INLINE_LIMIT = 100 * 1024;
 
 function getTextByteSize(text: string) {
     return new TextEncoder().encode(text).length;

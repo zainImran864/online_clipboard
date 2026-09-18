@@ -70,21 +70,11 @@ export default function SendPage() {
         error,
     } = useClipboard();
 
-    const [textContent, setTextContent] = useState<string>(() => {
-        if (typeof window !== 'undefined') {
-            const prefill = sessionStorage.getItem('pasteport_prefill_text');
-            if (prefill) {
-                sessionStorage.removeItem('pasteport_prefill_text');
-                return prefill;
-            }
-        }
-        return '';
-    });
+    const [textContent, setTextContent] = useState<string>('');
     const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
     const [clip, setClip] = useState<Clip | null>(null);
     const [uploading, setUploading] = useState(false);
     const [isDestroying, setIsDestroying] = useState(false);
-    const [sessionId] = useState(() => Math.random().toString(36).substring(7));
     const [activeTab, setActiveTab] = useState<'text' | 'files' | 'both'>('both');
     const [copiedCode, setCopiedCode] = useState(false);
     const [copiedLink, setCopiedLink] = useState(false);
@@ -97,6 +87,21 @@ export default function SendPage() {
     const [deletePin, setDeletePin] = useState<string>('');
     const [showSecurityOptions, setShowSecurityOptions] = useState<boolean>(false);
     const [isDraggingOver, setIsDraggingOver] = useState<boolean>(false);
+
+    // Mount effect to handle developer utils prefill
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            const prefill = sessionStorage.getItem('pasteport_prefill_text');
+            if (prefill) {
+                sessionStorage.removeItem('pasteport_prefill_text');
+                setTimeout(() => {
+                    setTextContent(prefill);
+                    setActiveTab('both');
+                    showToast('Payload imported from Developer Utilities');
+                }, 0);
+            }
+        }
+    }, []);
 
     // Reference max for the size meter (the per-file limit). Not a daily quota.
     const SIZE_METER_MAX_BYTES = 10 * 1024 * 1024;
@@ -140,13 +145,11 @@ export default function SendPage() {
                 }
             });
 
-            // Store session ID in localStorage
-            localStorage.setItem('clipSessionId', sessionId);
             localStorage.setItem('clipId', clip.id);
 
             return () => unsubscribe();
         }
-    }, [clip?.id, subscribeToClip, sessionId]);
+    }, [clip?.id, subscribeToClip]);
 
     const handleTextChange = useCallback(async (newText: string) => {
         setTextContent(newText);
