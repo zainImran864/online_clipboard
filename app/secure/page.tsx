@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Logo from '@/components/Logo';
+import Footer from '@/components/Footer';
 import { showToast, startNavigation } from '@/lib/appEvents';
 import {
     ACCESS_CODE_LENGTH,
@@ -98,7 +99,7 @@ export default function SecurePage() {
     };
 
     return (
-        <div className="min-h-screen bg-blue-50">
+        <div className="flex min-h-screen flex-col bg-blue-50">
             <header className="flex flex-wrap items-center justify-between gap-3 p-4 sm:p-6">
                 <Logo size={40} className="sm:hidden" />
                 <Logo size={50} className="hidden sm:flex" />
@@ -110,7 +111,7 @@ export default function SecurePage() {
                 </button>
             </header>
 
-            <main className="flex min-h-[calc(100vh-100px)] items-center justify-center px-4 py-6 sm:min-h-[calc(100vh-120px)]">
+            <main className="flex flex-1 items-center justify-center px-4 py-6">
                 <div className="w-full max-w-2xl space-y-4 sm:space-y-6">
                     <div className="text-center">
                         <h1 className="text-2xl font-bold text-gray-800 sm:text-3xl md:text-4xl">Secret Share</h1>
@@ -321,6 +322,7 @@ export default function SecurePage() {
                     </div>
                 </div>
             </main>
+            <Footer />
         </div>
     );
 }

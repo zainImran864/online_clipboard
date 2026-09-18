@@ -16,15 +16,12 @@ import {
 } from 'firebase/firestore';
 import { generateUniqueCode } from '@/lib/codeGenerator';
 
-const EXPIRATION_MS = 24 * 60 * 60 * 1000;
-
 export type StorageProvider = 'firebase-inline' | 'r2';
 
 // Text larger than this (UTF-8 bytes) is offloaded to R2 instead of being
-// written inline, since a Firestore document is capped at ~1 MiB total. Kept
-// low enough that an inline file (≤500 KiB encoded) plus inline text on a
-// 'both' clip still fits comfortably under the cap.
-const TEXT_INLINE_LIMIT = 400 * 1024;
+// written inline, keeping Firestore documents feather-light (<100KB) and storing
+// large content safely in Cloudflare R2 storage.
+const TEXT_INLINE_LIMIT = 100 * 1024;
 
 function getTextByteSize(text: string) {
     return new TextEncoder().encode(text).length;
@@ -123,6 +120,12 @@ export interface SharedFile {
     storageKey?: string;
 }
 
+export interface CreateClipOptions {
+    expirationHours?: number; // 1 to 24
+    deletePin?: string;
+    creatorToken?: string;
+}
+
 export interface Clip {
     id: string;
     code: string;
@@ -133,6 +136,10 @@ export interface Clip {
     // Present when the clip's text is stored in R2 rather than inline.
     textStorageProvider?: StorageProvider;
     textStorageKey?: string;
+    hasDeletePin?: boolean;
+    deletePin?: string;
+    creatorToken?: string;
+    expirationHours?: number;
     // Legacy fields for backward compatibility
     fileName?: string;
     fileType?: string;
@@ -152,7 +159,8 @@ export function useClipboard() {
             content: string,
             type: 'text' | 'file' | 'both',
             files?: SharedFile[],
-            textContent?: string
+            textContent?: string,
+            options?: CreateClipOptions
         ) => {
             setLoading(true);
             setError(null);
@@ -160,8 +168,9 @@ export function useClipboard() {
             try {
                 const code = await generateUniqueCode();
                 const createdAt = Timestamp.now();
-                // Keep this field for Firestore TTL (configure TTL on `expiresAt`).
-                const expiresAt = Timestamp.fromDate(new Date(Date.now() + EXPIRATION_MS));
+                const expirationHours = Math.max(1, Math.min(24, options?.expirationHours ?? 24));
+                const expirationMs = expirationHours * 60 * 60 * 1000;
+                const expiresAt = Timestamp.fromDate(new Date(Date.now() + expirationMs));
 
                 const clipData: DocumentData = {
                     code,
@@ -169,7 +178,16 @@ export function useClipboard() {
                     content,
                     createdAt,
                     expiresAt,
+                    expirationHours,
                 };
+
+                if (options?.deletePin && options.deletePin.trim()) {
+                    clipData.deletePin = options.deletePin.trim();
+                }
+
+                if (options?.creatorToken && options.creatorToken.trim()) {
+                    clipData.creatorToken = options.creatorToken.trim();
+                }
 
                 if (textContent) {
                     clipData.textContent = textContent;
@@ -212,6 +230,10 @@ export function useClipboard() {
                     files,
                     fileName: files?.[0]?.fileName,
                     fileType: files?.[0]?.fileType,
+                    hasDeletePin: Boolean(clipData.deletePin),
+                    deletePin: clipData.deletePin,
+                    creatorToken: clipData.creatorToken,
+                    expirationHours,
                     createdAt: createdAt.toDate(),
                     expiresAt: expiresAt.toDate(),
                 } as Clip;
@@ -305,6 +327,8 @@ export function useClipboard() {
                 textContent,
                 textStorageProvider: data.textStorageProvider,
                 textStorageKey: data.textStorageKey,
+                hasDeletePin: Boolean(data.deletePin),
+                expirationHours: data.expirationHours,
                 files: data.files || (data.fileName ? [{
                     url: data.content,
                     fileName: data.fileName,
@@ -347,6 +371,8 @@ export function useClipboard() {
                         textContent,
                         textStorageProvider: data.textStorageProvider,
                         textStorageKey: data.textStorageKey,
+                        hasDeletePin: Boolean(data.deletePin),
+                        expirationHours: data.expirationHours,
                         files: data.files || (data.fileName ? [{
                             url: data.content,
                             fileName: data.fileName,
@@ -492,6 +518,36 @@ export function useClipboard() {
         }
     }, []);
 
+    /**
+     * Manually destroys / self-destructs a clip before its expiration window lapses.
+     */
+    const destroyClip = useCallback(async (code: string, pin?: string, creatorToken?: string) => {
+        setLoading(true);
+        setError(null);
+
+        try {
+            const response = await fetch('/api/clips/delete', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ code, pin, creatorToken }),
+            });
+
+            const result = await response.json();
+
+            if (!response.ok) {
+                throw new Error(result.error || 'Failed to destroy clip.');
+            }
+
+            setLoading(false);
+            return result;
+        } catch (err) {
+            const errorMessage = err instanceof Error ? err.message : 'Failed to destroy clip.';
+            setError(errorMessage);
+            setLoading(false);
+            throw new Error(errorMessage);
+        }
+    }, []);
+
     return {
         loading,
         error,
@@ -501,6 +557,7 @@ export function useClipboard() {
         removeFileFromClip,
         fetchClipByCode,
         subscribeToClip,
+        destroyClip,
     };
 }
 

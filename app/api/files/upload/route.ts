@@ -41,37 +41,37 @@ export async function POST(request: Request) {
 
         const arrayBuffer = await file.arrayBuffer();
         const fileType = file.type || 'application/octet-stream';
+        const storageKey = createR2StorageKey(file.name);
 
-        // Decide inline-vs-R2 on the encoded size that will actually be written
-        // to Firestore, not the raw file size — see INLINE_FIRESTORE_LIMIT.
-        const inlineDataUrl = arrayBufferToDataUrl(arrayBuffer, fileType);
+        try {
+            await uploadToR2({
+                storageKey,
+                body: Buffer.from(arrayBuffer),
+                contentType: fileType,
+            });
 
-        if (Buffer.byteLength(inlineDataUrl) <= INLINE_FIRESTORE_LIMIT) {
             return NextResponse.json({
-                url: inlineDataUrl,
+                url: getR2PublicUrl(storageKey),
                 fileName: file.name,
                 fileType,
                 fileSize: file.size,
-                storageProvider: 'firebase-inline',
+                storageProvider: 'r2',
+                storageKey,
             });
+        } catch (r2Error) {
+            console.warn('R2 upload failed or not configured, checking inline fallback:', r2Error);
+            const inlineDataUrl = arrayBufferToDataUrl(arrayBuffer, fileType);
+            if (Buffer.byteLength(inlineDataUrl) <= INLINE_FIRESTORE_LIMIT) {
+                return NextResponse.json({
+                    url: inlineDataUrl,
+                    fileName: file.name,
+                    fileType,
+                    fileSize: file.size,
+                    storageProvider: 'firebase-inline',
+                });
+            }
+            throw r2Error;
         }
-
-        const storageKey = createR2StorageKey(file.name);
-
-        await uploadToR2({
-            storageKey,
-            body: Buffer.from(arrayBuffer),
-            contentType: fileType,
-        });
-
-        return NextResponse.json({
-            url: getR2PublicUrl(storageKey),
-            fileName: file.name,
-            fileType,
-            fileSize: file.size,
-            storageProvider: 'r2',
-            storageKey,
-        });
     } catch (error) {
         console.error('File upload failed:', error);
         const message = error instanceof Error ? error.message : 'Failed to upload file';

@@ -3,8 +3,10 @@
 import { useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import SplashScreen from '@/components/SplashScreen';
-import Logo from '@/components/Logo';
+import Navbar from '@/components/Navbar';
+import Footer from '@/components/Footer';
 import { showToast, startNavigation } from '@/lib/appEvents';
 
 interface LastShare {
@@ -29,7 +31,7 @@ interface ActionCard {
 const cards: ActionCard[] = [
   {
     title: 'Send File',
-    description: 'Upload a file or write text to generate a share code.',
+    description: 'Upload a file, write text, or press Ctrl+V anywhere to share.',
     href: '/send',
     cta: 'Start sharing',
     iconBg: 'bg-blue-600',
@@ -46,7 +48,7 @@ const cards: ActionCard[] = [
   },
   {
     title: 'Read File',
-    description: 'Enter a code to instantly view shared content.',
+    description: 'Enter a 6-digit code or link to instantly view shared content.',
     href: '/read',
     cta: 'Enter a code',
     iconBg: 'bg-cyan-600',
@@ -66,7 +68,7 @@ const cards: ActionCard[] = [
   },
   {
     title: 'Secret Share',
-    description: 'Use a secret code to share large files up to 600MB.',
+    description: 'Use a secret code to share large files up to 600MB directly to R2.',
     href: '/secure',
     cta: 'Unlock upload',
     iconBg: 'bg-purple-600',
@@ -82,6 +84,15 @@ const cards: ActionCard[] = [
     ),
   },
 ];
+
+const devTools = [
+  { href: '/json', name: 'JSON Formatter & Tree', icon: '🌲', desc: 'Auto-beautify, minify, validate & explore nested JSON' },
+  { href: '/diff', name: 'Diff Checker', icon: '🔍', desc: 'Compare text and code changes side-by-side or unified' },
+  { href: '/jwt', name: 'JWT Debugger', icon: '🔐', desc: 'Inspect header and payload claims with live expiry countdown' },
+  { href: '/encode', name: 'Base64 & URL Converter', icon: '🔄', desc: 'Encode strings, query params & binary files into Data URIs' },
+  { href: '/markdown', name: 'Markdown Live Preview', icon: '📝', desc: 'Split-screen live markdown editor with HTML/export' },
+];
+
 function getStoredLastShare(): LastShare | null {
   if (typeof window === 'undefined') return null;
 
@@ -103,6 +114,7 @@ function getStoredLastShare(): LastShare | null {
     return null;
   }
 }
+
 export default function Home() {
   const [showSplash, setShowSplash] = useState(true);
   const [pendingHref, setPendingHref] = useState<string | null>(null);
@@ -112,8 +124,8 @@ export default function Home() {
   const features = [
     { label: 'No login required', color: 'text-emerald-500' },
     { label: 'Real-time updates', color: 'text-blue-500' },
-    { label: 'Auto-expires in 24h', color: 'text-purple-500' },
-    { label: 'Files up to 600MB', color: 'text-fuchsia-500' },
+    { label: 'Custom auto-expiry (1–24h)', color: 'text-purple-500' },
+    { label: 'Self-Destruct PIN wipe', color: 'text-rose-500' },
   ];
 
   useEffect(() => {
@@ -142,18 +154,14 @@ export default function Home() {
 
   return (
     <div className="flex min-h-screen flex-col bg-slate-50">
-      {/* Splash overlays the home page while it loads, then fades away to
-          reveal the already-rendered content beneath — no blank/black gap. */}
+      {/* Splash overlays home page */}
       {showSplash && <SplashScreen onComplete={() => setShowSplash(false)} />}
 
-      {/* Header */}
-      <header className="p-4 sm:p-6">
-        <Logo size={40} className="sm:hidden" />
-        <Logo size={48} className="hidden sm:flex" />
-      </header>
+      {/* Global Navbar */}
+      <Navbar />
 
       {/* Main Content */}
-      <main className="flex flex-1 items-center justify-center px-4 py-8">
+      <main className="flex flex-1 items-center justify-center px-4 py-8 sm:py-12">
         <div className="w-full max-w-5xl animate-fadeIn space-y-10 text-center sm:space-y-12">
           {/* Hero */}
           <div className="space-y-5">
@@ -169,7 +177,7 @@ export default function Home() {
               Share Anything, <span className="text-blue-600">Instantly</span>
             </h1>
             <p className="mx-auto max-w-xl text-base text-slate-600 sm:text-lg">
-              Upload files or write text, get a short code, and share it with anyone — across any device, no account needed.
+              Upload files, write text, or press <kbd className="rounded bg-slate-200 px-1.5 py-0.5 text-xs font-semibold font-mono text-slate-700">Ctrl + V</kbd> anywhere. Get a short code and share across any device with custom auto-expiry.
             </p>
           </div>
 
@@ -217,6 +225,8 @@ export default function Home() {
               </button>
             ))}
           </div>
+
+          {/* Last Share Pill */}
           {lastShare && (
             <div className="mx-auto max-w-xl rounded-2xl border border-blue-100 bg-white p-4 text-left shadow-sm sm:p-5">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -246,6 +256,7 @@ export default function Home() {
               </div>
             </div>
           )}
+
           {/* Feature strip */}
           <div className="mx-auto flex max-w-3xl flex-wrap items-center justify-center gap-x-6 gap-y-3 rounded-2xl border border-slate-200 bg-white px-6 py-4 text-sm text-slate-700 shadow-sm">
             {features.map((feature) => (
@@ -261,13 +272,49 @@ export default function Home() {
               </div>
             ))}
           </div>
+
+          {/* Developer Utilities Suite Section */}
+          <div className="space-y-4 pt-4 text-left">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-extrabold text-slate-900 sm:text-xl">
+                  🛠️ Developer Utilities Suite
+                </h3>
+                <p className="text-xs text-slate-500">
+                  Zero-server overhead, 100% client-side privacy-first web utilities.
+                </p>
+              </div>
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {devTools.map((tool) => (
+                <Link
+                  key={tool.href}
+                  href={tool.href}
+                  className="group rounded-2xl border border-slate-200 bg-white p-4 shadow-2xs transition-all hover:-translate-y-1 hover:border-blue-300 hover:shadow-md"
+                >
+                  <div className="flex items-start gap-3">
+                    <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-slate-100 text-xl transition-transform group-hover:scale-110">
+                      {tool.icon}
+                    </span>
+                    <div>
+                      <h4 className="text-sm font-bold text-slate-900 group-hover:text-blue-600">
+                        {tool.name}
+                      </h4>
+                      <p className="mt-0.5 text-xs text-slate-500 leading-relaxed">
+                        {tool.desc}
+                      </p>
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
         </div>
       </main>
 
       {/* Footer */}
-      <footer className="pb-6 text-center text-xs text-slate-400">
-        Pasteport — share anything, instantly.
-      </footer>
+      <Footer />
     </div>
   );
 }

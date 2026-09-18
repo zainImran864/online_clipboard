@@ -35,7 +35,9 @@ Built with Next.js (App Router), Firebase Firestore, and Cloudflare R2. Installa
 - 📋 **Share text and/or files** — send plain text, code, PDFs, images, Office docs, archives, or any combination.
 - 🔢 **6‑digit share codes** — recipients open content by code or by pasting the share link.
 - 🔴 **Real‑time updates** — the recipient can enable "live mode" to see the sender's edits as they type (powered by Firestore snapshots).
-- ⏳ **Auto‑expiry** — every clip expires 24 hours after creation and is cleaned up (including its R2 objects) by a daily cron.
+- 📋 **Ctrl + V & Drop anywhere** — paste screenshots directly from clipboard or drag & drop files anywhere on the page.
+- ⏳ **Custom Expiry (1h–24h)** — customize the auto-deletion window from 1 to 24 hours. Access is revoked immediately upon expiry.
+- 💥 **Self-Destruct PIN / Duress Wipe** — set an optional deletion key to manually revoke and wipe clips and R2 storage at any moment before expiry.
 - 🗂️ **Smart storage** — small payloads live inline in Firestore; large files and large text are offloaded to Cloudflare R2.
 - 🛡️ **Per‑file size limit** — up to 10 MB per file, enforced client‑side and server‑side. No daily/total quota.
 - 📱 **PWA** — installable on mobile/desktop with offline‑ready service worker and app manifest.
@@ -108,11 +110,18 @@ my-clipboard/
 
 | Path           | Description                                                                 |
 | -------------- | --------------------------------------------------------------------------- |
-| `/`            | Landing page with animated splash and *Send File* / *Read File* cards.      |
-| `/send`        | Compose a clip: enter text, attach files, generate a code, edit in real time. |
+| `/`            | Landing page with animated splash, *Send File* / *Read File* cards, and Dev Tools. |
+| `/send`        | Compose a clip: enter text, attach files, Ctrl+V paste, custom expiry & self-destruct. |
 | `/read`        | Enter a 6‑digit code **or** paste a share link to view content.             |
-| `/view/[code]` | Direct deep link to a clip; the `[code]` segment is the 6‑digit code.       |
+| `/view/[code]` | Direct deep link to a clip with live countdown timer, auto-expiry & mini-game. |
 | `/secure`      | Secret share: upload a large file directly to R2 with a one‑time access code, or download by send code. |
+| `/json`        | JSON Formatter: Beautify, minify, validate syntax, and collapsible tree viewer. |
+| `/diff`        | Diff Checker: Side-by-side & unified text/code comparison with change stats. |
+| `/jwt`         | JWT Debugger: Inspect header and payload claims locally with expiry countdown. |
+| `/encode`      | Base64 & URL Encoder: Convert strings, tokens & binary files into Data URIs. |
+| `/markdown`    | Markdown Live Preview: Split-screen markdown editor with export & paste sharing. |
+| `/privacy`     | Privacy Policy: data handling, 24h retention, logs, and third-party services.|
+| `/terms`       | Terms of Service: Acceptable Use Policy, takedown process, and disclaimers.  |
 
 ### API endpoints
 
@@ -129,6 +138,12 @@ Uploads a single file.
 Stores oversized clip text in R2 (Firestore documents are capped at ~1 MiB; there is **no** size limit on text).
 - **Body:** JSON `{ "text": "…" }`.
 - **Response:** `{ url, storageKey, storageProvider: "r2" }`.
+
+#### `POST /api/clips/delete`
+Manually revokes and deletes a clip and its R2 storage objects immediately (Self-Destruct PIN / Duress Wipe).
+- **Body:** JSON `{ "code": "…", "pin": "…", "creatorToken": "…" }`.
+- **Validation:** checks `code` and verifies `pin` or `creatorToken`.
+- **Response:** `{ success: true, message: "Clip and all associated data have been permanently destroyed" }`.
 
 #### `POST /api/secure/authorize`
 Step 1 of a secret‑share upload. Validates a one‑time access code and returns a **presigned POST** so the browser uploads the file straight to R2 (it never passes through the server, bypassing the serverless body limit). The code is *not* consumed here.
