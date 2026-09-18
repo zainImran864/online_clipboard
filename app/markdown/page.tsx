@@ -92,6 +92,94 @@ export default function MarkdownEditorPage() {
         showToast('Downloaded pasteport-doc.md');
     };
 
+    const exportHtml = () => {
+        const fullHtml = `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pasteport Export</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #1e293b; max-width: 800px; margin: 40px auto; padding: 0 20px; }
+        h1 { font-size: 2rem; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px; margin-top: 24px; }
+        h2 { font-size: 1.5rem; border-bottom: 1px solid #e2e8f0; padding-bottom: 6px; margin-top: 20px; }
+        blockquote { border-left: 4px solid #3b82f6; background: #eff6ff; padding: 8px 16px; margin: 16px 0; color: #334155; }
+        pre { background: #0f172a; color: #f8fafc; padding: 12px; border-radius: 8px; overflow-x: auto; font-family: monospace; }
+        code { background: #f1f5f9; color: #db2777; padding: 2px 6px; border-radius: 4px; font-family: monospace; }
+        pre code { background: transparent; color: inherit; padding: 0; }
+        li { margin-left: 20px; }
+    </style>
+</head>
+<body>
+    ${renderedHtml}
+</body>
+</html>`;
+        const blob = new Blob([fullHtml], { type: 'text/html' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'pasteport-doc.html';
+        a.click();
+        URL.revokeObjectURL(url);
+        showToast('Downloaded pasteport-doc.html');
+    };
+
+    const exportPdf = () => {
+        if (!markdown.trim()) return;
+
+        const printWindow = window.open('', '_blank', 'width=850,height=950');
+        if (!printWindow) {
+            window.print();
+            return;
+        }
+
+        printWindow.document.write(`<!DOCTYPE html>
+<html>
+<head>
+    <title>Pasteport Document Export</title>
+    <meta charset="utf-8" />
+    <style>
+        @page {
+            margin: 20mm 15mm;
+            size: A4 portrait;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            line-height: 1.6;
+            color: #1e293b;
+            padding: 24px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        h1 { font-size: 22pt; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px; margin-top: 24px; color: #0f172a; }
+        h2 { font-size: 16pt; border-bottom: 1px solid #e2e8f0; padding-bottom: 6px; margin-top: 20px; color: #0f172a; }
+        h3 { font-size: 13pt; margin-top: 16px; color: #0f172a; }
+        blockquote { border-left: 4px solid #3b82f6; background: #eff6ff; padding: 8px 16px; margin: 16px 0; color: #334155; font-style: italic; }
+        pre { background: #0f172a; color: #f8fafc; padding: 12px; border-radius: 8px; overflow-x: auto; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 9.5pt; }
+        code { background: #f1f5f9; color: #db2777; padding: 2px 6px; border-radius: 4px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 9pt; }
+        pre code { background: transparent; color: inherit; padding: 0; }
+        li { margin-left: 20px; margin-bottom: 4px; }
+        del { color: #94a3b8; }
+        @media print {
+            body { padding: 0; }
+        }
+    </style>
+</head>
+<body>
+    ${renderedHtml}
+    <script>
+        window.onload = function() {
+            window.focus();
+            window.print();
+            setTimeout(function() { window.close(); }, 1500);
+        };
+    </script>
+</body>
+</html>`);
+        printWindow.document.close();
+        showToast('Preparing PDF export dialog...');
+    };
+
     const shareViaPasteport = () => {
         if (!markdown.trim()) return;
         if (typeof window !== 'undefined') {
@@ -122,6 +210,13 @@ export default function MarkdownEditorPage() {
 
                         <div className="flex flex-wrap gap-2">
                             <button
+                                onClick={exportPdf}
+                                disabled={!markdown.trim()}
+                                className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-xs font-bold text-slate-700 shadow-xs transition-all hover:bg-slate-50 active:scale-95 disabled:opacity-50"
+                            >
+                                📄 Export PDF
+                            </button>
+                            <button
                                 onClick={shareViaPasteport}
                                 disabled={!markdown.trim()}
                                 className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 px-4 py-2.5 text-xs font-bold text-white shadow-md transition-all hover:brightness-105 active:scale-95 disabled:opacity-50"
@@ -139,7 +234,7 @@ export default function MarkdownEditorPage() {
                             <span>~<b>{stats.readTime}</b> min read</span>
                         </div>
 
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-wrap items-center gap-2">
                             <button
                                 onClick={copyMarkdown}
                                 className="rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-700 hover:bg-slate-50 active:scale-95"
@@ -151,6 +246,18 @@ export default function MarkdownEditorPage() {
                                 className="rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-700 hover:bg-slate-50 active:scale-95"
                             >
                                 ⬇ Download .md
+                            </button>
+                            <button
+                                onClick={exportHtml}
+                                className="rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-700 hover:bg-slate-50 active:scale-95"
+                            >
+                                🌐 Export HTML
+                            </button>
+                            <button
+                                onClick={exportPdf}
+                                className="rounded-xl border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-bold text-blue-700 hover:bg-blue-100 active:scale-95"
+                            >
+                                📄 Export PDF
                             </button>
                             <button
                                 onClick={() => setMarkdown('')}
