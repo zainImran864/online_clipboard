@@ -34,17 +34,26 @@ Built with Next.js (App Router), Firebase Firestore, and Cloudflare R2. Installa
 
 - 📋 **Share text and/or files** — send plain text, code, PDFs, images, Office docs, archives, or any combination.
 - 🔢 **6‑digit share codes** — recipients open content by code or by pasting the share link.
+- 🔐 **4-Character Access PIN Protection** — password-protect any share with a 4-character PIN.
+  - **Composer switch**: enable/disable before code generation.
+  - **Runtime toggle & edit**: switch PIN protection ON/OFF or edit the PIN at runtime directly from the generated share card.
+  - **Real-time locking**: when toggled ON at runtime, active reader screens lock instantly with a 4-character PIN unlock barrier until entered.
+- 💥 **Self-Destruct PIN / Duress Wipe** — set an optional deletion PIN or use creator tokens to manually destroy and wipe clips and R2 storage objects immediately.
+  - Placed directly below the generated code digits on the share card.
+  - **Strictly conditional on reader side**: the Self-Destruct button appears on `/view/[code]` **only if the sender configured a Self-Destruct PIN**.
+  - **Zero-wait real-time wipe**: when self-destructed, real-time listeners hide all data from reader screens immediately with zero delay.
+- ⏳ **Custom Lifespan (1h–24h) & Instant Auto-Expiry Wipe** — customize the auto-deletion window (1h, 3h, 6h, 12h, 24h) with live countdown timers. Expired clips are instantly purged from Firestore and R2 storage.
 - 🔴 **Real‑time updates** — the recipient can enable "live mode" to see the sender's edits as they type (powered by Firestore snapshots).
 - 📋 **Drop-to-Upload & Clipboard Paste (`Ctrl + V` anywhere)** — paste screenshots or copied text directly from clipboard anywhere on the page, or drag & drop files onto the global drop zone.
-- ⏳ **Custom Lifespan (1h–24h)** — customize the auto-deletion window (1h, 3h, 6h, 12h, 24h) with live countdown timers and instant access revocation upon expiry.
-- 💥 **Self-Destruct PIN / Duress Wipe** — set an optional deletion PIN or use creator tokens to manually destroy and wipe clips and R2 storage objects immediately.
+- 🚫 **Zero Blocking Alerts** — non-blocking accessible toast notifications (`showToast`) replace all native browser `alert()` popups.
 - 🕹️ **Interactive Error Mini-Game** — retro paper-plane canvas glider game on 404, invalid code, and expired link pages.
 - 🧰 **Developer Utilities Suite (100% Client-Side)**:
   - **JSON Formatter & Tree Inspector (`/json`)** — format, minify, validate, and inspect JSON tree nodes.
   - **Diff Checker (`/diff`)** — side-by-side and unified text/code comparison with change counters.
   - **JWT Debugger & Decoder (`/jwt`)** — decode header and payload claims locally with live expiration countdowns.
   - **Base64 / URL Encoder & Decoder (`/encode`)** — convert strings, tokens, and binary files/images directly to Data URIs.
-  - **Markdown Live Preview & Exporter (`/markdown`)** — split-screen editor with table/checklist support, PDF export, HTML export, `.md` download, and one-click Pasteport sharing.
+  - **Markdown Live Preview & Exporter (`/markdown`)** — fully mobile-responsive markdown editor with `Split`/`Edit`/`Preview` switcher, table/checklist support, PDF export, HTML export, `.md` download, and one-click Pasteport sharing.
+- 🧪 **Playwright E2E Testing** — automated cross-platform end-to-end testing suite for desktop and mobile viewports (`channel: 'chrome'`).
 - 🗂️ **Cloudflare R2 Object Storage** — all binary files and large text payloads (>100 KB) are stored directly in Cloudflare R2, keeping Firestore documents ultra-lightweight (<2 KB).
 - 🛡️ **Per‑file size limit** — up to 10 MB per file, enforced client‑side and server‑side. No daily/total quota.
 - 📱 **PWA** — installable on mobile/desktop with offline‑ready service worker and app manifest.
@@ -52,13 +61,17 @@ Built with Next.js (App Router), Firebase Firestore, and Cloudflare R2. Installa
 
 ## How it works
 
-1. **Send** — On `/send`, the user types text and/or selects files, picks a lifespan (1h–24h) and optional PIN, then clicks *Generate Share Code*.
+1. **Send** — On `/send`, the user types text and/or selects files, picks a lifespan (1h–24h), optionally sets a Self-Destruct PIN and/or enables a 4-character Access PIN, then clicks *Generate Share Code*.
    - Files are uploaded through `POST /api/files/upload` directly to Cloudflare R2.
    - Text larger than 100 KB is offloaded to R2 via `POST /api/text/upload`.
    - A `clips` document is created in Firestore with a unique 6‑digit `code`, timestamps, and R2 metadata.
-2. **Share** — The sender shares the 6‑digit code or the link `…/view/<code>`.
-3. **Read** — On `/read` or `/view/<code>`, the recipient fetches the clip by code. Optionally they enable *live mode* to subscribe to real‑time updates.
-4. **Expire / Wipe** — Creators can trigger a Self-Destruct wipe at any time via `POST /api/clips/delete`. Otherwise, a daily Vercel Cron hits `GET /api/cron/cleanup`, deleting expired clip documents **and** their associated R2 objects (files and text).
+2. **Share** — The sender shares the 6‑digit code or the link `…/view/<code>`. The sender can also toggle or edit the 4-character Access PIN on runtime directly on the code card.
+3. **Read** — On `/read` or `/view/<code>`, the recipient opens the clip.
+   - If the creator enabled a 4-character Access PIN, the reader is presented with an unlock barrier verified via `POST /api/clips/verify-pin`.
+   - If the sender toggles the PIN ON at runtime, active readers are locked immediately in real-time.
+   - If the creator configured a Self-Destruct PIN, a Self-Destruct button is made available to wipe the share upon providing the PIN.
+   - Optionally recipients can enable *live mode* to subscribe to real‑time updates.
+4. **Expire / Wipe** — Creators or authorized readers can trigger a Self-Destruct wipe at any time via `POST /api/clips/delete`, immediately hiding data in real time from all screens. Expired clips are cleaned up instantly upon access or swept by the daily Vercel Cron via `GET /api/cron/cleanup`, deleting expired clip documents **and** their associated R2 objects (files and text).
 
 ## Tech stack
 
@@ -146,10 +159,22 @@ Stores oversized clip text in R2 (Firestore documents are capped at ~1 MiB; ther
 - **Body:** JSON `{ "text": "…" }`.
 - **Response:** `{ url, storageKey, storageProvider: "r2" }`.
 
+#### `POST /api/clips/verify-pin`
+Verifies a 4-character Access PIN to unlock a protected share on the reader side.
+- **Body:** JSON `{ "code": "…", "pin": "…" }`.
+- **Validation:** compares normalized entered PIN against Firestore clip `accessPin`.
+- **Response:** `{ valid: true }` on success, or `{ valid: false, error: "Incorrect 4-character PIN. Please try again." }` (HTTP 401).
+
+#### `POST /api/clips/update-pin`
+Enables, disables, or updates the 4-character Access PIN at runtime from the code page.
+- **Body:** JSON `{ "code": "…", "accessPin": "…", "enabled": boolean, "creatorToken": "…" }`.
+- **Validation:** enforces `creatorToken` matching if creator token was set on the clip; validates that PIN is exactly 4 characters when enabled.
+- **Response:** `{ success: true, hasAccessPin: boolean, message: "…" }`.
+
 #### `POST /api/clips/delete`
-Manually revokes and deletes a clip and its R2 storage objects immediately (Self-Destruct PIN / Duress Wipe).
-- **Body:** JSON `{ "code": "…", "pin": "…", "creatorToken": "…" }`.
-- **Validation:** checks `code` and verifies `pin` or `creatorToken`.
+Manually revokes and deletes a clip and its R2 storage objects immediately (Self-Destruct PIN / Duress Wipe or instant expired cleanup).
+- **Body:** JSON `{ "code": "…", "pin": "…", "creatorToken": "…", "expiredWipe": boolean }`.
+- **Validation:** checks `code`, strictly verifies `pin` if `hasDeletePin` is enabled (or allows creator token / expired wipe).
 - **Response:** `{ success: true, message: "Clip and all associated data have been permanently destroyed" }`.
 
 #### `POST /api/secure/authorize`
@@ -326,7 +351,9 @@ Everything lives in a single **`clips`** collection, which stores two kinds of d
 | `textStorageKey`      | string?                  | R2 object key for offloaded text                             |
 | `hasDeletePin`        | boolean?                 | True if creator configured a Self-Destruct PIN               |
 | `deletePin`           | string?                  | PIN for manual duress wipe / revocation                      |
-| `creatorToken`        | string?                  | Creator session token for one-click manual deletion          |
+| `hasAccessPin`        | boolean?                 | True if 4-character Access PIN protection is active          |
+| `accessPin`           | string?                  | 4-character PIN required for readers to unlock content       |
+| `creatorToken`        | string?                  | Creator session token for manual deletion and PIN updates    |
 | `expirationHours`     | number                   | Selected lifespan (1 to 24 hours)                            |
 | `createdAt`           | Timestamp                | Creation timestamp                                           |
 | `expiresAt`           | Timestamp                | Expiry timestamp (now + expirationHours)                     |
@@ -383,12 +410,13 @@ Pasteport is installable and works offline for cached pages. The pieces:
 
 ## Scripts
 
-| Command          | Description                                    |
-| ---------------- | ---------------------------------------------- |
-| `npm run dev`    | Start the dev server (Turbopack)               |
-| `npm run build`  | Production build (runs `next-sitemap` after)   |
-| `npm run start`  | Start the production server                    |
-| `npm run lint`   | Run ESLint                                     |
+| Command             | Description                                    |
+| ------------------- | ---------------------------------------------- |
+| `npm run dev`       | Start the dev server (Turbopack)               |
+| `npm run build`     | Production build (runs `next-sitemap` after)   |
+| `npm run start`     | Start the production server                    |
+| `npm run lint`      | Run ESLint                                     |
+| `npm run test:e2e`  | Run Playwright E2E tests (Desktop & Mobile)    |
 
 ## Contributing
 
