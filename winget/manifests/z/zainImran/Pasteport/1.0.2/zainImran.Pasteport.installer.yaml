@@ -1,0 +1,21 @@
+# yaml-language-server: $schema=https://aka.ms/winget-manifest.installer.1.6.0.schema.json
+
+PackageIdentifier: zainImran.Pasteport
+PackageVersion: 1.0.2
+Platform:
+  - Windows.Desktop
+MinimumOSVersion: 10.0.0.0
+InstallerType: nullsoft
+Scope: user
+InstallModes:
+  - interactive
+  - silent
+  - silentWithProgress
+UpgradeBehavior: install
+Installers:
+  - Architecture: x64
+    InstallerUrl: https://github.com/zainImran864/online_clipboard/releases/download/v1.0.2/Pasteport-Setup-1.0.2.exe
+    InstallerSha256: 7B30E87BE1DA84489C2E63B2B563705CA16753E449D014B74C5802BA787BA063
+    InstallerType: nullsoft
+ManifestType: installer
+ManifestVersion: 1.6.0

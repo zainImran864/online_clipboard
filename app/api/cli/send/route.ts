@@ -57,6 +57,9 @@ export async function POST(request: Request) {
                 }
 
                 clipType = 'files';
+                if (text && text.trim().length > 0) {
+                    textContent = text.trim();
+                }
                 const fileBuffer = Buffer.from(await file.arrayBuffer());
                 const storageKey = createR2StorageKey(file.name || 'uploaded_file');
 
@@ -135,6 +138,9 @@ export async function POST(request: Request) {
             }
         } else if (clipType === 'files' && fileItem) {
             docPayload.files = [fileItem];
+            if (textContent) {
+                docPayload.content = textContent;
+            }
         }
 
         await addDoc(collection(db, 'clips'), docPayload);

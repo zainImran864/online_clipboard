@@ -15,7 +15,7 @@ import mimetypes
 import uuid
 from pathlib import Path
 
-VERSION = "1.0.1"
+VERSION = "1.0.2"
 DEFAULT_SERVER = "https://pasteport.zain-imran.com"
 STANDARD_MAX_FILE_SIZE = 10 * 1024 * 1024       # 10 MB
 SECURE_MAX_FILE_SIZE = 600 * 1024 * 1024        # 600 MB
@@ -33,14 +33,45 @@ class Colors:
     CYAN = "\033[36m"
     WHITE = "\033[37m"
 
+    # Lowercase aliases
+    reset = RESET
+    bold = BOLD
+    dim = DIM
+    red = RED
+    green = GREEN
+    yellow = YELLOW
+    blue = BLUE
+    magenta = MAGENTA
+    cyan = CYAN
+    white = WHITE
+
+# Ensure UTF-8 output on Windows consoles
+if sys.platform == "win32":
+    try:
+        if hasattr(sys.stdout, "reconfigure"):
+            sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+        if hasattr(sys.stderr, "reconfigure"):
+            sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
+
 def print_banner():
-    print(f"""
+    try:
+        print(f"""
   {Colors.CYAN}██████╗  █████╗ ███████╗████████╗███████╗██████╗  ██████╗ ██████╗ ████████╗{Colors.RESET}
   {Colors.CYAN}██╔══██╗██╔══██╗██╔════╝╚══██╔══╝██╔════╝██╔══██╗██╔═══██╗██╔══██╗╚══██╔══╝{Colors.RESET}
   {Colors.CYAN}██████╔╝███████║███████╗   ██║   █████╗  ██████╔╝██║   ██║██████╔╝   ██║   {Colors.RESET}
   {Colors.CYAN}██╔═══╝ ██╔══██║╚════██║   ██║   ██╔══╝  ██╔═══╝ ██║   ██║██╔══██╗   ██║   {Colors.RESET}
   {Colors.CYAN}██║     ██║  ██║███████║   ██║   ███████╗██║     ╚██████╔╝██║  ██║   ██║   {Colors.RESET}
   {Colors.CYAN}╚═╝     ╚═╝  ╚═╝╚══════╝   ╚═╝   ╚══════╝╚═╝      ╚═════╝ ╚═╝  ╚═╝   ╚═╝   {Colors.RESET}
+  {Colors.DIM}Cross-device sharing + Developer Toolkit | Python CLI v{VERSION}{Colors.RESET}
+""")
+    except UnicodeEncodeError:
+        print(f"""
+  {Colors.CYAN}  ___  _   ___ _____ ___ ___  ___  ___ _____ {Colors.RESET}
+  {Colors.CYAN} | _ \\/_\\ / __|_   _| __| _ \\/ _ \\| _ \\_   _|{Colors.RESET}
+  {Colors.CYAN} |  _/ _ \\\\__ \\ | | | _||  _/ (_) |   / | |  {Colors.RESET}
+  {Colors.CYAN} |_|/_/ \\_\\___/ |_| |___|_|  \\___/|_|_\\ |_|  {Colors.RESET}
   {Colors.DIM}Cross-device sharing + Developer Toolkit | Python CLI v{VERSION}{Colors.RESET}
 """)
 
@@ -92,7 +123,7 @@ def encode_multipart_formdata(fields, files):
     content_type_header = f"multipart/form-data; boundary={boundary}"
     return content_type_header, bytes(body)
 
-def handle_send(target, pin="", expiry=24, self_destruct="", json_output=False, server=DEFAULT_SERVER):
+def handle_send(target, pin="", expiry=24, self_destruct="", text_note="", json_output=False, server=DEFAULT_SERVER):
     server = server.rstrip("/")
     send_url = f"{server}/api/cli/send"
 
@@ -100,9 +131,11 @@ def handle_send(target, pin="", expiry=24, self_destruct="", json_output=False, 
     is_file = False
     file_path = None
 
-    if target and os.path.isfile(target):
-        is_file = True
-        file_path = Path(target).resolve()
+    if target and isinstance(target, str):
+        clean_target = target.strip().strip("'\"")
+        if os.path.isfile(clean_target):
+            is_file = True
+            file_path = Path(clean_target).resolve()
     elif not target and not sys.stdin.isatty():
         content_to_send = sys.stdin.read()
     elif not content_to_send:
@@ -131,6 +164,8 @@ def handle_send(target, pin="", expiry=24, self_destruct="", json_output=False, 
             mime_type = mimetypes.guess_type(str(file_path))[0] or "application/octet-stream"
 
             fields = {"expiryHours": str(expiry)}
+            if text_note:
+                fields["text"] = text_note
             if pin:
                 fields["accessPin"] = pin
             if self_destruct:
@@ -378,7 +413,55 @@ def run_interactive_menu():
         return
 
     if choice == "1":
-        handle_send("")
+        print(f"\n{Colors.BOLD}── [Option 1] Standard Share (up to 10 MB) ──{Colors.RESET}")
+        print(f"  {Colors.GREEN}[1]{Colors.RESET} Send a File (from your computer)")
+        print(f"  {Colors.CYAN}[2]{Colors.RESET} Send Text Snippet")
+        try:
+            sub_choice = input(f"{Colors.BLUE}Choose [1/2, default: 1]: {Colors.RESET}").strip() or "1"
+        except (KeyboardInterrupt, EOFError):
+            print("\nAborted.")
+            return
+
+        if sub_choice in ("1", "f", "file", "F", "File"):
+            try:
+                raw_path = input(f"{Colors.CYAN}Enter path to local file: {Colors.RESET}").strip()
+            except (KeyboardInterrupt, EOFError):
+                print("\nAborted.")
+                return
+
+            clean_path = raw_path.strip("'\"")
+            if not clean_path or not os.path.exists(clean_path):
+                log_error("File Not Found", f'No file found at: "{clean_path}". Please check the path and try again.')
+                return
+            if not os.path.isfile(clean_path):
+                log_error("Not a File", f'"{clean_path}" is a directory. Please provide a path to a file.')
+                return
+
+            f_size = os.path.getsize(clean_path)
+            size_str = f"{f_size / (1024 * 1024):.2f} MB" if f_size >= 1024 * 1024 else f"{f_size / 1024:.1f} KB"
+            print(f"{Colors.GREEN}✔ Found local file:{Colors.RESET} {Colors.BOLD}{os.path.basename(clean_path)}{Colors.RESET} (Size: {size_str})")
+
+            try:
+                note = input(f"{Colors.CYAN}Optional accompanying note/description (press Enter to skip): {Colors.RESET}").strip()
+                pin = input(f"{Colors.CYAN}Optional 4-character PIN lock (press Enter to skip): {Colors.RESET}").strip()
+                exp_str = input(f"{Colors.CYAN}Lifespan in hours [default: 24]: {Colors.RESET}").strip()
+                expiry = int(exp_str) if exp_str.isdigit() else 24
+            except (KeyboardInterrupt, EOFError):
+                print("\nAborted.")
+                return
+
+            handle_send(clean_path, pin=pin, expiry=expiry, text_note=note)
+        else:
+            try:
+                text = input(f"{Colors.CYAN}Enter text to send to Pasteport: {Colors.RESET}")
+                pin = input(f"{Colors.CYAN}Optional 4-character PIN lock (press Enter to skip): {Colors.RESET}").strip()
+                exp_str = input(f"{Colors.CYAN}Lifespan in hours [default: 24]: {Colors.RESET}").strip()
+                expiry = int(exp_str) if exp_str.isdigit() else 24
+            except (KeyboardInterrupt, EOFError):
+                print("\nAborted.")
+                return
+
+            handle_send(text, pin=pin, expiry=expiry)
     elif choice == "2":
         handle_secret("", "")
     elif choice == "3":
@@ -402,6 +485,7 @@ def main():
     send_parser.add_argument("-p", "--pin", default="", help="4-character access PIN")
     send_parser.add_argument("-e", "--expiry", type=int, default=24, help="Lifespan in hours")
     send_parser.add_argument("-d", "--self-destruct", default="", help="Self-destruct PIN")
+    send_parser.add_argument("-n", "--note", default="", help="Accompanying text note for file upload")
     send_parser.add_argument("--json", action="store_true", help="JSON output")
     send_parser.add_argument("--server", default=DEFAULT_SERVER, help="Server override")
 
@@ -444,7 +528,7 @@ def main():
         return
 
     if args.command == "send":
-        handle_send(args.target, pin=args.pin, expiry=args.expiry, self_destruct=args.self_destruct, json_output=args.json, server=args.server)
+        handle_send(args.target, pin=args.pin, expiry=args.expiry, self_destruct=args.self_destruct, text_note=args.note, json_output=args.json, server=args.server)
     elif args.command == "secret":
         handle_secret(args.code, args.file, server=args.server)
     elif args.command == "get":

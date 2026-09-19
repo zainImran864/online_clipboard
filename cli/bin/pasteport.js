@@ -12,7 +12,7 @@ const fs = require('fs');
 const path = require('path');
 const readline = require('readline');
 
-const VERSION = '1.0.1';
+const VERSION = '1.0.2';
 const DEFAULT_SERVER = process.env.PASTEPORT_API_URL || 'https://pasteport.zain-imran.com';
 const STANDARD_MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
 const SECURE_MAX_FILE_SIZE = 600 * 1024 * 1024; // 600 MB
@@ -76,6 +76,7 @@ ${colors.bold}OPTIONS FOR SEND:${colors.reset}
   ${colors.cyan}-p, --pin${colors.reset} <4-char>       Lock clip behind a 4-character PIN
   ${colors.cyan}-e, --expiry${colors.reset} <hours>     Expiration horizon in hours (1-72, default: 24)
   ${colors.cyan}-d, --self-destruct${colors.reset} [pin] Set self-destruct PIN
+  ${colors.cyan}-n, --note${colors.reset} <text>        Accompanying text note for file upload
   ${colors.cyan}--json${colors.reset}                   Output results strictly as machine-readable JSON
   ${colors.cyan}--server${colors.reset} <url>           Override backend server endpoint (default: ${DEFAULT_SERVER})
 
@@ -199,6 +200,7 @@ function parseArgs(args) {
             pin: '',
             expiry: 24,
             selfDestruct: '',
+            textNote: '',
             output: '',
             raw: false,
             json: false,
@@ -222,6 +224,8 @@ function parseArgs(args) {
             parsed.options.expiry = Number(args[++i]) || 24;
         } else if (arg === '-d' || arg === '--self-destruct') {
             parsed.options.selfDestruct = args[++i] || 'auto';
+        } else if (arg === '-n' || arg === '--note') {
+            parsed.options.textNote = args[++i] || '';
         } else if (arg === '-o' || arg === '--output') {
             parsed.options.output = args[++i] || '';
         } else if (arg === '--raw') {
@@ -251,11 +255,14 @@ async function handleSend(target, options, existingRl = null) {
     let filePath = '';
 
     // Check if target is a local file
-    if (target && fs.existsSync(target)) {
-        const stat = fs.statSync(target);
-        if (stat.isFile()) {
-            isFile = true;
-            filePath = path.resolve(target);
+    if (target && typeof target === 'string') {
+        const clean = target.trim().replace(/^["']|["']$/g, '');
+        if (fs.existsSync(clean)) {
+            const stat = fs.statSync(clean);
+            if (stat.isFile()) {
+                isFile = true;
+                filePath = path.resolve(clean);
+            }
         }
     } else if (!target && !process.stdin.isTTY) {
         // Read piped stdin only when no target argument was supplied
@@ -290,6 +297,7 @@ async function handleSend(target, options, existingRl = null) {
             const blob = new Blob([fileBytes]);
             form.append('file', blob, fileName);
             form.append('expiryHours', String(options.expiry));
+            if (options.textNote) form.append('text', options.textNote);
             if (options.pin) form.append('accessPin', options.pin);
             if (options.selfDestruct) form.append('deletePin', options.selfDestruct);
 
@@ -720,14 +728,45 @@ async function runInteractiveMenu(options) {
     switch (choice) {
         case '1':
             log(`\n${colors.bold}── [Option 1] Standard Share (up to 10 MB) ──${colors.reset}`);
-            const textOrFile = await promptInput(`${colors.cyan}Enter text content or path to a local file:${colors.reset} `, rl);
-            const pin = await promptInput(`${colors.cyan}Optional 4-character PIN lock (press Enter to skip):${colors.reset} `, rl);
-            const exp = await promptInput(`${colors.cyan}Lifespan in hours [default: 24]:${colors.reset} `, rl);
-            await handleSend(textOrFile, {
-                ...options,
-                pin: pin.trim() || '',
-                expiry: Number(exp) || 24,
-            }, rl);
+            log(`  ${colors.green}[1]${colors.reset} Send a File (from your computer)`);
+            log(`  ${colors.cyan}[2]${colors.reset} Send Text Snippet`);
+            const subChoice = (await promptInput(`${colors.blue}Choose [1/2, default: 1]:${colors.reset} `, rl)).trim() || '1';
+
+            if (subChoice === '1' || subChoice.toLowerCase() === 'f' || subChoice.toLowerCase() === 'file') {
+                const filePathInput = await promptInput(`${colors.cyan}Enter path to local file:${colors.reset} `, rl);
+                const cleanPath = filePathInput.trim().replace(/^["']|["']$/g, '');
+
+                if (!cleanPath || !fs.existsSync(cleanPath)) {
+                    logError('File Not Found', `No file found at: "${cleanPath}". Please check the path and try again.`);
+                    break;
+                }
+                const stat = fs.statSync(cleanPath);
+                if (!stat.isFile()) {
+                    logError('Not a File', `"${cleanPath}" is a directory. Please provide a path to a file.`);
+                    break;
+                }
+                const sizeStr = stat.size >= 1024 * 1024 ? `${(stat.size / (1024 * 1024)).toFixed(2)} MB` : `${(stat.size / 1024).toFixed(1)} KB`;
+                log(`${colors.green}✔ Found local file:${colors.reset} ${colors.bold}${path.basename(cleanPath)}${colors.reset} (Size: ${sizeStr})`);
+
+                const note = await promptInput(`${colors.cyan}Optional accompanying note/description (press Enter to skip):${colors.reset} `, rl);
+                const pin = await promptInput(`${colors.cyan}Optional 4-character PIN lock (press Enter to skip):${colors.reset} `, rl);
+                const exp = await promptInput(`${colors.cyan}Lifespan in hours [default: 24]:${colors.reset} `, rl);
+                await handleSend(cleanPath, {
+                    ...options,
+                    textNote: note.trim(),
+                    pin: pin.trim(),
+                    expiry: Number(exp) || 24,
+                }, rl);
+            } else {
+                const text = await promptInput(`${colors.cyan}Enter text to send to Pasteport:${colors.reset} `, rl);
+                const pin = await promptInput(`${colors.cyan}Optional 4-character PIN lock (press Enter to skip):${colors.reset} `, rl);
+                const exp = await promptInput(`${colors.cyan}Lifespan in hours [default: 24]:${colors.reset} `, rl);
+                await handleSend(text, {
+                    ...options,
+                    pin: pin.trim(),
+                    expiry: Number(exp) || 24,
+                }, rl);
+            }
             break;
         case '2':
             await handleSecretShare('', '', options, rl);

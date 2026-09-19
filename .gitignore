@@ -10,6 +10,8 @@ cli/node_modules/
 python/dist/
 python/build/
 python/*.egg-info/
+__pycache__/
+*.py[cod]
 /.pnp
 .pnp.*
 .yarn/*
