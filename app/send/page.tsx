@@ -87,6 +87,17 @@ export default function SendPage() {
     const [deletePin, setDeletePin] = useState<string>('');
     const [showSecurityOptions, setShowSecurityOptions] = useState<boolean>(false);
     const [isDraggingOver, setIsDraggingOver] = useState<boolean>(false);
+    const [showSendPinModal, setShowSendPinModal] = useState<boolean>(false);
+    const [sendEnteredPin, setSendEnteredPin] = useState<string>('');
+    const [sendPinError, setSendPinError] = useState<string | null>(null);
+
+    // 4-Character Access PIN
+    const [isAccessPinEnabled, setIsAccessPinEnabled] = useState<boolean>(false);
+    const [accessPin, setAccessPin] = useState<string>('');
+    const [showAccessPinModal, setShowAccessPinModal] = useState<boolean>(false);
+    const [accessPinInput, setAccessPinInput] = useState<string>('');
+    const [accessPinModalError, setAccessPinModalError] = useState<string | null>(null);
+    const [isUpdatingPin, setIsUpdatingPin] = useState<boolean>(false);
 
     // Mount effect to handle developer utils prefill
     useEffect(() => {
@@ -136,6 +147,14 @@ export default function SendPage() {
     useEffect(() => {
         if (clip?.id) {
             const unsubscribe = subscribeToClip(clip.id, (updatedClip) => {
+                if (!updatedClip) {
+                    setClip(null);
+                    setTextContent('');
+                    setSelectedFiles([]);
+                    setDeletePin('');
+                    showToast('Share was self-destructed and wiped');
+                    return;
+                }
                 setClip(updatedClip);
                 // Update text content based on the type
                 if (updatedClip.textContent !== undefined) {
@@ -187,7 +206,7 @@ export default function SendPage() {
         } catch (err) {
             console.error('Error uploading files live:', err);
             const message = err instanceof Error ? err.message : 'Failed to upload files. Please try again.';
-            alert(message);
+            showToast(message);
         } finally {
             setUploading(false);
             setTimeout(() => {
@@ -327,7 +346,7 @@ export default function SendPage() {
         const hasFiles = showFiles && selectedFiles.length > 0;
 
         if (!hasText && !hasFiles) {
-            alert('Please enter some text or select at least one file');
+            showToast('Please enter some text or select at least one file');
             return;
         }
 
@@ -370,6 +389,7 @@ export default function SendPage() {
             const clipOptions = {
                 expirationHours,
                 deletePin: deletePin.trim() || undefined,
+                accessPin: isAccessPinEnabled && accessPin.trim().length === 4 ? accessPin.trim() : undefined,
                 creatorToken,
             };
 
@@ -404,45 +424,43 @@ export default function SendPage() {
         } catch (err) {
             console.error('Error creating clip:', err);
             const message = err instanceof Error ? err.message : 'Failed to create clip. Please try again.';
-            alert(message);
+            showToast(message);
         } finally {
             setUploading(false);
             setTimeout(() => setGenerateProgress(null), 500);
         }
     };
 
-    const handleSelfDestruct = async () => {
+    const handleOpenSelfDestructModal = () => {
+        setSendPinError(null);
+        setSendEnteredPin(deletePin || '');
+        setShowSendPinModal(true);
+    };
+
+    const handleConfirmSelfDestruct = async () => {
         if (!clip) return;
 
-        const confirmWipe = window.confirm(
-            'Are you sure you want to self-destruct and permanently wipe this share right now? All files and text will be deleted immediately.'
-        );
-        if (!confirmWipe) return;
-
-        let pinToUse: string | undefined = deletePin.trim() || undefined;
-        const creatorToken = localStorage.getItem('creatorToken_' + clip.code) || undefined;
-
-        if (clip.hasDeletePin && !pinToUse && !creatorToken) {
-            const entered = window.prompt('Enter the Self-Destruct PIN to confirm wipe:');
-            if (!entered) return;
-            pinToUse = entered.trim();
-        }
-
         setIsDestroying(true);
+        setSendPinError(null);
+
         try {
-            await destroyClip(clip.code, pinToUse, creatorToken);
+            await destroyClip(clip.code, sendEnteredPin.trim() || undefined);
             showToast('Share permanently wiped and destroyed');
+            setShowSendPinModal(false);
             setClip(null);
             setTextContent('');
             setSelectedFiles([]);
             setDeletePin('');
-            localStorage.removeItem('clipSessionId');
-            localStorage.removeItem('clipId');
-            localStorage.removeItem('creatorToken_' + clip.code);
-            localStorage.removeItem('lastShare');
+            setSendEnteredPin('');
+            if (typeof window !== 'undefined') {
+                localStorage.removeItem('clipSessionId');
+                localStorage.removeItem('clipId');
+                localStorage.removeItem('creatorToken_' + clip.code);
+                localStorage.removeItem('lastShare');
+            }
         } catch (err) {
-            const msg = err instanceof Error ? err.message : 'Failed to destroy share.';
-            alert(msg);
+            const msg = err instanceof Error ? err.message : 'Incorrect PIN or failed to destroy share.';
+            setSendPinError(msg);
         } finally {
             setIsDestroying(false);
         }
@@ -482,7 +500,37 @@ export default function SendPage() {
             await removeFileFromClip(clip.id, fileUrl);
         } catch (err) {
             const message = err instanceof Error ? err.message : 'Failed to remove file. Please try again.';
-            alert(message);
+            showToast(message);
+        }
+    };
+
+    const handleToggleRuntimeAccessPin = async (enabled: boolean, pin?: string) => {
+        if (!clip) return;
+        setIsUpdatingPin(true);
+        try {
+            const creatorToken = typeof window !== 'undefined' ? localStorage.getItem('creatorToken_' + clip.code) : null;
+            const res = await fetch('/api/clips/update-pin', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    code: clip.code,
+                    accessPin: pin,
+                    enabled,
+                    creatorToken: creatorToken || clip.creatorToken,
+                }),
+            });
+            const data = await res.json();
+            if (!res.ok) {
+                throw new Error(data.error || 'Failed to update PIN');
+            }
+            setClip((prev) => (prev ? { ...prev, hasAccessPin: enabled, accessPin: pin } : null));
+            showToast(enabled ? '4-character PIN enabled' : 'PIN protection disabled');
+        } catch (err) {
+            const msg = err instanceof Error ? err.message : 'Failed to update PIN';
+            showToast(msg);
+            throw err;
+        } finally {
+            setIsUpdatingPin(false);
         }
     };
 
@@ -496,6 +544,143 @@ export default function SendPage() {
 
     return (
         <div className="relative flex min-h-screen flex-col overflow-x-clip bg-[radial-gradient(1000px_500px_at_15%_-10%,#dbeafe_0%,transparent_55%),radial-gradient(900px_500px_at_100%_0%,#ede9fe_0%,transparent_50%)] bg-slate-50">
+            {/* PIN / Confirmation Modal for Self-Destruct in Send */}
+            {showSendPinModal && clip && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-xs animate-fadeIn">
+                    <div className="w-full max-w-sm rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl space-y-4">
+                        <div className="flex items-center justify-between">
+                            <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                                <span>💥</span>
+                                <span>Self-Destruct Share</span>
+                            </h3>
+                            <button
+                                onClick={() => setShowSendPinModal(false)}
+                                className="text-slate-400 hover:text-slate-600"
+                            >
+                                ✕
+                            </button>
+                        </div>
+
+                        {clip.hasDeletePin ? (
+                            <>
+                                <p className="text-xs text-slate-600 leading-relaxed">
+                                    A Self-Destruct PIN was set for this share. Enter the PIN to immediately and permanently wipe this share from server storage.
+                                </p>
+                                <input
+                                    type="password"
+                                    value={sendEnteredPin}
+                                    onChange={(e) => setSendEnteredPin(e.target.value)}
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter' && sendEnteredPin.trim()) {
+                                            void handleConfirmSelfDestruct();
+                                        }
+                                    }}
+                                    placeholder="Enter Self-Destruct PIN"
+                                    className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm font-mono text-slate-900 focus:border-red-500 focus:outline-none"
+                                    autoFocus
+                                />
+                            </>
+                        ) : (
+                            <p className="text-xs text-slate-600 leading-relaxed">
+                                Are you sure you want to permanently wipe and destroy this share? All files and text will be deleted immediately with zero recovery.
+                            </p>
+                        )}
+
+                        {sendPinError && (
+                            <p className="text-xs font-semibold text-red-600">{sendPinError}</p>
+                        )}
+
+                        <div className="flex gap-2 pt-2">
+                            <button
+                                onClick={() => setShowSendPinModal(false)}
+                                className="flex-1 rounded-xl border border-slate-200 bg-slate-50 py-2.5 text-xs font-bold text-slate-700 hover:bg-slate-100"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={handleConfirmSelfDestruct}
+                                disabled={isDestroying || (Boolean(clip.hasDeletePin) && !sendEnteredPin.trim())}
+                                className="flex-1 rounded-xl bg-red-600 py-2.5 text-xs font-bold text-white shadow-md hover:bg-red-700 active:scale-95 disabled:opacity-50"
+                            >
+                                {isDestroying ? 'Wiping...' : 'Destroy Now'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Modal for setting 4-Character Access PIN in Composer */}
+            {showAccessPinModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-xs animate-fadeIn text-left">
+                    <div className="w-full max-w-sm rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl space-y-4">
+                        <div className="flex items-center justify-between">
+                            <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                                <span>🔐</span>
+                                <span>Set 4-Character Access PIN</span>
+                            </h3>
+                            <button
+                                onClick={() => setShowAccessPinModal(false)}
+                                className="text-slate-400 hover:text-slate-600"
+                            >
+                                ✕
+                            </button>
+                        </div>
+                        <p className="text-xs text-slate-600 leading-relaxed">
+                            Choose a 4-character PIN (letters, numbers, or symbols). Anyone opening this share will be required to enter this PIN to read the content.
+                        </p>
+                        <div>
+                            <input
+                                type="text"
+                                maxLength={4}
+                                value={accessPinInput}
+                                onChange={(e) => setAccessPinInput(e.target.value.slice(0, 4))}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter' && accessPinInput.trim().length === 4) {
+                                        setAccessPin(accessPinInput.trim());
+                                        setIsAccessPinEnabled(true);
+                                        setShowAccessPinModal(false);
+                                        showToast('4-character PIN configured');
+                                    }
+                                }}
+                                placeholder="e.g. ABCD or 7421"
+                                className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-center text-lg font-mono font-bold tracking-widest text-slate-900 focus:border-blue-500 focus:outline-none"
+                                autoFocus
+                            />
+                            <p className="mt-1 text-[11px] text-slate-400 text-center">
+                                Exactly 4 characters
+                            </p>
+                        </div>
+                        {accessPinModalError && (
+                            <p className="text-xs font-semibold text-red-600">{accessPinModalError}</p>
+                        )}
+                        <div className="flex gap-2 pt-2">
+                            <button
+                                onClick={() => setShowAccessPinModal(false)}
+                                className="flex-1 rounded-xl border border-slate-200 py-2.5 text-xs font-bold text-slate-700 hover:bg-slate-50 active:scale-95"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={() => {
+                                    if (accessPinInput.trim().length !== 4) {
+                                        setAccessPinModalError('PIN must be exactly 4 characters.');
+                                        return;
+                                    }
+                                    setAccessPin(accessPinInput.trim());
+                                    setIsAccessPinEnabled(true);
+                                    setShowAccessPinModal(false);
+                                    showToast('4-character PIN configured');
+                                }}
+                                disabled={accessPinInput.trim().length !== 4}
+                                className="flex-1 rounded-xl bg-blue-600 py-2.5 text-xs font-bold text-white shadow-md hover:bg-blue-700 active:scale-95 disabled:opacity-50"
+                            >
+                                Set PIN
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* Global Drop Overlay */}
             {isDraggingOver && (
                 <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-blue-600/90 p-6 text-white backdrop-blur-sm transition-all">
@@ -679,6 +864,61 @@ export default function SendPage() {
                                                 </div>
                                             )}
                                         </div>
+
+                                        {/* 4-Character Access PIN Switch */}
+                                        <div className="border-t border-slate-200/60 pt-3">
+                                            <div className="flex items-center justify-between">
+                                                <div>
+                                                    <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                                                        <span>🔐</span>
+                                                        <span>4-Character Access PIN Protection</span>
+                                                    </span>
+                                                    <p className="text-[11px] text-slate-500">
+                                                        {isAccessPinEnabled
+                                                            ? `Protected with PIN: ${accessPin}`
+                                                            : 'Require a 4-character PIN to unlock and read this share'}
+                                                    </p>
+                                                </div>
+                                                <div className="flex items-center gap-2">
+                                                    {isAccessPinEnabled && (
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => {
+                                                                setAccessPinInput(accessPin);
+                                                                setAccessPinModalError(null);
+                                                                setShowAccessPinModal(true);
+                                                            }}
+                                                            className="text-[11px] font-bold text-blue-600 hover:text-blue-800 hover:underline"
+                                                        >
+                                                            Change
+                                                        </button>
+                                                    )}
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => {
+                                                            if (isAccessPinEnabled) {
+                                                                setIsAccessPinEnabled(false);
+                                                            } else {
+                                                                setAccessPinInput(accessPin || '');
+                                                                setAccessPinModalError(null);
+                                                                setShowAccessPinModal(true);
+                                                            }
+                                                        }}
+                                                        className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                                                            isAccessPinEnabled ? 'bg-blue-600' : 'bg-slate-300'
+                                                        }`}
+                                                        role="switch"
+                                                        aria-checked={isAccessPinEnabled}
+                                                    >
+                                                        <span
+                                                            className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                                                                isAccessPinEnabled ? 'translate-x-5' : 'translate-x-0'
+                                                            }`}
+                                                        />
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
 
                                     {/* Status chips */}
@@ -854,8 +1094,11 @@ export default function SendPage() {
                                     onShare={shareLink}
                                     expirationHours={clip.expirationHours || expirationHours}
                                     hasDeletePin={clip.hasDeletePin}
-                                    onDestroy={handleSelfDestruct}
+                                    onDestroy={handleOpenSelfDestructModal}
                                     isDestroying={isDestroying}
+                                    hasAccessPin={clip.hasAccessPin}
+                                    onToggleAccessPin={handleToggleRuntimeAccessPin}
+                                    isUpdatingPin={isUpdatingPin}
                                 />
                             </div>
                         </>

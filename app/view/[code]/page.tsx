@@ -37,9 +37,17 @@ export default function ViewPage() {
     const [isLiveMode, setIsLiveMode] = useState(false);
     const [remainingMs, setRemainingMs] = useState<number | null>(null);
     const [isDestroying, setIsDestroying] = useState(false);
+
+    // Self-Destruct Modal state
     const [showPinModal, setShowPinModal] = useState(false);
     const [enteredPin, setEnteredPin] = useState('');
     const [pinError, setPinError] = useState<string | null>(null);
+
+    // Access PIN Protection state (4-character PIN)
+    const [isUnlocked, setIsUnlocked] = useState(false);
+    const [enteredAccessPin, setEnteredAccessPin] = useState('');
+    const [accessPinError, setAccessPinError] = useState<string | null>(null);
+    const [isVerifyingPin, setIsVerifyingPin] = useState(false);
 
     useEffect(() => {
         if (!code) return;
@@ -54,6 +62,11 @@ export default function ViewPage() {
                         setClip(null);
                     } else {
                         setClip(fetchedClip);
+                        if (!fetchedClip.hasAccessPin) {
+                            setIsUnlocked(true);
+                        } else {
+                            setIsUnlocked(false);
+                        }
                     }
                 } else {
                     setNotFound(true);
@@ -87,21 +100,46 @@ export default function ViewPage() {
         return () => clearInterval(interval);
     }, [clip?.expiresAt]);
 
-    // Subscribe to real-time updates when live mode is enabled
+    // Always subscribe to real-time updates so if the clip is destroyed or PIN toggled,
+    // the read side hides all data immediately with zero wait.
     useEffect(() => {
-        if (clip?.id && isLiveMode) {
-            const unsubscribe = subscribeToClip(clip.id, (updatedClip) => {
-                if (updatedClip.expiresAt && updatedClip.expiresAt.getTime() <= Date.now()) {
-                    setIsExpired(true);
-                    setClip(null);
-                    return;
-                }
-                setClip(updatedClip);
-            });
+        if (!clip?.id) return;
 
-            return () => unsubscribe();
-        }
-    }, [clip?.id, isLiveMode, subscribeToClip]);
+        const unsubscribe = subscribeToClip(clip.id, (updatedClip) => {
+            if (!updatedClip) {
+                // Instantly wipe and hide data from user in real time!
+                setClip(null);
+                setIsExpired(true);
+                showToast('Share was self-destructed and wiped');
+                return;
+            }
+
+            if (updatedClip.expiresAt && updatedClip.expiresAt.getTime() <= Date.now()) {
+                setClip(null);
+                setIsExpired(true);
+                return;
+            }
+
+            // Real-time access PIN locking:
+            // If sender enables PIN at runtime, instantly lock reader and show PIN prompt!
+            if (updatedClip.hasAccessPin && !clip.hasAccessPin) {
+                setIsUnlocked(false);
+                setEnteredAccessPin('');
+                setAccessPinError(null);
+                showToast('The sender enabled PIN protection. Enter 4-character PIN to continue.');
+            } else if (!updatedClip.hasAccessPin && clip.hasAccessPin) {
+                // If sender disabled PIN at runtime, instantly unlock!
+                setIsUnlocked(true);
+                showToast('PIN protection was removed by the sender.');
+            }
+
+            if (isLiveMode || !isUnlocked) {
+                setClip(updatedClip);
+            }
+        });
+
+        return () => unsubscribe();
+    }, [clip?.id, clip?.hasAccessPin, isLiveMode, isUnlocked, subscribeToClip]);
 
     const toggleLiveMode = () => {
         setIsLiveMode(!isLiveMode);
@@ -113,9 +151,8 @@ export default function ViewPage() {
         setIsDestroying(true);
         setPinError(null);
 
-        const creatorToken = typeof window !== 'undefined' ? localStorage.getItem('creatorToken_' + code) || undefined : undefined;
-
         try {
+            const creatorToken = typeof window !== 'undefined' ? localStorage.getItem('creatorToken_' + code) || undefined : undefined;
             await destroyClip(code, enteredPin.trim() || undefined, creatorToken);
             showToast('Share permanently destroyed and wiped');
             setShowPinModal(false);
@@ -134,16 +171,42 @@ export default function ViewPage() {
     };
 
     const openDestructionFlow = () => {
-        const creatorToken = typeof window !== 'undefined' ? localStorage.getItem('creatorToken_' + code) : null;
-        if (creatorToken || !clip?.hasDeletePin) {
-            const confirmWipe = window.confirm(
-                'Are you sure you want to self-destruct and immediately wipe this share? All content and files will be permanently deleted.'
-            );
-            if (confirmWipe) {
-                void handleConfirmDestruction();
+        setPinError(null);
+        setEnteredPin('');
+        setShowPinModal(true);
+    };
+
+    const handleVerifyAccessPin = async () => {
+        if (!code || enteredAccessPin.trim().length !== 4) {
+            setAccessPinError('Please enter exactly 4 characters');
+            return;
+        }
+
+        setIsVerifyingPin(true);
+        setAccessPinError(null);
+
+        try {
+            const res = await fetch('/api/clips/verify-pin', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    code,
+                    pin: enteredAccessPin.trim(),
+                }),
+            });
+
+            const data = await res.json();
+            if (!res.ok || !data.valid) {
+                setAccessPinError(data.error || 'Incorrect 4-character PIN. Please try again.');
+                return;
             }
-        } else {
-            setShowPinModal(true);
+
+            setIsUnlocked(true);
+            showToast('Share unlocked successfully!');
+        } catch (err) {
+            setAccessPinError(err instanceof Error ? err.message : 'Validation failed. Please try again.');
+        } finally {
+            setIsVerifyingPin(false);
         }
     };
 
@@ -268,7 +331,10 @@ export default function ViewPage() {
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-xs animate-fadeIn">
                     <div className="w-full max-w-sm rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl space-y-4">
                         <div className="flex items-center justify-between">
-                            <h3 className="text-lg font-bold text-slate-900">💥 Self-Destruct Share</h3>
+                            <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                                <span>💥</span>
+                                <span>Self-Destruct Share</span>
+                            </h3>
                             <button
                                 onClick={() => setShowPinModal(false)}
                                 className="text-slate-400 hover:text-slate-600"
@@ -276,20 +342,36 @@ export default function ViewPage() {
                                 ✕
                             </button>
                         </div>
-                        <p className="text-xs text-slate-600 leading-relaxed">
-                            Enter the Self-Destruct PIN configured by the creator to immediately wipe this share from Firestore and R2 storage.
-                        </p>
-                        <input
-                            type="password"
-                            value={enteredPin}
-                            onChange={(e) => setEnteredPin(e.target.value)}
-                            placeholder="Enter Deletion PIN"
-                            className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm font-mono text-slate-900 focus:border-red-500 focus:outline-none"
-                            autoFocus
-                        />
+
+                        {clip?.hasDeletePin ? (
+                            <>
+                                <p className="text-xs text-slate-600 leading-relaxed">
+                                    A Self-Destruct PIN was configured for this share. Enter the PIN to immediately and permanently wipe this content.
+                                </p>
+                                <input
+                                    type="password"
+                                    value={enteredPin}
+                                    onChange={(e) => setEnteredPin(e.target.value)}
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter' && enteredPin.trim()) {
+                                            void handleConfirmDestruction();
+                                        }
+                                    }}
+                                    placeholder="Enter Self-Destruct PIN"
+                                    className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm font-mono text-slate-900 focus:border-red-500 focus:outline-none"
+                                    autoFocus
+                                />
+                            </>
+                        ) : (
+                            <p className="text-xs text-slate-600 leading-relaxed">
+                                Are you sure you want to self-destruct and immediately wipe this share? All content and files will be permanently deleted from server storage.
+                            </p>
+                        )}
+
                         {pinError && (
                             <p className="text-xs font-semibold text-red-600">{pinError}</p>
                         )}
+
                         <div className="flex gap-2 pt-2">
                             <button
                                 onClick={() => setShowPinModal(false)}
@@ -299,7 +381,7 @@ export default function ViewPage() {
                             </button>
                             <button
                                 onClick={handleConfirmDestruction}
-                                disabled={isDestroying || !enteredPin.trim()}
+                                disabled={isDestroying || (Boolean(clip?.hasDeletePin) && !enteredPin.trim())}
                                 className="flex-1 rounded-xl bg-red-600 py-2.5 text-xs font-bold text-white shadow-md hover:bg-red-700 active:scale-95 disabled:opacity-50"
                             >
                                 {isDestroying ? 'Wiping...' : 'Destroy Now'}
@@ -314,14 +396,17 @@ export default function ViewPage() {
                 <Logo size={40} className="sm:hidden" />
                 <Logo size={50} className="hidden sm:flex" />
                 <div className="flex items-center gap-2 sm:gap-3">
-                    <button
-                        onClick={openDestructionFlow}
-                        disabled={isDestroying}
-                        className="inline-flex items-center gap-1.5 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs font-bold text-red-600 shadow-xs transition-all hover:bg-red-100 active:scale-95 sm:text-sm"
-                        title="Manually destroy this paste"
-                    >
-                        💥 Self-Destruct
-                    </button>
+                    {/* Self-Destruct button ONLY appears if the sender set a Self-Destruct PIN */}
+                    {clip?.hasDeletePin && (
+                        <button
+                            onClick={openDestructionFlow}
+                            disabled={isDestroying}
+                            className="inline-flex items-center gap-1.5 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs font-bold text-red-600 shadow-xs transition-all hover:bg-red-100 active:scale-95 sm:text-sm"
+                            title="Manually destroy this paste"
+                        >
+                            💥 Self-Destruct
+                        </button>
+                    )}
                     <button
                         onClick={() => { startNavigation(); router.push('/'); }}
                         className="rounded-xl bg-white px-3 py-2 text-xs font-semibold text-gray-700 shadow-md transition-all hover:bg-gray-50 active:scale-95 sm:px-4 sm:text-sm"
@@ -354,33 +439,83 @@ export default function ViewPage() {
 
                     {clip && (
                         <>
-                            {/* Live Mode Banner */}
-                            <div className="flex items-center justify-between gap-4 rounded-2xl border border-slate-100 bg-white p-4 shadow-lg sm:p-5">
-                                <div className="flex items-center gap-3">
-                                    <span className={`h-2.5 w-2.5 flex-shrink-0 rounded-full ${isLiveMode ? 'animate-pulse bg-green-500 ring-4 ring-green-500/20' : 'bg-gray-300'}`} />
+                            {/* Access PIN Lock Screen */}
+                            {clip.hasAccessPin && !isUnlocked ? (
+                                <div className="mx-auto max-w-md rounded-3xl border border-slate-200 bg-white p-6 sm:p-8 shadow-xl text-center space-y-5 animate-fadeIn">
+                                    <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-100 text-3xl">
+                                        🔐
+                                    </div>
                                     <div>
-                                        <h3 className="text-sm font-bold text-gray-700 sm:text-base">
-                                            Real-Time Updates {isLiveMode && '· Live'}
-                                        </h3>
-                                        <p className="text-xs text-gray-400 sm:text-sm">
-                                            {isLiveMode
-                                                ? 'Text & previews refresh automatically as the sender edits'
-                                                : 'Enable to see changes as the sender edits'}
+                                        <h2 className="text-xl font-extrabold text-slate-900 sm:text-2xl">
+                                            4-Character PIN Protected
+                                        </h2>
+                                        <p className="mt-2 text-xs text-slate-500 sm:text-sm">
+                                            The creator protected this share with a 4-character PIN. Enter the PIN to view the content.
                                         </p>
                                     </div>
-                                </div>
-                                <button
-                                    onClick={toggleLiveMode}
-                                    className={`flex-shrink-0 rounded-xl px-4 py-2.5 text-sm font-bold text-white transition-all active:scale-95 sm:px-6 ${isLiveMode
-                                        ? 'bg-green-600 hover:bg-green-700'
-                                        : 'bg-blue-600 hover:bg-blue-700'
-                                        }`}
-                                >
-                                    {isLiveMode ? '✓ Live' : 'Enable Live'}
-                                </button>
-                            </div>
 
-                            <ContentViewer clip={clip} />
+                                    <div className="space-y-3">
+                                        <input
+                                            type="text"
+                                            maxLength={4}
+                                            value={enteredAccessPin}
+                                            onChange={(e) => setEnteredAccessPin(e.target.value.slice(0, 4))}
+                                            onKeyDown={(e) => {
+                                                if (e.key === 'Enter' && enteredAccessPin.trim().length === 4) {
+                                                    void handleVerifyAccessPin();
+                                                }
+                                            }}
+                                            placeholder="ABCD"
+                                            className="w-full rounded-2xl border-2 border-slate-200 py-3 text-center font-mono text-2xl font-bold tracking-widest text-slate-900 focus:border-blue-500 focus:outline-none"
+                                            autoFocus
+                                        />
+
+                                        {accessPinError && (
+                                            <p className="text-xs font-semibold text-red-600 animate-fadeIn">
+                                                {accessPinError}
+                                            </p>
+                                        )}
+
+                                        <button
+                                            onClick={handleVerifyAccessPin}
+                                            disabled={isVerifyingPin || enteredAccessPin.trim().length !== 4}
+                                            className="w-full rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 py-3.5 text-sm font-bold text-white shadow-md transition-all hover:brightness-105 active:scale-95 disabled:opacity-50"
+                                        >
+                                            {isVerifyingPin ? 'Verifying PIN...' : 'Unlock & View Content'}
+                                        </button>
+                                    </div>
+                                </div>
+                            ) : (
+                                <>
+                                    {/* Live Mode Banner */}
+                                    <div className="flex items-center justify-between gap-4 rounded-2xl border border-slate-100 bg-white p-4 shadow-lg sm:p-5">
+                                        <div className="flex items-center gap-3">
+                                            <span className={`h-2.5 w-2.5 flex-shrink-0 rounded-full ${isLiveMode ? 'animate-pulse bg-green-500 ring-4 ring-green-500/20' : 'bg-gray-300'}`} />
+                                            <div>
+                                                <h3 className="text-sm font-bold text-gray-700 sm:text-base">
+                                                    Real-Time Updates {isLiveMode && '· Live'}
+                                                </h3>
+                                                <p className="text-xs text-gray-400 sm:text-sm">
+                                                    {isLiveMode
+                                                        ? 'Text & previews refresh automatically as the sender edits'
+                                                        : 'Enable to see changes as the sender edits'}
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <button
+                                            onClick={toggleLiveMode}
+                                            className={`flex-shrink-0 rounded-xl px-4 py-2.5 text-sm font-bold text-white transition-all active:scale-95 sm:px-6 ${isLiveMode
+                                                ? 'bg-green-600 hover:bg-green-700'
+                                                : 'bg-blue-600 hover:bg-blue-700'
+                                                }`}
+                                        >
+                                            {isLiveMode ? '✓ Live' : 'Enable Live'}
+                                        </button>
+                                    </div>
+
+                                    <ContentViewer clip={clip} />
+                                </>
+                            )}
                         </>
                     )}
                 </div>
