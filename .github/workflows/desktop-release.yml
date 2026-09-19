@@ -4,6 +4,10 @@ on:
   push:
     tags:
       - 'v*'
+    branches:
+      - main
+    paths:
+      - 'desktop/**'
   workflow_dispatch:
     inputs:
       version:
