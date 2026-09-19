@@ -232,15 +232,23 @@ desktop/
 
 ### Desktop Installation by OS
 
-#### Windows
+#### Windows (Winget & Executables)
 ```powershell
-# Install via Winget
+# Install via Winget (Local / PR Manifest):
+winget install --manifest winget\manifests\z\zainImran\Pasteport\1.0.0\zainImran.Pasteport.yaml
+
+# Once approved in official Microsoft winget-pkgs repository:
+winget install zainImran.Pasteport
+# or:
 winget install pasteport-zisphere
 
-# Uninstall via Winget
-winget uninstall pasteport-zisphere
+# Uninstall via Winget:
+winget uninstall zainImran.Pasteport
 ```
-*Or download the standalone `Pasteport-Setup-1.0.0.exe` installer / portable binary.*
+*Or download the compiled binaries from [GitHub Releases](https://github.com/zainImran864/online_clipboard/releases):*
+- **`Pasteport Setup 1.0.0.exe`** — Complete NSIS Windows installer (start menu shortcut, desktop icon, uninstaller).
+- **`Pasteport 1.0.0.exe`** — Standalone single-file portable executable (no install required, runs immediately from USB or folder).
+
 
 #### macOS
 ```bash

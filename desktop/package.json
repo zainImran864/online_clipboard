@@ -32,12 +32,15 @@
     "directories": {
       "output": "dist"
     },
+    "forceCodeSigning": false,
     "win": {
       "target": [
         "nsis",
         "portable"
       ],
-      "icon": "assets/icon.ico"
+      "icon": "assets/icon.ico",
+      "sign": null,
+      "signAndEditExecutable": false
     },
     "mac": {
       "target": [
