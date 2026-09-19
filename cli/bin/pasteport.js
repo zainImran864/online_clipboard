@@ -86,25 +86,27 @@ ${colors.bold}OPTIONS FOR GET:${colors.reset}
   ${colors.cyan}--json${colors.reset}                   Output clip metadata and content as JSON
   ${colors.cyan}--server${colors.reset} <url>           Override backend server endpoint
 
-${colors.bold}INSTALLATION & EXECUTION (npm, pnpm, bun):${colors.reset}
-  ${colors.dim}# Global Install:${colors.reset}
-  npm install -g pasteport-cli
-  pnpm add -g pasteport-cli
-  bun add -g pasteport-cli
+${colors.bold}INSTALLATION & EXECUTION (npm, pnpm, bun, pip):${colors.reset}
+  ${colors.dim}# Global Install (Node.js & Python):${colors.reset}
+  npm install -g pasteport-zisphere
+  pnpm add -g pasteport-zisphere
+  bun add -g pasteport-zisphere
+  pip install pasteport-zisphere
 
   ${colors.dim}# Run immediately without installing:${colors.reset}
-  npx pasteport-cli send "hello world"
-  pnpm dlx pasteport-cli send "hello world"
-  bunx pasteport-cli send "hello world"
+  npx pasteport-zisphere send "hello world"
+  pnpm dlx pasteport-zisphere send "hello world"
+  bunx pasteport-zisphere send "hello world"
 
-  ${colors.dim}# Install from local repo (or before npm publish):${colors.reset}
+  ${colors.dim}# Install from local source:${colors.reset}
   npm install -g ./cli
-  npm install -g github:zainImran864/online_clipboard#feat/desktop-app-and-cli
+  pip install ./python
 
   ${colors.dim}# Uninstall from system:${colors.reset}
-  npm uninstall -g pasteport-cli
-  pnpm remove -g pasteport-cli
-  bun remove -g pasteport-cli
+  npm uninstall -g pasteport-zisphere
+  pnpm remove -g pasteport-zisphere
+  bun remove -g pasteport-zisphere
+  pip uninstall pasteport-zisphere
 
 ${colors.bold}EXAMPLES:${colors.reset}
   ${colors.dim}# Send inline text snippet:${colors.reset}

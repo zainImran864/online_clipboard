@@ -76,7 +76,7 @@ export default function TermsOfServicePage() {
                 1. Description of the Service
               </h2>
               <p className="text-sm leading-relaxed text-slate-600 sm:text-base">
-                Pasteport is a free, ephemeral online clipboard, developer toolkit, and temporary file transfer utility designed for quick peer-to-peer sharing across devices using short access codes. The service is accessible via our web application, native desktop client, and command-line interface (<code className="rounded bg-slate-100 px-1 font-mono text-xs">pasteport-cli</code>). No registration or account creation is required.
+                Pasteport is a free, ephemeral online clipboard, developer toolkit, and temporary file transfer utility designed for quick peer-to-peer sharing across devices using short access codes. The service is accessible via our web application, native desktop client, and command-line interface (<code className="rounded bg-slate-100 px-1 font-mono text-xs">pasteport-zisphere</code>). No registration or account creation is required.
               </p>
             </section>
 

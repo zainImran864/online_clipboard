@@ -63,5 +63,6 @@ npm run build:mac
 npm run build:linux
 # Generates:
 # - dist/Pasteport-1.0.0.AppImage (Runs on all distributions)
-# - dist/pasteport_1.0.0_amd64.deb (Debian / Ubuntu)
+# - dist/pasteport_1.0.0_amd64.deb (Debian / Ubuntu / Mint)
+# - dist/pasteport-1.0.0.x86_64.rpm (RHEL / Oracle Linux / Fedora / openSUSE)
 ```

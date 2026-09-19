@@ -120,36 +120,42 @@ const INSTALL_COMMANDS = [
     {
         title: 'Install via NPM',
         subtitle: 'Global installation via standard Node package manager.',
-        cmd: 'npm install -g pasteport-cli',
+        cmd: 'npm install -g pasteport-zisphere',
         type: 'npm',
     },
     {
         title: 'Install via PNPM',
         subtitle: 'Fast, disk space efficient global installation.',
-        cmd: 'pnpm add -g pasteport-cli',
+        cmd: 'pnpm add -g pasteport-zisphere',
         type: 'pnpm',
     },
     {
         title: 'Install via Bun',
         subtitle: 'Lightning-fast native global install with Bun runtime.',
-        cmd: 'bun add -g pasteport-cli',
+        cmd: 'bun add -g pasteport-zisphere',
         type: 'bun',
+    },
+    {
+        title: 'Install via Python PIP',
+        subtitle: 'Pure Python package with zero external dependencies.',
+        cmd: 'pip install pasteport-zisphere',
+        type: 'pip',
     },
     {
         title: 'Run Instantly (NPX / Bunx / PNPM)',
         subtitle: 'Zero permanent install required. Executes in memory.',
-        cmd: 'npx pasteport-cli send "hello world"',
+        cmd: 'npx pasteport-zisphere send "hello world"',
         type: 'npx',
     },
     {
-        title: 'Install from Local Source / Git',
-        subtitle: 'Use immediately before public NPM registry publication.',
-        cmd: 'npm install -g ./cli',
+        title: 'Install from Local Source (Node & Python)',
+        subtitle: 'Use immediately before public registry publication.',
+        cmd: 'npm install -g ./cli  # or: pip install ./python',
         type: 'local',
     },
     {
-        title: 'Publish to NPM Registry',
-        subtitle: 'Publish package to npmjs.org so anyone can install it.',
+        title: 'Publish to Public Registries',
+        subtitle: 'Publish to npmjs.org and PyPI for global availability.',
         cmd: 'cd cli && npm publish --access public',
         type: 'publish',
     },
@@ -159,11 +165,48 @@ const INSTALL_COMMANDS = [
         cmd: 'pasteport delete <code> --pin <optional-pin>',
         type: 'delete',
     },
+];
+
+const UNINSTALL_COMMANDS = [
     {
-        title: 'Uninstall CLI from System',
-        subtitle: 'Removes the global binary and packages completely.',
-        cmd: 'npm uninstall -g pasteport-cli',
-        type: 'uninstall',
+        title: 'Uninstall from NPM',
+        desc: 'Removes globally installed npm package.',
+        cmd: 'npm uninstall -g pasteport-zisphere',
+    },
+    {
+        title: 'Uninstall from PNPM',
+        desc: 'Removes global pnpm binary.',
+        cmd: 'pnpm remove -g pasteport-zisphere',
+    },
+    {
+        title: 'Uninstall from Bun',
+        desc: 'Removes global bun package.',
+        cmd: 'bun remove -g pasteport-zisphere',
+    },
+    {
+        title: 'Uninstall from Python PIP',
+        desc: 'Removes python pip entry point.',
+        cmd: 'pip uninstall -y pasteport-zisphere',
+    },
+    {
+        title: 'Uninstall via Windows Winget',
+        desc: 'Removes Windows package manager installation.',
+        cmd: 'winget uninstall pasteport-zisphere',
+    },
+    {
+        title: 'Debian / Ubuntu Linux (APT)',
+        desc: 'Removes deb package from system.',
+        cmd: 'sudo apt remove pasteport',
+    },
+    {
+        title: 'Fedora / RHEL / Oracle Linux (DNF)',
+        desc: 'Removes rpm package on RedHat & Oracle Linux.',
+        cmd: 'sudo dnf remove pasteport',
+    },
+    {
+        title: 'openSUSE / SUSE Linux (Zypper)',
+        desc: 'Removes package via zypper manager.',
+        cmd: 'sudo zypper remove pasteport',
     },
 ];
 
@@ -188,32 +231,43 @@ const TIERS = [
     },
 ];
 
-type PkgType = 'npm' | 'pnpm' | 'bun' | 'local';
+type PkgType = 'npm' | 'pnpm' | 'bun' | 'pip' | 'local';
 
-const PKG_CONFIGS: Record<PkgType, { name: string; icon: string; installCmd: string; execCmd: string }> = {
+const PKG_CONFIGS: Record<PkgType, { name: string; icon: string; installCmd: string; execCmd: string; uninstallCmd: string }> = {
     npm: {
         name: 'npm',
         icon: '📦',
-        installCmd: 'npm install -g pasteport-cli',
-        execCmd: 'npx pasteport-cli',
+        installCmd: 'npm install -g pasteport-zisphere',
+        execCmd: 'npx pasteport-zisphere',
+        uninstallCmd: 'npm uninstall -g pasteport-zisphere',
     },
     pnpm: {
         name: 'pnpm',
         icon: '⚡',
-        installCmd: 'pnpm add -g pasteport-cli',
-        execCmd: 'pnpm dlx pasteport-cli',
+        installCmd: 'pnpm add -g pasteport-zisphere',
+        execCmd: 'pnpm dlx pasteport-zisphere',
+        uninstallCmd: 'pnpm remove -g pasteport-zisphere',
     },
     bun: {
         name: 'bun',
         icon: '🥟',
-        installCmd: 'bun add -g pasteport-cli',
-        execCmd: 'bunx pasteport-cli',
+        installCmd: 'bun add -g pasteport-zisphere',
+        execCmd: 'bunx pasteport-zisphere',
+        uninstallCmd: 'bun remove -g pasteport-zisphere',
+    },
+    pip: {
+        name: 'pip (Python)',
+        icon: '🐍',
+        installCmd: 'pip install pasteport-zisphere',
+        execCmd: 'pasteport',
+        uninstallCmd: 'pip uninstall pasteport-zisphere',
     },
     local: {
         name: 'local source',
         icon: '🛠️',
         installCmd: 'npm install -g ./cli',
         execCmd: 'node cli/bin/pasteport.js',
+        uninstallCmd: 'npm uninstall -g pasteport-zisphere',
     },
 };
 
@@ -423,6 +477,43 @@ export default function CliDocsPage() {
                                     </div>
                                     <p className="text-xs text-slate-500">{item.subtitle}</p>
                                     <div className="rounded-xl border border-slate-200 bg-slate-50 p-2.5 font-mono text-xs font-bold text-slate-800 select-all">
+                                        $ {item.cmd}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Uninstallation Commands Grid */}
+                    <div className="space-y-4">
+                        <div className="text-center space-y-1">
+                            <h2 className="text-2xl font-black text-slate-900">
+                                🗑️ Uninstallation Commands (All Platforms)
+                            </h2>
+                            <p className="text-xs text-slate-500 sm:text-sm">
+                                Clean, complete uninstallation commands for npm, pnpm, bun, python, winget, and Linux package managers.
+                            </p>
+                        </div>
+
+                        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                            {UNINSTALL_COMMANDS.map((item) => (
+                                <div
+                                    key={item.title}
+                                    className="rounded-2xl border border-slate-200 bg-white p-4 shadow-2xs space-y-2 flex flex-col justify-between"
+                                >
+                                    <div>
+                                        <div className="flex items-center justify-between">
+                                            <h3 className="text-xs font-bold text-slate-900">{item.title}</h3>
+                                            <button
+                                                onClick={() => copyText(item.cmd, item.title)}
+                                                className="rounded-lg bg-slate-50 border border-slate-200 px-2 py-0.5 text-[11px] font-bold text-rose-600 hover:bg-rose-50"
+                                            >
+                                                Copy
+                                            </button>
+                                        </div>
+                                        <p className="text-[11px] text-slate-500 mt-1">{item.desc}</p>
+                                    </div>
+                                    <div className="rounded-xl border border-slate-200 bg-slate-50 p-2 font-mono text-[11px] font-bold text-slate-800 select-all overflow-x-auto">
                                         $ {item.cmd}
                                     </div>
                                 </div>

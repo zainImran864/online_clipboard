@@ -1,0 +1,37 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pasteport-zisphere"
+version = "1.0.0"
+description = "Cross-device clipboard and file sharing CLI tool for Pasteport."
+readme = "README.md"
+requires-python = ">=3.8"
+license = { text = "MIT" }
+authors = [
+  { name = "Zain Imran" }
+]
+keywords = ["pasteport", "clipboard", "sharing", "developer-tools", "cli", "file-transfer"]
+classifiers = [
+  "Development Status :: 5 - Production/Stable",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.8",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Topic :: Utilities",
+]
+
+[project.urls]
+Homepage = "https://pasteport.zain-imran.com"
+Documentation = "https://pasteport.zain-imran.com/cli"
+Repository = "https://github.com/zainImran864/online_clipboard"
+
+[project.scripts]
+pasteport = "pasteport_zisphere.cli:main"
+pasteport-zisphere = "pasteport_zisphere.cli:main"

@@ -205,7 +205,7 @@ export default function PrivacyPolicyPage() {
               </h2>
               <div className="space-y-2 text-sm leading-relaxed text-slate-600 sm:text-base">
                 <p>
-                  Pasteport provides open-source native desktop clients (Electron) and command-line interfaces (<code className="rounded bg-slate-100 px-1 font-mono text-xs">pasteport-cli</code>). Both tools uphold our strict zero-tracking principles:
+                  Pasteport provides open-source native desktop clients (Electron) and command-line interfaces (<code className="rounded bg-slate-100 px-1 font-mono text-xs">pasteport-zisphere</code>). Both tools uphold our strict zero-tracking principles:
                 </p>
                 <ul className="list-disc space-y-1.5 pl-5 text-slate-700">
                   <li>

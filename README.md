@@ -204,10 +204,10 @@ flowchart TD
     - `[3] Retrieve / Get` — preview text or download files using either a code or a full web URL.
     - `[4] Delete / Wipe` — permanently destroy any clip with a Self-Destruct PIN.
     - `[5] Exit`.
-  - **Zero External Dependencies**: Pure Node.js CLI script using native `fetch` and ANSI color banners with structured troubleshooting suggestions.
+  - **Zero External Dependencies**: Pure Node.js & Python implementations with native HTTP and ANSI color banners with structured troubleshooting suggestions.
   - **Dual Input Resolution**: Accepts both 6-digit codes (`pasteport get 482193`) and full web URLs (`pasteport get https://pasteport.zain-imran.com/view/482193`).
   - **Piping & Automation**: Pipe terminal outputs effortlessly: `git diff | pasteport send` or `cat build.log | pasteport send --expiry 6`.
-  - **Zero-Friction Execution**: Run on-demand with `npx pasteport-cli` or install globally via `npm install -g pasteport-cli`.
+  - **Multi-Package Manager Support**: Run on-demand with `npx pasteport-zisphere` or install globally via `npm`, `pnpm`, `bun`, or `pip` (`pasteport-zisphere`).
 - 🔓 **No accounts & zero tracking** — nothing to sign up for; zero personal data collected.
 
 ---
@@ -218,7 +218,7 @@ Pasteport Desktop packages the full power of Pasteport into a native, ultra-ligh
 
 ```
 desktop/
-├── package.json    # Electron app configuration & electron-builder packaging targets
+├── package.json    # Electron app configuration & electron-builder packaging targets (.exe, .dmg, .rpm, .deb, .AppImage)
 ├── main.js         # Tray lifecycle, global hotkey registration, HUD window, IPC handlers
 ├── preload.js      # Context-isolated secure IPC bridge
 └── README.md       # Packaging & developer instructions
@@ -230,85 +230,130 @@ desktop/
 - **System Tray Daemon**: Sits quietly in the notification area / menu bar consuming <40 MB RAM. Right-click to open Pasteport, launch Developer Tools, or quit.
 - **Native OS Notifications**: Displays native notifications upon code generation with 1-click clipboard link copying.
 
-### Build & Package Binaries
+### Desktop Installation by OS
+
+#### Windows
+```powershell
+# Install via Winget
+winget install pasteport-zisphere
+
+# Uninstall via Winget
+winget uninstall pasteport-zisphere
+```
+*Or download the standalone `Pasteport-Setup-1.0.0.exe` installer / portable binary.*
+
+#### macOS
 ```bash
-# Navigate to desktop directory
+# Install via Homebrew
+brew install --cask pasteport
+
+# Uninstall via Homebrew
+brew uninstall --cask pasteport
+```
+*Or download `Pasteport-1.0.0.dmg` and drag to `/Applications`.*
+
+#### Linux (Zypper, DNF, APT, Pacman & AppImage)
+```bash
+# openSUSE / SUSE Linux Enterprise (Zypper)
+sudo zypper install ./pasteport-1.0.0.rpm
+sudo zypper remove pasteport
+
+# RHEL / Oracle Linux / Fedora / CentOS / Rocky (DNF)
+sudo dnf install ./pasteport-1.0.0.rpm
+sudo dnf remove pasteport
+
+# Ubuntu / Debian / Linux Mint (APT)
+sudo apt install ./pasteport-1.0.0.deb
+sudo apt remove pasteport
+
+# Arch Linux / Manjaro (Pacman)
+sudo pacman -U ./pasteport-1.0.0.pkg.tar.zst
+sudo pacman -R pasteport
+
+# Universal AppImage (Runs on any Linux distribution)
+chmod +x Pasteport-1.0.0.AppImage && ./Pasteport-1.0.0.AppImage
+```
+
+### Build & Package Desktop Binaries
+```bash
 cd desktop
-
-# Install dependencies
 npm install
-
-# Run desktop app in development
-npm start
-
-# Build production installers
+npm start              # Run in development
 npm run build:win      # Windows (.exe installer & portable)
-npm run build:mac      # macOS (.dmg & .zip for Apple Silicon + Intel)
-npm run build:linux    # Linux (.AppImage & .deb)
+npm run build:mac      # macOS (.dmg for Apple Silicon + Intel)
+npm run build:linux    # Linux (.rpm, .deb & .AppImage)
 ```
 
 ---
 
 ## Command-Line Interface (CLI)
 
-The `pasteport` CLI brings seamless clipboard sharing, piping, large file transfers, and remote wiping directly into your terminal.
+The `pasteport` CLI brings seamless clipboard sharing, piping, large file transfers, and remote wiping directly into your terminal. Available as both **Node.js** (`pasteport-zisphere`) and **pure Python** (`pip install pasteport-zisphere`) packages.
 
-### Installation & Execution (npm, pnpm, bun)
+### Installation & Execution (npm, pnpm, bun, pip)
 
 #### Global Installation
 ```bash
 # via npm
-npm install -g pasteport-cli
+npm install -g pasteport-zisphere
 
 # via pnpm
-pnpm add -g pasteport-cli
+pnpm add -g pasteport-zisphere
 
 # via bun
-bun add -g pasteport-cli
+bun add -g pasteport-zisphere
+
+# via Python pip
+pip install pasteport-zisphere
 ```
 
 #### Run Instantly (No Installation Required)
 ```bash
 # via npx
-npx pasteport-cli send "hello world"
+npx pasteport-zisphere send "hello world"
 
 # via pnpm dlx
-pnpm dlx pasteport-cli send "hello world"
+pnpm dlx pasteport-zisphere send "hello world"
 
 # via bunx
-bunx pasteport-cli send "hello world"
+bunx pasteport-zisphere send "hello world"
 ```
 
-#### Install Directly from Local Repository or Git (Pre-Publish)
-If you haven't published to the public NPM registry yet, you can use the CLI right now directly on your system:
+#### Install Directly from Local Repository (Pre-Publish)
+If you haven't published to public registries yet, install and use the CLI immediately from source:
 ```bash
-# Option A: Install globally from local repository
+# Node CLI (from repo root):
 npm install -g ./cli
-# or with pnpm
+# or with pnpm:
 pnpm add -g ./cli
-# or with bun
+# or with bun:
 bun add -g ./cli
 
-# Option B: Symlink during local development
+# Python CLI:
+pip install ./python
+# or symlink in dev:
 cd cli && npm link
-
-# Option C: Install directly from GitHub
-npm install -g github:zainImran864/online_clipboard#feat/desktop-app-and-cli
 ```
 
-#### Publish to NPM Registry
-To make `pasteport-cli` installable by anyone worldwide via standard `npm install -g pasteport-cli`:
+#### Publish to Public Registries
 ```bash
+# Publish to NPM:
 cd cli
 npm login
 npm publish --access public
+
+# Publish to PyPI:
+cd python
+python -m build
+twine upload dist/*
 ```
 
-#### Uninstallation
+#### Complete Uninstallation
 ```bash
-npm uninstall -g pasteport-cli
-pnpm remove -g pasteport-cli
-bun remove -g pasteport-cli
+npm uninstall -g pasteport-zisphere
+pnpm remove -g pasteport-zisphere
+bun remove -g pasteport-zisphere
+pip uninstall pasteport-zisphere
 ```
 
 ### Interactive Menu Mode (`pasteport`)
