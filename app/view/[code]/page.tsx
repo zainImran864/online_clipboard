@@ -1,13 +1,20 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Logo from '@/components/Logo';
 import Footer from '@/components/Footer';
 import ContentViewer from '@/components/ContentViewer';
 import ClipboardMiniGame from '@/components/ClipboardMiniGame';
+import QRCodeModal from '@/components/QRCodeModal';
 import { useClipboard, Clip } from '@/hooks/useClipboard';
 import { showToast, startNavigation } from '@/lib/appEvents';
+import {
+    saveClipOffline,
+    getOfflineClip,
+    isClipSavedOffline,
+    deleteOfflineClip,
+} from '@/lib/offlineStorage';
 
 function formatRemainingTime(ms: number): string {
     if (ms <= 0) return 'Expired';
@@ -38,6 +45,14 @@ export default function ViewPage() {
     const [remainingMs, setRemainingMs] = useState<number | null>(null);
     const [isDestroying, setIsDestroying] = useState(false);
 
+    // QR Modal state
+    const [showQrModal, setShowQrModal] = useState(false);
+
+    // Offline state
+    const [isSavedOffline, setIsSavedOffline] = useState(false);
+    const [isSavingOffline, setIsSavingOffline] = useState(false);
+    const [isViewingOfflineCopy, setIsViewingOfflineCopy] = useState(false);
+
     // Self-Destruct Modal state
     const [showPinModal, setShowPinModal] = useState(false);
     const [enteredPin, setEnteredPin] = useState('');
@@ -49,10 +64,64 @@ export default function ViewPage() {
     const [accessPinError, setAccessPinError] = useState<string | null>(null);
     const [isVerifyingPin, setIsVerifyingPin] = useState(false);
 
+    // Helper to load offline copy
+    const tryLoadOfflineCopy = useCallback(async (clipCode: string) => {
+        try {
+            const offlineRecord = await getOfflineClip(clipCode);
+            if (offlineRecord) {
+                const localClip: Clip = {
+                    id: offlineRecord.code,
+                    code: offlineRecord.code,
+                    type: offlineRecord.type,
+                    content: offlineRecord.content || '',
+                    textContent: offlineRecord.textContent,
+                    files: offlineRecord.files?.map((f) => ({
+                        url: f.dataUrl,
+                        fileName: f.fileName,
+                        fileType: f.fileType,
+                        fileSize: f.fileSize,
+                        storageProvider: 'r2',
+                    })),
+                    hasAccessPin: offlineRecord.hasAccessPin,
+                    createdAt: new Date(offlineRecord.savedAt),
+                    expiresAt: offlineRecord.expiresAt ? new Date(offlineRecord.expiresAt) : undefined,
+                };
+                setClip(localClip);
+                setIsViewingOfflineCopy(true);
+                setIsUnlocked(true);
+                setIsSavedOffline(true);
+                setNotFound(false);
+                setIsExpired(false);
+                showToast('Loaded offline saved copy');
+                return true;
+            }
+        } catch (err) {
+            console.warn('[ViewPage] Failed to load offline record:', err);
+        }
+        return false;
+    }, []);
+
+    // Check if current clip is already saved offline
+    useEffect(() => {
+        if (!code) return;
+        void isClipSavedOffline(code).then(setIsSavedOffline);
+    }, [code]);
+
+    // Initial fetch with offline fallback
     useEffect(() => {
         if (!code) return;
         let cancelled = false;
         (async () => {
+            // Check local offline storage first for instant local responsiveness
+            const loadedOffline = await tryLoadOfflineCopy(code);
+            if (cancelled) return;
+
+            // If completely offline or already loaded offline copy with no connection
+            if (typeof navigator !== 'undefined' && !navigator.onLine) {
+                if (!loadedOffline) setNotFound(true);
+                return;
+            }
+
             try {
                 const fetchedClip = await fetchClipByCode(code);
                 if (cancelled) return;
@@ -62,27 +131,28 @@ export default function ViewPage() {
                         setClip(null);
                     } else {
                         setClip(fetchedClip);
+                        setIsViewingOfflineCopy(false);
                         if (!fetchedClip.hasAccessPin) {
                             setIsUnlocked(true);
                         } else {
                             setIsUnlocked(false);
                         }
                     }
-                } else {
+                } else if (!loadedOffline) {
                     setNotFound(true);
                 }
             } catch (err) {
                 if (cancelled) return;
-                console.error('Error fetching clip:', err);
-                setNotFound(true);
+                console.error('Error fetching clip, using offline fallback if available:', err);
+                if (!loadedOffline) setNotFound(true);
             }
         })();
         return () => { cancelled = true; };
-    }, [code, fetchClipByCode]);
+    }, [code, fetchClipByCode, tryLoadOfflineCopy]);
 
     // Countdown timer & auto-expiration enforcement
     useEffect(() => {
-        if (!clip?.expiresAt) return;
+        if (!clip?.expiresAt || isViewingOfflineCopy) return;
 
         const updateCountdown = () => {
             const diff = clip.expiresAt!.getTime() - Date.now();
@@ -98,16 +168,14 @@ export default function ViewPage() {
         updateCountdown();
         const interval = setInterval(updateCountdown, 1000);
         return () => clearInterval(interval);
-    }, [clip?.expiresAt]);
+    }, [clip?.expiresAt, isViewingOfflineCopy]);
 
-    // Always subscribe to real-time updates so if the clip is destroyed or PIN toggled,
-    // the read side hides all data immediately with zero wait.
+    // Real-time updates subscription
     useEffect(() => {
-        if (!clip?.id) return;
+        if (!clip?.id || isViewingOfflineCopy) return;
 
         const unsubscribe = subscribeToClip(clip.id, (updatedClip) => {
             if (!updatedClip) {
-                // Instantly wipe and hide data from user in real time!
                 setClip(null);
                 setIsExpired(true);
                 showToast('Share was self-destructed and wiped');
@@ -120,15 +188,13 @@ export default function ViewPage() {
                 return;
             }
 
-            // Real-time access PIN locking:
-            // If sender enables PIN at runtime, instantly lock reader and show PIN prompt!
+            // Real-time access PIN locking
             if (updatedClip.hasAccessPin && !clip.hasAccessPin) {
                 setIsUnlocked(false);
                 setEnteredAccessPin('');
                 setAccessPinError(null);
                 showToast('The sender enabled PIN protection. Enter 4-character PIN to continue.');
             } else if (!updatedClip.hasAccessPin && clip.hasAccessPin) {
-                // If sender disabled PIN at runtime, instantly unlock!
                 setIsUnlocked(true);
                 showToast('PIN protection was removed by the sender.');
             }
@@ -139,10 +205,46 @@ export default function ViewPage() {
         });
 
         return () => unsubscribe();
-    }, [clip?.id, clip?.hasAccessPin, isLiveMode, isUnlocked, subscribeToClip]);
+    }, [clip?.id, clip?.hasAccessPin, isLiveMode, isUnlocked, isViewingOfflineCopy, subscribeToClip]);
 
     const toggleLiveMode = () => {
         setIsLiveMode(!isLiveMode);
+    };
+
+    // Toggle Offline Save
+    const handleToggleSaveOffline = async () => {
+        if (!clip) return;
+        setIsSavingOffline(true);
+
+        try {
+            if (isSavedOffline) {
+                await deleteOfflineClip(code);
+                setIsSavedOffline(false);
+                showToast('Offline copy removed');
+            } else {
+                await saveClipOffline({
+                    code: clip.code,
+                    type: clip.type,
+                    content: clip.content,
+                    textContent: clip.textContent,
+                    files: clip.files?.map((f) => ({
+                        url: f.url,
+                        fileName: f.fileName,
+                        fileType: f.fileType,
+                        fileSize: f.fileSize,
+                    })),
+                    expiresAt: clip.expiresAt,
+                    hasAccessPin: clip.hasAccessPin,
+                });
+                setIsSavedOffline(true);
+                showToast('✓ Saved for offline viewing and download!');
+            }
+        } catch (err) {
+            console.error('Failed to toggle offline save:', err);
+            showToast('Failed to save offline copy');
+        } finally {
+            setIsSavingOffline(false);
+        }
     };
 
     const handleConfirmDestruction = async () => {
@@ -158,6 +260,8 @@ export default function ViewPage() {
             setShowPinModal(false);
             setIsExpired(true);
             setClip(null);
+            // Clean up any local offline copies as well
+            void deleteOfflineClip(code);
             if (typeof window !== 'undefined') {
                 localStorage.removeItem('creatorToken_' + code);
                 localStorage.removeItem('lastShare');
@@ -289,7 +393,7 @@ export default function ViewPage() {
                             </svg>
                             <h1 className="mb-2 text-2xl font-bold text-gray-800">Content Not Found</h1>
                             <p className="text-gray-600">
-                                This link is invalid or the content has expired.
+                                This link is invalid, offline, or the content has expired.
                             </p>
                         </div>
                         <div className="grid gap-3 sm:grid-cols-2">
@@ -395,9 +499,38 @@ export default function ViewPage() {
             <header className="flex flex-wrap items-center justify-between gap-3 p-4 sm:p-6">
                 <Logo size={40} className="sm:hidden" />
                 <Logo size={50} className="hidden sm:flex" />
-                <div className="flex items-center gap-2 sm:gap-3">
+
+                <div className="flex items-center gap-2 sm:gap-2.5">
+                    {/* QR Code Share Modal trigger */}
+                    <button
+                        onClick={() => setShowQrModal(true)}
+                        className="inline-flex items-center gap-1.5 rounded-xl border border-blue-200 bg-white px-3 py-2 text-xs font-bold text-blue-700 shadow-xs transition-all hover:bg-blue-50 active:scale-95 sm:text-sm"
+                        title="Show mobile QR code for sharing"
+                    >
+                        <span>📱</span>
+                        <span className="hidden sm:inline">Share</span>
+                        <span>QR</span>
+                    </button>
+
+                    {/* Offline Save Toggle button (active once unlocked) */}
+                    {isUnlocked && clip && (
+                        <button
+                            onClick={handleToggleSaveOffline}
+                            disabled={isSavingOffline}
+                            className={`inline-flex items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-bold shadow-xs transition-all active:scale-95 sm:text-sm ${
+                                isSavedOffline
+                                    ? 'border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
+                                    : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
+                            }`}
+                            title={isSavedOffline ? 'Saved for offline access on this device' : 'Save for offline access & download'}
+                        >
+                            <span>{isSavedOffline ? '✓' : '💾'}</span>
+                            <span>{isSavingOffline ? 'Saving...' : isSavedOffline ? 'Saved Offline' : 'Save Offline'}</span>
+                        </button>
+                    )}
+
                     {/* Self-Destruct button ONLY appears if the sender set a Self-Destruct PIN */}
-                    {clip?.hasDeletePin && (
+                    {clip?.hasDeletePin && !isViewingOfflineCopy && (
                         <button
                             onClick={openDestructionFlow}
                             disabled={isDestroying}
@@ -407,6 +540,7 @@ export default function ViewPage() {
                             💥 Self-Destruct
                         </button>
                     )}
+
                     <button
                         onClick={() => { startNavigation(); router.push('/'); }}
                         className="rounded-xl bg-white px-3 py-2 text-xs font-semibold text-gray-700 shadow-md transition-all hover:bg-gray-50 active:scale-95 sm:px-4 sm:text-sm"
@@ -423,19 +557,42 @@ export default function ViewPage() {
                         <h1 className="text-3xl font-extrabold tracking-tight text-gray-900 sm:text-4xl">
                             Read{' '}
                             <span className="bg-gradient-to-r from-blue-600 to-violet-600 bg-clip-text text-transparent">
-                                live
+                                {isViewingOfflineCopy ? 'offline' : 'live'}
                             </span>
                             {' '}content
                         </h1>
                         <p className="mt-2 text-sm text-gray-500 sm:text-base">
                             Viewing code <span className="font-mono font-bold tracking-widest text-blue-800">{code}</span>
-                            {remainingMs !== null && (
+                            {remainingMs !== null && !isViewingOfflineCopy && (
                                 <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-bold text-blue-800">
                                     ⏳ {formatRemainingTime(remainingMs)}
                                 </span>
                             )}
+                            {isViewingOfflineCopy && (
+                                <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-bold text-emerald-800">
+                                    📶 Offline Copy
+                                </span>
+                            )}
                         </p>
                     </div>
+
+                    {/* Offline Banner when viewing offline copy */}
+                    {isViewingOfflineCopy && (
+                        <div className="flex items-center justify-between gap-3 rounded-2xl border border-emerald-200 bg-gradient-to-r from-emerald-50 to-teal-50 p-4 text-emerald-900 shadow-sm">
+                            <div className="flex items-center gap-3">
+                                <span className="text-2xl">📶</span>
+                                <div>
+                                    <p className="text-sm font-extrabold">Offline Copy Active</p>
+                                    <p className="text-xs text-emerald-700">
+                                        Viewing saved copy stored locally on this device. All text and attached files can be viewed and downloaded offline.
+                                    </p>
+                                </div>
+                            </div>
+                            <span className="rounded-full bg-emerald-200/80 px-2.5 py-1 text-[11px] font-bold text-emerald-800">
+                                Device Storage
+                            </span>
+                        </div>
+                    )}
 
                     {clip && (
                         <>
@@ -487,31 +644,33 @@ export default function ViewPage() {
                                 </div>
                             ) : (
                                 <>
-                                    {/* Live Mode Banner */}
-                                    <div className="flex items-center justify-between gap-4 rounded-2xl border border-slate-100 bg-white p-4 shadow-lg sm:p-5">
-                                        <div className="flex items-center gap-3">
-                                            <span className={`h-2.5 w-2.5 flex-shrink-0 rounded-full ${isLiveMode ? 'animate-pulse bg-green-500 ring-4 ring-green-500/20' : 'bg-gray-300'}`} />
-                                            <div>
-                                                <h3 className="text-sm font-bold text-gray-700 sm:text-base">
-                                                    Real-Time Updates {isLiveMode && '· Live'}
-                                                </h3>
-                                                <p className="text-xs text-gray-400 sm:text-sm">
-                                                    {isLiveMode
-                                                        ? 'Text & previews refresh automatically as the sender edits'
-                                                        : 'Enable to see changes as the sender edits'}
-                                                </p>
+                                    {/* Live Mode Banner (only shown if not an offline copy) */}
+                                    {!isViewingOfflineCopy && (
+                                        <div className="flex items-center justify-between gap-4 rounded-2xl border border-slate-100 bg-white p-4 shadow-lg sm:p-5">
+                                            <div className="flex items-center gap-3">
+                                                <span className={`h-2.5 w-2.5 flex-shrink-0 rounded-full ${isLiveMode ? 'animate-pulse bg-green-500 ring-4 ring-green-500/20' : 'bg-gray-300'}`} />
+                                                <div>
+                                                    <h3 className="text-sm font-bold text-gray-700 sm:text-base">
+                                                        Real-Time Updates {isLiveMode && '· Live'}
+                                                    </h3>
+                                                    <p className="text-xs text-gray-400 sm:text-sm">
+                                                        {isLiveMode
+                                                            ? 'Text & previews refresh automatically as the sender edits'
+                                                            : 'Enable to see changes as the sender edits'}
+                                                    </p>
+                                                </div>
                                             </div>
+                                            <button
+                                                onClick={toggleLiveMode}
+                                                className={`flex-shrink-0 rounded-xl px-4 py-2.5 text-sm font-bold text-white transition-all active:scale-95 sm:px-6 ${isLiveMode
+                                                    ? 'bg-green-600 hover:bg-green-700'
+                                                    : 'bg-blue-600 hover:bg-blue-700'
+                                                    }`}
+                                            >
+                                                {isLiveMode ? '✓ Live' : 'Enable Live'}
+                                            </button>
                                         </div>
-                                        <button
-                                            onClick={toggleLiveMode}
-                                            className={`flex-shrink-0 rounded-xl px-4 py-2.5 text-sm font-bold text-white transition-all active:scale-95 sm:px-6 ${isLiveMode
-                                                ? 'bg-green-600 hover:bg-green-700'
-                                                : 'bg-blue-600 hover:bg-blue-700'
-                                                }`}
-                                        >
-                                            {isLiveMode ? '✓ Live' : 'Enable Live'}
-                                        </button>
-                                    </div>
+                                    )}
 
                                     <ContentViewer clip={clip} />
                                 </>
@@ -520,6 +679,14 @@ export default function ViewPage() {
                     )}
                 </div>
             </main>
+
+            {/* QR Share Modal */}
+            <QRCodeModal
+                isOpen={showQrModal}
+                onClose={() => setShowQrModal(false)}
+                code={code}
+            />
+
             <Footer />
         </div>
     );

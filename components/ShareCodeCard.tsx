@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import QRCode from 'react-qr-code';
+import QRCodeModal from '@/components/QRCodeModal';
 
 interface ShareCodeCardProps {
     code: string;
@@ -76,18 +77,44 @@ export default function ShareCodeCard({
         }
     };
 
+    const [showQrModal, setShowQrModal] = useState(false);
+
     return (
         <div className="order-1 rounded-3xl border border-slate-100 bg-gradient-to-b from-white to-blue-50/40 p-6 text-center shadow-[0_20px_50px_rgba(2,6,23,0.10)] lg:order-2 lg:sticky lg:top-6">
             <p className="text-xs font-extrabold uppercase tracking-[0.14em] text-gray-400">Your code</p>
 
-            {/* QR code */}
-            <div className="mx-auto mt-4 w-fit rounded-2xl border border-slate-100 bg-white p-3 shadow-sm">
+            {/* QR code with enlarge on click */}
+            <div
+                onClick={() => setShowQrModal(true)}
+                className="group relative mx-auto mt-4 w-fit cursor-pointer rounded-2xl border border-slate-100 bg-white p-3 shadow-sm transition-all hover:border-blue-300 hover:shadow-md active:scale-95"
+                title="Tap to enlarge QR code or save image"
+            >
                 <QRCode
                     value={shareUrl}
                     size={132}
                     className="h-[132px] w-[132px]"
                 />
+                <div className="absolute inset-0 flex items-center justify-center rounded-2xl bg-blue-900/0 opacity-0 transition-all group-hover:bg-blue-900/20 group-hover:opacity-100">
+                    <span className="rounded-full bg-slate-900/80 px-2 py-1 text-[10px] font-bold text-white backdrop-blur-xs">
+                        🔍 Enlarge
+                    </span>
+                </div>
             </div>
+            <button
+                type="button"
+                onClick={() => setShowQrModal(true)}
+                className="mt-1 text-[11px] font-semibold text-blue-600 hover:underline inline-flex items-center gap-1"
+            >
+                <span>📱 Scan / Save QR Code</span>
+            </button>
+
+            {/* Fullscreen QR Modal */}
+            <QRCodeModal
+                isOpen={showQrModal}
+                onClose={() => setShowQrModal(false)}
+                code={code}
+                url={shareUrl}
+            />
 
             {/* Code digits + copy — wraps instead of overflowing the card */}
             <div className="mt-4 flex flex-wrap items-center justify-center gap-1.5 sm:gap-2">

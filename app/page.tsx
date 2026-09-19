@@ -48,9 +48,9 @@ const cards: ActionCard[] = [
   },
   {
     title: 'Read File',
-    description: 'Enter a 6-digit code or link to instantly view shared content.',
+    description: 'Enter a 6-digit code or scan QR to view and download offline.',
     href: '/read',
-    cta: 'Enter a code',
+    cta: 'Enter code or scan QR',
     iconBg: 'bg-cyan-600',
     accent: 'text-cyan-600',
     hoverBorder: 'hover:border-cyan-500',
