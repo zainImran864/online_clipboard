@@ -31,10 +31,11 @@ Be respectful and constructive. Assume good intent, keep discussions focused on 
    ```
    Use a prefix that matches your change: `feat/`, `fix/`, `docs/`, `refactor/`, `chore/`.
 2. Make your change. Keep pull requests **focused** — one logical change per PR.
-3. Before pushing, make sure the project lints and builds:
+3. Before pushing, make sure the project lints, builds, and passes tests:
    ```bash
    npm run lint
    npm run build
+   npm run test:e2e
    ```
 4. Push your branch and open a pull request against `main`.
 

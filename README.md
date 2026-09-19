@@ -1,15 +1,57 @@
-# Pasteport — Online Clipboard
+<p align="center">
+  <a href="https://pasteport.zain-imran.com">
+    <img src="public/icon-192.png" width="96" height="96" alt="Pasteport Logo" style="border-radius: 20%;" />
+  </a>
+</p>
 
-Share files, text, PDFs, and images instantly with a simple 6‑digit code. **No login required.** Content is available for 24 hours, then automatically deleted.
+<h1 align="center">Pasteport — Open-Source Online Clipboard & Ephemeral File Sharing</h1>
 
-Built with Next.js (App Router), Firebase Firestore, and Cloudflare R2. Installable as a PWA.
+<p align="center">
+  <strong>Share files, text, snippets, and images across any device instantly with a simple 6-digit code.</strong><br/>
+  <em>No login required. 100% open-source, privacy-first, and self-hostable.</em>
+</p>
 
-> **Live demo:** https://pasteport.zain-imran.com
+<p align="center">
+  <a href="https://pasteport.zain-imran.com"><strong>🚀 Live Demo</strong></a> •
+  <a href="https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2FzainImran864%2Fonline_clipboard&env=NEXT_PUBLIC_FIREBASE_API_KEY,NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,NEXT_PUBLIC_FIREBASE_PROJECT_ID,NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,NEXT_PUBLIC_FIREBASE_APP_ID,CLOUDFLARE_ACCOUNT_ID,R2_ACCESS_KEY_ID,R2_SECRET_ACCESS_KEY,R2_BUCKET_NAME,R2_PUBLIC_URL,CRON_SECRET&project-name=pasteport&repository-name=pasteport"><strong>⚡ Deploy to Vercel</strong></a> •
+  <a href="#why-pasteport"><strong>✨ Why Pasteport?</strong></a> •
+  <a href="#architecture"><strong>📐 Architecture</strong></a> •
+  <a href="#getting-started"><strong>🛠️ Quickstart</strong></a> •
+  <a href="CONTRIBUTING.md"><strong>🤝 Contributing</strong></a>
+</p>
+
+<p align="center">
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square" alt="MIT License" /></a>
+  <a href="https://nextjs.org/"><img src="https://img.shields.io/badge/Next.js-16-black?style=flat-square&logo=next.js" alt="Next.js 16" /></a>
+  <a href="https://react.dev/"><img src="https://img.shields.io/badge/React-19-61dafb?style=flat-square&logo=react" alt="React 19" /></a>
+  <a href="https://www.typescriptlang.org/"><img src="https://img.shields.io/badge/TypeScript-5-3178C6?style=flat-square&logo=typescript" alt="TypeScript 5" /></a>
+  <a href="https://tailwindcss.com/"><img src="https://img.shields.io/badge/Tailwind_CSS-v4-38B2AC?style=flat-square&logo=tailwind-css" alt="Tailwind CSS v4" /></a>
+  <a href="https://firebase.google.com/"><img src="https://img.shields.io/badge/Firebase-Firestore-FFCA28?style=flat-square&logo=firebase" alt="Firebase Firestore" /></a>
+  <a href="https://www.cloudflare.com/products/r2/"><img src="https://img.shields.io/badge/Cloudflare-R2_Storage-F38020?style=flat-square&logo=cloudflare" alt="Cloudflare R2" /></a>
+  <a href="https://playwright.dev/"><img src="https://img.shields.io/badge/Playwright-E2E_Tested-45ba4b?style=flat-square&logo=playwright" alt="Playwright Tested" /></a>
+  <a href="https://pasteport.zain-imran.com/"><img src="https://img.shields.io/badge/PWA-Installable-purple?style=flat-square&logo=pwa" alt="PWA Ready" /></a>
+  <a href="https://github.com/zainImran864/online_clipboard/stargazers"><img src="https://img.shields.io/github/stars/zainImran864/online_clipboard?style=flat-square&logo=github" alt="GitHub Stars" /></a>
+  <a href="CONTRIBUTING.md"><img src="https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square" alt="PRs Welcome" /></a>
+</p>
+
+---
+
+## Overview
+
+**Pasteport** is a privacy-first, lightning-fast, open-source online clipboard and temporary file transfer platform. It solves the friction of moving text, code snippets, photos, PDFs, and documents between different operating systems and devices (iOS, Android, macOS, Windows, Linux) without requiring email logins, messaging apps, browser extensions, or cloud subscriptions.
+
+Share anything with a **temporary 6-digit pairing code** or direct URL. Content is sandboxed, encrypted in transit, and permanently wiped either automatically after its chosen lifespan (1h–24h) or instantly via manual **Self-Destruct PIN / Duress Wipe**.
+
+> 💡 **Looking for a modern, open-source Pastebin or AirDrop alternative?**
+> Pasteport works universally across web browsers and can be installed as a Progressive Web App (PWA) with zero device lock-in.
 
 ---
 
 ## Table of contents
 
+- [Overview](#overview)
+- [Why Pasteport? (Comparison Matrix)](#why-pasteport)
+- [Architecture](#architecture)
 - [Features](#features)
 - [How it works](#how-it-works)
 - [Tech stack](#tech-stack)
@@ -18,47 +60,120 @@ Built with Next.js (App Router), Firebase Firestore, and Cloudflare R2. Installa
   - [Pages](#pages)
   - [API endpoints](#api-endpoints)
 - [Supported file types](#supported-file-types)
-- [Security](#security)
+- [Security & Sandboxing](#security--sandboxing)
 - [SEO & AI Optimization (GEO)](#seo--ai-optimization-geo)
+- [Getting started & Self-Hosting](#getting-started--self-hosting)
+  - [1-Click Vercel Deployment](#1-click-vercel-deployment)
+  - [Local Development Setup](#local-development-setup)
 - [Environment variables](#environment-variables)
-- [Getting started](#getting-started)
 - [Firestore data model](#firestore-data-model)
 - [Storage tiers & limits](#storage-tiers--limits)
+- [E2E Testing](#e2e-testing)
 - [Deployment](#deployment)
 - [Scripts](#scripts)
 - [Contributing](#contributing)
 - [License](#license)
+- [Open-Source Discovery & Topics](#open-source-discovery--topics)
+
+---
+
+## Why Pasteport?
+
+Most clipboard and file-sharing utilities require account registrations, bombard users with ads, enforce walled gardens (like Apple AirDrop), or lack critical privacy safeguards such as PIN locks and instant duress destruction. Pasteport was built to offer a completely open-source, private, and universal alternative.
+
+| Feature | **Pasteport** (Open Source) | **Pastebin** | **Apple AirDrop** | **Pushbullet** | **WeTransfer** |
+| :--- | :---: | :---: | :---: | :---: | :---: |
+| **100% Open Source (MIT)** | ✅ **Yes** | ❌ Proprietary | ❌ Proprietary | ❌ Proprietary | ❌ Proprietary |
+| **No Account / No Login Required** | ✅ **Yes** | ⚠️ Partial | ✅ Yes | ❌ Requires Login | ✅ Yes |
+| **Cross-Platform Compatibility** | ✅ **iOS, Android, Windows, macOS, Linux** | ✅ Web | ❌ Apple Only | ⚠️ Limited | ✅ Web |
+| **6-Digit Instant Pairing** | ✅ **Yes** | ❌ Long URLs | ❌ Bluetooth/Wi-Fi only | ❌ Account sync | ❌ Email/Long link |
+| **4-Character Access PIN Lock** | ✅ **Yes** (with runtime toggle) | ❌ Paid / No toggle | ❌ No | ❌ No | ❌ Password only in Pro |
+| **Self-Destruct PIN / Duress Wipe** | ✅ **Yes** (real-time instant) | ❌ No | ❌ No | ❌ No | ❌ No |
+| **Global Clipboard Paste (`Ctrl+V`)** | ✅ **Yes** (Anywhere on page) | ⚠️ Text box only | ❌ No | ❌ No | ❌ No |
+| **Zero Egress Cloud Object Storage** | ✅ **Cloudflare R2** | ❌ Text only | ❌ P2P Local | ❌ Quota caps | ❌ Expired link caps |
+| **Real-Time Synchronized Editing** | ✅ **Yes** (Firestore live mode) | ❌ Static | ❌ No | ❌ No | ❌ No |
+| **Self-Hostable with 1-Click Deploy**| ✅ **Yes** (Vercel + R2) | ❌ No | ❌ No | ❌ No | ❌ No |
+| **Client-Side Dev Utilities Suite** | ✅ **JSON, Diff, JWT, Base64, MD** | ❌ No | ❌ No | ❌ No | ❌ No |
+| **PWA (Installable Offline App)** | ✅ **Yes** | ❌ No | ❌ Native Apple | ❌ Proprietary App | ❌ No |
+
+---
+
+## Architecture
+
+Pasteport leverages a modern serverless JAMstack architecture engineered for sub-second delivery, zero egress costs, and origin-isolated security:
+
+```mermaid
+flowchart TD
+    subgraph Clients["📱 Cross-Platform Clients (iOS, Android, macOS, Windows, Linux)"]
+        Sender["Sender (Web / PWA)<br/>• Ctrl+V Clipboard Paste<br/>• File Drag & Drop (≤10MB)<br/>• 4-Char PIN & Lifespan Setup<br/>• Self-Destruct PIN"]
+        Receiver["Recipient (Web / PWA)<br/>• 6-Digit Code / Deep Link<br/>• 4-Char PIN Unlock Barrier<br/>• Real-Time Snapshot Sync<br/>• Conditional Self-Destruct Wipe"]
+    end
+
+    subgraph App["⚡ Next.js 16 App Router (Vercel Serverless)"]
+        API_Upload["/api/files/upload & /api/text/upload"]
+        API_PIN["/api/clips/verify-pin & update-pin"]
+        API_Delete["/api/clips/delete (Duress Wipe)"]
+        API_Cron["/api/cron/cleanup (Automated Purge)"]
+    end
+
+    subgraph DB["🔥 Firebase Firestore"]
+        Firestore["'clips' Collection<br/>• Metadata, 6-Digit Code<br/>• Realtime Snapshot Listeners<br/>• PIN Hash & Expiration Timestamps"]
+    end
+
+    subgraph Storage["☁️ Cloudflare R2 Object Storage"]
+        R2["S3-Compatible Object Store<br/>• Zero Egress Fees<br/>• Sandboxed Origin pub-*.r2.dev<br/>• High-Speed Binary Streaming"]
+    end
+
+    Sender -->|"1. Upload Files (>500KB) & Large Text (>100KB)"| API_Upload
+    API_Upload -->|"2. Stream to S3 Bucket"| Storage
+    Sender -->|"3. Write Clip Metadata & PIN"| Firestore
+    Firestore -.->|"4. Real-Time Snapshot Stream"| Receiver
+    Receiver -->|"5. Verify 4-Char PIN"| API_PIN
+    Receiver -->|"6. Download / Preview Stream"| Storage
+    Sender -.->|"Runtime PIN Lock / Self-Destruct"| API_Delete
+    API_Delete -->|"Purge Metadata"| Firestore
+    API_Delete -->|"Purge Blobs"| Storage
+    API_Cron -->|"Daily Cleanup Sweep"| Firestore
+    API_Cron -->|"Purge Expired Blobs"| Storage
+```
+
+1. **Lightweight Document Store**: Firestore stores only high-level clip metadata, PIN states, and expiration timestamps (<2 KB per document), enabling ultra-fast real-time listeners.
+2. **Zero-Egress Object Storage**: Binary payloads and oversized text (>100 KB) stream directly to Cloudflare R2 via the AWS S3 SDK.
+3. **Origin Isolation**: Uploaded files and media are served from an isolated Cloudflare R2 domain (`pub-*.r2.dev`) or sandboxed data URIs, preventing cross-site scripting (XSS) against the main application.
 
 ---
 
 ## Features
 
-- 📋 **Share text and/or files** — send plain text, code, PDFs, images, Office docs, archives, or any combination.
-- 🔢 **6‑digit share codes** — recipients open content by code or by pasting the share link.
-- 🔐 **4-Character Access PIN Protection** — password-protect any share with a 4-character PIN.
-  - **Composer switch**: enable/disable before code generation.
+- 📋 **Share text, code, and files** — send plain text, source code, PDFs, images, Office documents, archives, or any combination.
+- 🔢 **6-digit share codes & deep links** — recipients open content instantly by typing a 6-digit code or clicking a share URL (`/view/[code]`).
+- 🔐 **4-Character Access PIN Protection**:
+  - **Composer switch**: optionally require a 4-character PIN before generating the code.
   - **Runtime toggle & edit**: switch PIN protection ON/OFF or edit the PIN at runtime directly from the generated share card.
-  - **Real-time locking**: when toggled ON at runtime, active reader screens lock instantly with a 4-character PIN unlock barrier until entered.
-- 💥 **Self-Destruct PIN / Duress Wipe** — set an optional deletion PIN or use creator tokens to manually destroy and wipe clips and R2 storage objects immediately.
+  - **Real-time locking**: when toggled ON at runtime, active reader screens lock immediately with an interactive 4-character PIN barrier.
+- 💥 **Self-Destruct PIN / Duress Wipe**:
+  - Set an optional deletion PIN or use creator tokens to manually destroy clips and wipe R2 storage objects immediately.
   - Placed directly below the generated code digits on the share card.
   - **Strictly conditional on reader side**: the Self-Destruct button appears on `/view/[code]` **only if the sender configured a Self-Destruct PIN**.
-  - **Zero-wait real-time wipe**: when self-destructed, real-time listeners hide all data from reader screens immediately with zero delay.
-- ⏳ **Custom Lifespan (1h–24h) & Instant Auto-Expiry Wipe** — customize the auto-deletion window (1h, 3h, 6h, 12h, 24h) with live countdown timers. Expired clips are instantly purged from Firestore and R2 storage.
-- 🔴 **Real‑time updates** — the recipient can enable "live mode" to see the sender's edits as they type (powered by Firestore snapshots).
+  - **Zero-wait real-time wipe**: when self-destructed, real-time Firestore listeners hide all data from reader screens instantly with zero delay.
+- ⏳ **Custom Lifespan (1h–24h) & Instant Auto-Expiry Wipe** — customize the auto-deletion window (1h, 3h, 6h, 12h, 24h) with live countdown timers. Expired clips are instantly purged upon access or swept by the automated cron job.
+- 🔴 **Real‑time updates** — recipients can enable *Live Mode* to watch the sender's text updates stream in real-time as they type.
 - 📋 **Drop-to-Upload & Clipboard Paste (`Ctrl + V` anywhere)** — paste screenshots or copied text directly from clipboard anywhere on the page, or drag & drop files onto the global drop zone.
-- 🚫 **Zero Blocking Alerts** — non-blocking accessible toast notifications (`showToast`) replace all native browser `alert()` popups.
+- 🚫 **Zero Blocking Native Alerts** — non-blocking accessible toast notifications (`showToast`) replace all native browser `alert()` popups.
 - 🕹️ **Interactive Error Mini-Game** — retro paper-plane canvas glider game on 404, invalid code, and expired link pages.
-- 🧰 **Developer Utilities Suite (100% Client-Side)**:
-  - **JSON Formatter & Tree Inspector (`/json`)** — format, minify, validate, and inspect JSON tree nodes.
-  - **Diff Checker (`/diff`)** — side-by-side and unified text/code comparison with change counters.
+- 🧰 **Developer Utilities Suite (100% Client-Side & Zero Server Leakage)**:
+  - **JSON Formatter & Tree Inspector (`/json`)** — format, minify, validate syntax, and inspect collapsible JSON trees.
+  - **Diff Checker (`/diff`)** — side-by-side and unified text/code comparison with additions/deletions counters.
   - **JWT Debugger & Decoder (`/jwt`)** — decode header and payload claims locally with live expiration countdowns.
   - **Base64 / URL Encoder & Decoder (`/encode`)** — convert strings, tokens, and binary files/images directly to Data URIs.
   - **Markdown Live Preview & Exporter (`/markdown`)** — fully mobile-responsive markdown editor with `Split`/`Edit`/`Preview` switcher, table/checklist support, PDF export, HTML export, `.md` download, and one-click Pasteport sharing.
 - 🧪 **Playwright E2E Testing** — automated cross-platform end-to-end testing suite for desktop and mobile viewports (`channel: 'chrome'`).
 - 🗂️ **Cloudflare R2 Object Storage** — all binary files and large text payloads (>100 KB) are stored directly in Cloudflare R2, keeping Firestore documents ultra-lightweight (<2 KB).
 - 🛡️ **Per‑file size limit** — up to 10 MB per file, enforced client‑side and server‑side. No daily/total quota.
-- 📱 **PWA** — installable on mobile/desktop with offline‑ready service worker and app manifest.
-- 🔓 **No accounts** — nothing to sign up for; zero personal data collected.
+- 📱 **Progressive Web App (PWA)** — installable on iOS, Android, macOS, and Windows with offline-ready service worker and app manifest.
+- 🔓 **No accounts & zero tracking** — nothing to sign up for; zero personal data collected.
+
+---
 
 ## How it works
 
@@ -74,22 +189,27 @@ Built with Next.js (App Router), Firebase Firestore, and Cloudflare R2. Installa
    - Optionally recipients can enable *live mode* to subscribe to real‑time updates.
 4. **Expire / Wipe** — Creators or authorized readers can trigger a Self-Destruct wipe at any time via `POST /api/clips/delete`, immediately hiding data in real time from all screens. Expired clips are cleaned up instantly upon access or swept by the daily Vercel Cron via `GET /api/cron/cleanup`, deleting expired clip documents **and** their associated R2 objects (files and text).
 
+---
+
 ## Tech stack
 
-| Layer            | Technology                                            |
-| ---------------- | ----------------------------------------------------- |
-| Framework        | [Next.js 16](https://nextjs.org) (App Router, Turbopack) |
-| Language         | TypeScript, React 19                                  |
-| Styling          | Tailwind CSS v4                                        |
-| Database         | Firebase Firestore (client SDK)                       |
-| Object storage   | Cloudflare R2 (via the AWS S3 SDK)                    |
-| SEO / GEO / PWA  | Schema.org JSON-LD, `/llms.txt`, `next-sitemap`, Web App Manifest |
-| E2E Testing      | Playwright (`@playwright/test` on Chrome)             |
+| Layer | Technology | Purpose |
+| :--- | :--- | :--- |
+| **Framework** | [Next.js 16](https://nextjs.org) (App Router, Turbopack) | Serverless API routes & React Server Components |
+| **Core** | [React 19](https://react.dev) & [TypeScript 5](https://www.typescriptlang.org) | Modern concurrent UI and strict type safety |
+| **Styling** | [Tailwind CSS v4](https://tailwindcss.com) | High-performance CSS design system |
+| **Database** | [Firebase Firestore](https://firebase.google.com/docs/firestore) | Real-time document metadata & snapshot listeners |
+| **Object Storage**| [Cloudflare R2](https://www.cloudflare.com/products/r2) (via AWS S3 SDK) | Zero-egress binary file & oversized text storage |
+| **SEO & GEO** | Schema.org JSON-LD, `/llms.txt`, `next-sitemap` | Google rich snippets & generative AI discovery |
+| **E2E Testing** | [Playwright](https://playwright.dev) | Cross-platform desktop & mobile test automation |
+| **PWA** | Web App Manifest & Service Worker | Offline cache and home-screen installability |
+
+---
 
 ## Project structure
 
 ```
-my-clipboard/
+online_clipboard/
 ├── app/
 │   ├── page.tsx                    # Home (splash + Send/Read + Dev Tools + SEO FAQ)
 │   ├── send/page.tsx               # Create a clip (text + files + 4-char PIN + self-destruct)
@@ -98,6 +218,11 @@ my-clipboard/
 │   ├── secure/page.tsx             # Secret share — direct‑to‑R2 upload/download by code
 │   ├── layout.tsx                  # Root layout, canonical domain, OpenGraph, JSON-LD
 │   ├── globals.css                 # Tailwind + global styles
+│   ├── json/page.tsx               # JSON Formatter & Tree Inspector utility
+│   ├── diff/page.tsx               # Diff Checker side-by-side & unified utility
+│   ├── jwt/page.tsx                # JWT Debugger & claim decoder utility
+│   ├── encode/page.tsx             # Base64 & URL Encoder/Decoder utility
+│   ├── markdown/page.tsx           # Responsive Markdown Live Preview & Exporter
 │   └── api/
 │       ├── clips/
 │       │   ├── delete/route.ts         # POST — self-destruct wipe (PIN verified)
@@ -135,24 +260,26 @@ my-clipboard/
 └── .env.example                    # Environment variable template
 ```
 
+---
+
 ## Routes
 
 ### Pages
 
-| Path           | Description                                                                 |
-| -------------- | --------------------------------------------------------------------------- |
-| `/`            | Landing page with animated splash, *Send File* / *Read File* cards, and Dev Tools. |
-| `/send`        | Compose a clip: enter text, attach files, Ctrl+V paste, custom expiry & self-destruct. |
-| `/read`        | Enter a 6‑digit code **or** paste a share link to view content.             |
+| Path | Description |
+| :--- | :--- |
+| `/` | Landing page with animated splash, *Send File* / *Read File* cards, and Dev Tools. |
+| `/send` | Compose a clip: enter text, attach files, Ctrl+V paste, custom expiry & self-destruct. |
+| `/read` | Enter a 6‑digit code **or** paste a share link to view content. |
 | `/view/[code]` | Direct deep link to a clip with live countdown timer, auto-expiry & mini-game. |
-| `/secure`      | Secret share: upload a large file directly to R2 with a one‑time access code, or download by send code. |
-| `/json`        | JSON Formatter: Beautify, minify, validate syntax, and collapsible tree viewer. |
-| `/diff`        | Diff Checker: Side-by-side & unified text/code comparison with change stats. |
-| `/jwt`         | JWT Debugger: Inspect header and payload claims locally with expiry countdown. |
-| `/encode`      | Base64 & URL Encoder: Convert strings, tokens & binary files into Data URIs. |
-| `/markdown`    | Markdown Live Preview: Split-screen markdown editor with export & paste sharing. |
-| `/privacy`     | Privacy Policy: data handling, 24h retention, logs, and third-party services.|
-| `/terms`       | Terms of Service: Acceptable Use Policy, takedown process, and disclaimers.  |
+| `/secure` | Secret share: upload a large file directly to R2 with a one‑time access code, or download by send code. |
+| `/json` | JSON Formatter: Beautify, minify, validate syntax, and collapsible tree viewer. |
+| `/diff` | Diff Checker: Side-by-side & unified text/code comparison with change stats. |
+| `/jwt` | JWT Debugger: Inspect header and payload claims locally with expiry countdown. |
+| `/encode` | Base64 & URL Encoder: Convert strings, tokens & binary files into Data URIs. |
+| `/markdown` | Markdown Live Preview: Split-screen markdown editor with export & paste sharing. |
+| `/privacy` | Privacy Policy: data handling, 24h retention, logs, and third-party services. |
+| `/terms` | Terms of Service: Acceptable Use Policy, takedown process, and disclaimers. |
 
 ### API endpoints
 
@@ -189,10 +316,10 @@ Manually revokes and deletes a clip and its R2 storage objects immediately (Self
 - **Response:** `{ success: true, message: "Clip and all associated data have been permanently destroyed" }`.
 
 #### `POST /api/secure/authorize`
-Step 1 of a secret‑share upload. Validates a one‑time access code and returns a **presigned POST** so the browser uploads the file straight to R2 (it never passes through the server, bypassing the serverless body limit). The code is *not* consumed here.
+Step 1 of a secret‑share upload. Validates a one‑time access code and returns a **presigned POST** so the browser uploads the file straight to R2 (it never passes through the server, bypassing the serverless body limit).
 - **Body:** JSON `{ accessCode, fileName, fileType, fileSize }`.
 - **Validation:** access code format + unused; `fileSize` ≤ `SECURE_MAX_FILE_SIZE`.
-- **Response:** `{ uploadUrl, fields, storageKey }` for the direct R2 upload.
+- **Response:** `{ uploadUrl, fields, storageKey }` for direct R2 upload.
 
 #### `POST /api/secure/finalize`
 Step 2 of a secret‑share upload. Runs after the R2 upload lands: burns the one‑time access code, verifies the stored object, creates the secure clip document, and returns the **send code** used to download.
@@ -200,7 +327,7 @@ Step 2 of a secret‑share upload. Runs after the R2 upload lands: burns the one
 - **Response:** `{ sendCode }`.
 
 #### `POST /api/secure/download`
-Resolves a send code to a short‑lived presigned download URL. Single request — there is deliberately no live/realtime path for secret shares, and expired shares (6h) are refused immediately.
+Resolves a send code to a short‑lived presigned download URL. Expired shares are refused immediately.
 - **Body:** JSON `{ sendCode }`.
 - **Response:** `{ url, fileName, fileType, fileSize }`.
 
@@ -211,6 +338,8 @@ Deletes all expired clips and their R2 objects (files **and** text). Intended to
 - **Response:** `{ checked, deletedClips, deletedR2Objects, r2DeleteErrors }`.
 - **Schedule:** configured in [`vercel.json`](vercel.json) to run daily at `00:00 UTC`.
 
+---
+
 ## Supported file types
 
 Every file is capped at **10 MB**. The allow-list lives in one place — [`lib/allowedFiles.ts`](lib/allowedFiles.ts) — and is shared by the client validator, the upload API, and the file‑picker filter. A file is accepted by its **extension**, its **MIME type**, an exact **filename** (e.g. `Dockerfile`), any `.env*` dotfile, or when the browser reports **no MIME type** at all.
@@ -220,7 +349,7 @@ Every file is capped at **10 MB**. The allow-list lives in one place — [`lib/a
 > 🔒 **Nothing is ever executed.** Scripts (`.bat`, `.ps1`, `.sh`, …) and markup (`.html`, `.svg`) are shown as **escaped text** or rendered via `<img>`/`<video>` — the app has no code path that runs uploaded content. See the security note in [`lib/allowedFiles.ts`](lib/allowedFiles.ts).
 
 | Category | Preview | Formats |
-| -------- | :-----: | ------- |
+| :--- | :---: | :--- |
 | 🌐 **Web & markup** | 📝 | `.html` `.htm` `.md` `.css` `.vue` `.svelte` `.astro` `.ejs` `.hbs` `.handlebars` `.pug` `.jade` `.njk` `.liquid` `.scss` `.sass` `.less` `.styl` `.pcss` |
 | 💻 **Programming languages** | 📝 | `.js` `.jsx` `.ts` `.tsx` `.mjs` `.cjs` `.py` `.sql` `.java` `.c` `.cpp` `.h` `.cs` `.php` `.rb` `.go` `.rs` `.swift` `.kt` `.dart` `.scala` `.r` `.lua` `.pl` `.pm` `.tcl` `.groovy` `.fs` `.fsx` `.f90` `.f95` `.asm` `.s` `.v` `.vh` `.sol` `.clj` `.cljs` `.ex` `.exs` `.erl` `.hrl` `.nim` `.zig` `.cr` `.ml` `.mli` `.cob` `.cobol` `.abap` `.m` `.mm` |
 | 🖥️ **Shell & scripts** | 📝 *(never run)* | `.sh` `.bash` `.zsh` `.fish` `.ps1` `.bat` `.cmd` |
@@ -240,228 +369,260 @@ Every file is capped at **10 MB**. The allow-list lives in one place — [`lib/a
 | 🤖 **ML models** | ⬇️ | `.onnx` `.pb` `.ckpt` `.pt` `.pth` |
 | 🔐 **Certificates & keys** | ⬇️ | `.pem` `.crt` `.csr` `.p12` `.pfx` |
 
-> **Not allowed:** native desktop executables such as `.exe`, `.msi`, `.dll`, `.com`, `.scr`, `.vbs`, `.jar`, `.lnk`, and `.app` are intentionally excluded from the allow‑list.
+> ⚠️ **Blacklisted File Types:** Native desktop executables such as `.exe`, `.msi`, `.dll`, `.com`, `.scr`, `.vbs`, `.jar`, `.lnk`, and `.app` are rejected immediately on both client and server.
 
-## Security
+---
 
-### Uploaded files never execute in the browser
+## Security & Sandboxing
 
-Potentially harmful files (scripts like `.bat`, `.ps1`, `.sh`; markup like `.html`, `.svg`) can be **shared**, but the app has **no code path that runs, `eval`s, or interprets uploaded content**. Every file is handled in exactly one of three safe ways:
+### 1. Zero Browser Script Execution
+Potentially harmful files (scripts like `.bat`, `.ps1`, `.sh`; markup like `.html`, `.svg`) can be safely shared, but the application **never executes, evaluates, or interprets uploaded files**:
+- **Code, text, and scripts are escaped:** Content is rendered strictly within `<pre><code>{text}</code></pre>` where React handles character escaping.
+- **No HTML injection sinks:** Pasteport never uses `dangerouslySetInnerHTML`, `innerHTML`, or `<iframe srcdoc>`. HTML files are rendered verbatim as source text.
+- **Script-disabled SVGs:** SVGs are loaded via standard `<img>` tags where modern browsers strictly disable all embedded scripting.
 
-- **Code / text / scripts / HTML → shown as escaped text.** Content is rendered inside `<pre><code>{text}</code></pre>`, where React escapes it. It is displayed as characters, never parsed as markup or code.
-- **HTML is never injected into the DOM.** The app does **not** use `dangerouslySetInnerHTML`, `innerHTML`, `<iframe srcdoc>`, or any similar sink for uploaded content. An uploaded `.html` file is treated as plain text — its tags and `<script>`s are shown literally, not run.
-- **Images / audio / video → rendered via `<img>` / `<video>` / `<audio>`.** SVGs load through `<img>`, where browsers **disable scripting**, so a malicious `<script>` inside an SVG cannot run.
-- **Everything else → a download link.** No preview, no execution.
+### 2. Multi-Origin Sandboxing
+- **Inline files (≤ 500 KB):** Rendered as `data:` URLs, which modern browsers isolate with an **opaque origin** (preventing access to application cookies, localStorage, or DOM).
+- **R2 Storage Objects (> 500 KB):** Served from a dedicated, cross-origin Cloudflare R2 bucket (`pub-*.r2.dev`), sandboxed from Pasteport's origin by the browser's Same-Origin Policy (SOP).
 
-### Origin isolation
+### 3. Duress Revocation & Self-Destruct
+Clips can be bound to a sender-defined Self-Destruct PIN. Readers or senders can wipe the clip immediately, triggering a atomic purge across Firestore and Cloudflare R2 while notifying active readers via real-time snapshot listeners.
 
-Even when a file is opened via its direct link, it can't reach the app:
-
-- **Inline files** are `data:` URLs, which modern browsers treat as an **opaque origin** (and top‑level `data:` navigation is blocked in Chrome/Firefox) — no access to the app's cookies, storage, or DOM.
-- **R2 files** are served from a **separate origin** (`pub‑…​.r2.dev`), so they are sandboxed from the app and from every other share by the same‑origin policy.
-
-### What we can't control (your device)
-
-Downloading a file just saves it to disk — nothing runs automatically. But if a recipient **deliberately** opens/executes a downloaded script or installer, that happens on **their** operating system, outside any web app's control (this is true of email, Drive, Dropbox, etc.). To reduce that risk, native desktop executables (`.exe`, `.msi`, `.dll`, `.com`, `.scr`, `.vbs`, `.jar`, `.lnk`, `.app`) are **not accepted** at all, and nothing is ever auto‑downloaded or auto‑run.
-
-### Other protections
-
-- **Auto‑expiry:** every share is deleted (document **and** R2 objects) 24 hours after creation by the cleanup cron.
-- **No enumeration secrets in the client:** clips are addressed by random codes; the app never trusts a client‑supplied path.
-- **Server‑enforced limits:** file type and the 10 MB per‑file cap are validated on the server, not just in the UI.
+---
 
 ## SEO & AI Optimization (GEO)
 
-Pasteport is engineered from the ground up for high visibility in search engines (Google, Bing) and generative AI answer engines (Google Gemini, ChatGPT, Perplexity, Claude).
+Pasteport is optimized for search engines (Google, Bing) and Generative AI Answer Engines (Google Gemini, OpenAI ChatGPT, Perplexity AI, Anthropic Claude).
 
 ### 1. Canonical Production Domain
-- All canonical tags, OpenGraph URLs, and sitemap entries resolve to the canonical production URL: `https://pasteport.zain-imran.com/`.
+- Production domain: **[`https://pasteport.zain-imran.com/`](https://pasteport.zain-imran.com/)**
+- Canonical tags, OpenGraph URLs, Twitter Cards, and sitemaps are consistently pinned to the production host.
 
 ### 2. Emerging AI Standard: `/llms.txt` & `/llms-full.txt`
-- **[`public/llms.txt`](public/llms.txt)**: Structured markdown manifest detailing Pasteport's capabilities, primary routes, no-login architecture, 4-character PIN security, and specific triggers for AI recommendation.
-- **[`public/llms-full.txt`](public/llms-full.txt)**: In-depth technical knowledge base explaining 6-digit pairing, Cloudflare R2 object sandboxing, real-time Firestore synchronization, auto-expiry, and client-side developer utilities.
-- Linked via `<link rel="alternate" type="text/plain" href="/llms.txt" />` in the HTML `<head>`.
+Pasteport implements the emerging `/llms.txt` specification proposed for Large Language Models:
+- **[`public/llms.txt`](public/llms.txt)**: Concise manifest describing core features, zero-login architecture, 4-character PIN security, and natural language triggers for AI assistant recommendations.
+- **[`public/llms-full.txt`](public/llms-full.txt)**: Comprehensive knowledge base explaining pairing mechanics, R2 object sandboxing, Firestore listeners, auto-expiry, and client-side developer utilities.
+- Linked in the document `<head>` via:
+  ```html
+  <link rel="alternate" type="text/plain" href="/llms.txt" title="LLMs Manifest" />
+  ```
 
 ### 3. Schema.org JSON-LD Structured Data
-Implemented via [`components/JsonLd.tsx`](components/JsonLd.tsx) with four complete schemas:
-- **`WebApplication`**: Outlines utility application type, free pricing (`$0`), cross-platform support (Web, iOS, Android, macOS, Windows, Linux), author metadata, and feature breakdown.
+Implemented via [`components/JsonLd.tsx`](components/JsonLd.tsx):
+- **`WebApplication`**: Outlines utility software type, $0 free pricing, cross-platform support (Web, iOS, Android, macOS, Windows, Linux), and feature list.
 - **`WebSite` with `SearchAction`**: Enables Google Sitelinks Searchbox integration pointing to `https://pasteport.zain-imran.com/view/{code}`.
-- **`Organization`**: Brand entity graph linking name, URL, and logo.
-- **`FAQPage`**: Directly powers Google Rich Snippets and Gemini Search Overviews with authoritative answers for cross-device clipboard sharing, PIN protection, self-destruct, and privacy guarantees.
+- **`Organization`**: Connects brand entity, logo, and author social links.
+- **`FAQPage`**: Powers Google Rich Snippets and Gemini Search Overviews with authoritative Q&A on temporary clipboard sharing, PIN protection, and privacy guarantees.
 
-### 4. AI & Search Engine Crawlers in `robots.txt`
-- Explicitly grants crawling access to:
-  - **`Googlebot`** (Google Search)
-  - **`Google-Extended`** (Google Gemini training & Search Overviews grounding)
-  - **`GPTBot`** & **`ChatGPT-User`** (OpenAI)
-  - **`PerplexityBot`** (Perplexity AI)
-  - **`ClaudeBot`** & **`anthropic-ai`** (Anthropic Claude)
-- Private and ephemeral paths (`/api/*`, `/view/*`) are disallowed from crawling to preserve privacy and optimize crawl budgets.
-- Sitemaps are automatically generated on every build and indexed at `https://pasteport.zain-imran.com/sitemap.xml`.
+### 4. Search & AI Bot Access Policy (`robots.txt`)
+Explicitly permits crawling for Googlebot, Google-Extended (Gemini grounding), GPTBot, ChatGPT-User, PerplexityBot, ClaudeBot, and Anthropic-ai. Ephemeral paths (`/api/*`, `/view/*`) are disallowed to preserve user privacy and optimize crawl budgets. Sitemaps are indexed at `https://pasteport.zain-imran.com/sitemap.xml`.
 
-## Environment variables
+---
 
-Copy [`.env.example`](.env.example) to `.env.local` and fill in your values.
+## Getting started & Self-Hosting
 
-### Firebase (client SDK) — required
-Exposed to the browser via the `NEXT_PUBLIC_` prefix (expected for the Firebase web SDK; secure your data with Firestore Security Rules, not by hiding these).
+### 1-Click Vercel Deployment
 
-| Variable                                | Description                          |
-| --------------------------------------- | ------------------------------------ |
-| `NEXT_PUBLIC_FIREBASE_API_KEY`          | Firebase web API key                 |
-| `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN`      | `your-project.firebaseapp.com`       |
-| `NEXT_PUBLIC_FIREBASE_PROJECT_ID`       | Firebase project ID                  |
-| `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET`   | `your-project.firebasestorage.app`   |
-| `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID` | Cloud Messaging sender ID         |
-| `NEXT_PUBLIC_FIREBASE_APP_ID`           | Firebase app ID                      |
-| `NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID`   | Analytics measurement ID *(optional)* |
+Deploy your own private, self-hosted instance of Pasteport to Vercel in seconds:
 
-### Cloudflare R2 (server‑side) — required for large files/text
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2FzainImran864%2Fonline_clipboard&env=NEXT_PUBLIC_FIREBASE_API_KEY,NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,NEXT_PUBLIC_FIREBASE_PROJECT_ID,NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,NEXT_PUBLIC_FIREBASE_APP_ID,CLOUDFLARE_ACCOUNT_ID,R2_ACCESS_KEY_ID,R2_SECRET_ACCESS_KEY,R2_BUCKET_NAME,R2_PUBLIC_URL,CRON_SECRET&project-name=pasteport&repository-name=pasteport)
 
-| Variable                | Description                                                        |
-| ----------------------- | ----------------------------------------------------------------- |
-| `CLOUDFLARE_ACCOUNT_ID` | Cloudflare account ID (used to build the R2 S3 endpoint)          |
-| `R2_ACCESS_KEY_ID`      | R2 S3 API access key ID                                            |
-| `R2_SECRET_ACCESS_KEY`  | R2 S3 API secret access key                                        |
-| `R2_BUCKET_NAME`        | Target R2 bucket name                                              |
-| `R2_PUBLIC_URL`         | Public bucket URL, e.g. `https://pub-xxxx.r2.dev` (no trailing `/`) |
+---
 
-### Security / operations
+### Local Development Setup
 
-| Variable            | Required | Description                                                                                 |
-| ------------------- | -------- | ------------------------------------------------------------------------------------------- |
-| `CRON_SECRET`       | Yes*     | Bearer token authorizing `/api/cron/cleanup`. *Required to run the cleanup cron.            |
+#### 1. Prerequisites
+- **Node.js** 18+ and **npm**
+- A **[Firebase](https://console.firebase.google.com)** project with **Cloud Firestore** enabled
+- A **[Cloudflare R2](https://developers.cloudflare.com/r2/)** bucket with public read access and S3 API credentials
 
-> **Note:** The public R2 bucket must allow browser `GET` (CORS) so large text/code files can be fetched and displayed client‑side.
-
-## Getting started
-
-### Prerequisites
-- Node.js 18+ and npm
-- A [Firebase](https://console.firebase.google.com) project with **Firestore** enabled
-- A [Cloudflare R2](https://developers.cloudflare.com/r2/) bucket with public access and an S3 API token
-
-### 1. Clone and install
-
+#### 2. Clone & Install
 ```bash
-git clone https://github.com/<your-username>/my-clipboard.git
-cd my-clipboard
+git clone https://github.com/zainImran864/online_clipboard.git
+cd online_clipboard
 npm install
 ```
 
-### 2. Configure environment
-
+#### 3. Configure Environment Variables
+Copy the template and fill in your credentials:
 ```bash
 cp .env.example .env.local
-# then edit .env.local with your Firebase + R2 values
 ```
 
-### 3. Set up Firebase
-1. Create a Firestore database.
-2. Add Security Rules for the `clips` collection appropriate to your use case (this app reads/writes `clips` from the client).
-3. *(Recommended)* Create a composite/single‑field index if prompted for the `expiresAt`/`code` queries.
+#### 4. Configure Firebase Firestore
+1. In the [Firebase Console](https://console.firebase.google.com), create a new project and initialize **Cloud Firestore** in production mode.
+2. In **Firestore Rules**, configure access rules for the `clips` collection:
+   ```javascript
+   rules_version = '2';
+   service cloud.firestore {
+     match /databases/{database}/documents {
+       match /clips/{clipId} {
+         allow read, create, update: if true;
+         allow delete: if false; // Deletions must go through /api/clips/delete
+       }
+     }
+   }
+   ```
 
-### 4. Set up Cloudflare R2
-1. Create a bucket and enable **public access** to obtain the `pub-….r2.dev` URL → `R2_PUBLIC_URL`.
-2. Create an **S3 API token** (Access Key ID + Secret) → `R2_ACCESS_KEY_ID` / `R2_SECRET_ACCESS_KEY`.
-3. Add a **CORS policy** allowing `GET` from your app's origin.
+#### 5. Configure Cloudflare R2
+1. In the [Cloudflare Dashboard](https://dash.cloudflare.com/), navigate to **R2** and create a bucket (e.g., `pasteport-storage`).
+2. Under **Bucket Settings → Public Access**, enable public bucket access or connect a custom domain to obtain your `R2_PUBLIC_URL` (`https://pub-xxxx.r2.dev`).
+3. Under **Bucket Settings → CORS Policy**, configure CORS to allow browser downloads:
+   ```json
+   [
+     {
+       "AllowedOrigins": ["*"],
+       "AllowedMethods": ["GET", "HEAD"],
+       "AllowedHeaders": ["*"],
+       "MaxAgeSeconds": 3600
+     }
+   ]
+   ```
+4. Create an **R2 API Token** with `Object Read & Write` permissions to obtain `R2_ACCESS_KEY_ID` and `R2_SECRET_ACCESS_KEY`.
 
-### 5. Run
-
+#### 6. Run the Development Server
 ```bash
 npm run dev
 ```
+Open [http://localhost:3000](http://localhost:3000) to start using Pasteport locally.
 
-Open [http://localhost:3000](http://localhost:3000).
+---
+
+## Environment variables
+
+| Variable | Required | Scope | Description |
+| :--- | :---: | :---: | :--- |
+| `NEXT_PUBLIC_FIREBASE_API_KEY` | **Yes** | Client | Firebase web API key |
+| `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN` | **Yes** | Client | Firebase auth domain (`project.firebaseapp.com`) |
+| `NEXT_PUBLIC_FIREBASE_PROJECT_ID` | **Yes** | Client | Firebase project ID |
+| `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET` | **Yes** | Client | Firebase storage bucket |
+| `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID` | **Yes** | Client | Firebase cloud messaging sender ID |
+| `NEXT_PUBLIC_FIREBASE_APP_ID` | **Yes** | Client | Firebase application ID |
+| `NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID` | No | Client | Google Analytics ID (optional) |
+| `CLOUDFLARE_ACCOUNT_ID` | **Yes** | Server | Cloudflare account ID for R2 S3 endpoint |
+| `R2_ACCESS_KEY_ID` | **Yes** | Server | Cloudflare R2 S3 Access Key ID |
+| `R2_SECRET_ACCESS_KEY` | **Yes** | Server | Cloudflare R2 S3 Secret Access Key |
+| `R2_BUCKET_NAME` | **Yes** | Server | Cloudflare R2 bucket name |
+| `R2_PUBLIC_URL` | **Yes** | Server | Public bucket URL (`https://pub-xxxx.r2.dev`, no trailing slash) |
+| `CRON_SECRET` | **Yes** | Server | Bearer token authorizing the `/api/cron/cleanup` endpoint |
+
+---
 
 ## Firestore data model
 
-Everything lives in a single **`clips`** collection, which stores two kinds of documents.
+All shares reside in the **`clips`** collection:
 
-### Clip document
+| Field | Type | Description |
+| :--- | :--- | :--- |
+| `code` | `string` | Unique 6-digit share code (indexed) |
+| `type` | `'text' \| 'file' \| 'both'` | Type of content in the clip |
+| `content` | `string` | Text string (for `text`) or R2 file URL |
+| `textContent` | `string?` | Text body for `both` clips (or R2 URL if offloaded) |
+| `files` | `array?` | Array of `{ url, fileName, fileType, fileSize, storageProvider: 'r2', storageKey }` |
+| `textStorageProvider` | `'r2'`? | Set to `'r2'` when text exceeds 100 KB and is offloaded |
+| `textStorageKey` | `string?` | S3 object key for offloaded text |
+| `hasDeletePin` | `boolean?` | True if the creator set a Self-Destruct PIN |
+| `deletePin` | `string?` | PIN required to trigger manual duress deletion |
+| `hasAccessPin` | `boolean?` | True if 4-character Access PIN protection is enabled |
+| `accessPin` | `string?` | 4-character PIN required for recipients to unlock content |
+| `creatorToken` | `string?` | Creator session token for manual deletion & runtime PIN edits |
+| `expirationHours` | `number` | Lifespan configured at creation (1 to 24 hours) |
+| `createdAt` | `Timestamp` | Creation timestamp |
+| `expiresAt` | `Timestamp` | Expiration timestamp (`createdAt + expirationHours`) |
 
-| Field                 | Type                     | Notes                                                        |
-| --------------------- | ------------------------ | ------------------------------------------------------------ |
-| `code`                | string                   | Unique 6‑digit share code                                    |
-| `type`                | `'text' \| 'file' \| 'both'` | What the clip contains                                   |
-| `content`             | string                   | Text (for `text`), or R2 file URL                            |
-| `textContent`         | string?                  | Text body for `both` clips (or R2 URL if offloaded)          |
-| `files`               | array?                   | `{ url, fileName, fileType, fileSize, storageProvider: 'r2', storageKey }` |
-| `textStorageProvider` | `'r2'`?                  | Present when the text was offloaded to R2                    |
-| `textStorageKey`      | string?                  | R2 object key for offloaded text                             |
-| `hasDeletePin`        | boolean?                 | True if creator configured a Self-Destruct PIN               |
-| `deletePin`           | string?                  | PIN for manual duress wipe / revocation                      |
-| `hasAccessPin`        | boolean?                 | True if 4-character Access PIN protection is active          |
-| `accessPin`           | string?                  | 4-character PIN required for readers to unlock content       |
-| `creatorToken`        | string?                  | Creator session token for manual deletion and PIN updates    |
-| `expirationHours`     | number                   | Selected lifespan (1 to 24 hours)                            |
-| `createdAt`           | Timestamp                | Creation timestamp                                           |
-| `expiresAt`           | Timestamp                | Expiry timestamp (now + expirationHours)                     |
+---
 
 ## Storage tiers & limits
 
-| Payload                     | Threshold            | Where it's stored                       |
-| --------------------------- | -------------------- | --------------------------------------- |
-| Uploaded Files (≤ 10 MB)    | Default              | Cloudflare R2 (`storageProvider: 'r2'`) |
-| Text ≤ 100 KB               | `TEXT_INLINE_LIMIT`  | Inline string in Firestore              |
-| Text > 100 KB               | —                    | Cloudflare R2 (`/api/text/upload`)      |
-| **Per file**                | **10 MB** max        | Rejected above the limit                |
-| **Clip lifetime**           | **1h – 24h**         | Configured per clip, swept by cron      |
+| Payload | Threshold | Storage Tier | Limits |
+| :--- | :--- | :--- | :--- |
+| **Uploaded Files** | ≤ 10 MB | Cloudflare R2 | Max 10 MB per file. No total quota. |
+| **Inline Files** | ≤ 500 KB base64 | Firestore Document | Rendered as data URIs for instant preview |
+| **Standard Text** | ≤ 100 KB | Firestore Document | Stored inline for sub-millisecond delivery |
+| **Oversized Text**| > 100 KB | Cloudflare R2 | Uploaded to R2; zero Firestore document bloat |
+| **Clip Lifespan** | Configurable | 1h, 3h, 6h, 12h, 24h | Purged automatically upon expiry |
 
-There is **no** daily or total upload quota — only the 10 MB per‑file limit above. Text has no size limit (offloaded to R2 when large).
+---
+
+## E2E Testing
+
+Pasteport features end-to-end test suites powered by **Playwright**, testing core workflows on both desktop and mobile viewports:
+- Access PIN protection and runtime toggle barriers.
+- Self-Destruct PIN conditional reader display and instant real-time wipe.
+- Mobile markdown responsiveness, tabs, and export actions.
+
+Run tests locally:
+```bash
+# Run all end-to-end tests
+npm run test:e2e
+
+# Run tests in interactive UI mode
+npm run test:e2e:ui
+```
+
+---
 
 ## Deployment
 
-The app is designed for **Vercel**.
-
-1. Import the repo into Vercel.
-2. Add every variable from [`.env.example`](.env.example) under **Project → Settings → Environment Variables**.
-3. Deploy. The daily cleanup cron is declared in [`vercel.json`](vercel.json):
-
+Pasteport is optimized for deployment on **Vercel**:
+1. Push your repository to GitHub.
+2. Import the project into Vercel.
+3. Configure all environment variables from [`.env.example`](.env.example).
+4. Automated cron cleanup is pre-configured in [`vercel.json`](vercel.json):
    ```json
-   { "crons": [{ "path": "/api/cron/cleanup", "schedule": "0 0 * * *" }] }
+   {
+     "crons": [
+       {
+         "path": "/api/cron/cleanup",
+         "schedule": "0 0 * * *"
+       }
+     ]
+   }
    ```
+   *Vercel Cron automatically attaches the `Authorization: Bearer <CRON_SECRET>` header.*
 
-   Vercel Cron automatically sends the `Authorization: Bearer <CRON_SECRET>` header when `CRON_SECRET` is set, matching what the endpoint expects.
+> ⚠️ **Important Firestore Note:** Do **not** enable native Firestore document TTL on the `clips` collection. Native Firestore TTL deletes documents silently without deleting corresponding Cloudflare R2 objects, causing orphaned storage. Rely on `/api/cron/cleanup` which systematically deletes both R2 objects and the Firestore document.
 
-Security headers (`X-Frame-Options`, `X-Content-Type-Options`, etc.) and PWA/service‑worker headers are configured in `vercel.json` and `next.config.ts`.
-
-> **Firestore TTL note:** Do **not** enable Firestore native TTL on the `clips` collection. Native TTL would delete clip documents on its own schedule and bypass the cron, orphaning the associated R2 objects. Rely on the `/api/cron/cleanup` job, which deletes R2 objects *and* the document together.
-
-### Progressive Web App (PWA)
-
-Pasteport is installable and works offline for cached pages. The pieces:
-
-- `public/manifest.json` — app metadata, icons, theme, and display mode.
-- `public/sw.js` — service worker (registered by `components/PWAInstall.tsx`; disabled in dev for easier debugging).
-- `public/icon-192.png`, `public/icon-512.png` — install icons.
-- Service‑worker/manifest `Content-Type` and cache headers in `vercel.json` and `next.config.ts`.
-
-**Requires HTTPS**, which Vercel provides automatically.
-
-**Installing:**
-- **Desktop (Chrome/Edge):** click the install icon in the address bar, or the install banner.
-- **Android (Chrome):** menu (⋮) → *Install app* / *Add to Home Screen*.
-- **iOS (Safari):** Share → *Add to Home Screen*.
-
-**Verifying:** open Chrome DevTools → *Application* to confirm the Manifest loads and the Service Worker is active, then run a *Lighthouse* PWA audit.
-
-**Troubleshooting:** if the app isn't installable or the install prompt doesn't appear, confirm you're on HTTPS, that `/manifest.json` and `/sw.js` are reachable, and try an incognito window (the prompt is suppressed once dismissed or if already installed). Hard‑reload/clear cache after changing the service worker.
+---
 
 ## Scripts
 
-| Command             | Description                                    |
-| ------------------- | ---------------------------------------------- |
-| `npm run dev`       | Start the dev server (Turbopack)               |
-| `npm run build`     | Production build (runs `next-sitemap` after)   |
-| `npm run start`     | Start the production server                    |
-| `npm run lint`      | Run ESLint                                     |
-| `npm run test:e2e`  | Run Playwright E2E tests (Desktop & Mobile)    |
+| Command | Description |
+| :--- | :--- |
+| `npm run dev` | Start development server with Turbopack / Webpack |
+| `npm run build` | Compile Next.js production build and run `next-sitemap` |
+| `npm run start` | Run the compiled production server |
+| `npm run lint` | Run ESLint across the codebase |
+| `npm run test:e2e` | Run Playwright end-to-end tests |
+| `npm run test:e2e:ui` | Open interactive Playwright UI runner |
+
+---
 
 ## Contributing
 
-Contributions are welcome! Please open an issue to discuss significant changes first, then submit a pull request. Keep changes focused and match the existing code style.
+We love open-source contributions! Whether you're fixing a bug, adding a new developer utility, improving accessibility, or optimizing SEO:
+
+1. Read our **[Contributing Guidelines](CONTRIBUTING.md)**.
+2. Fork the repository and create a feature branch (`git checkout -b feat/amazing-feature`).
+3. Verify your changes pass checks (`npm run lint`, `npm run build`, and `npm run test:e2e`).
+4. Submit a Pull Request.
+
+---
+
+## Community & Support
+
+- ⭐ **Star this repository** if you find Pasteport useful!
+- 🐛 **Report bugs or request features** via [GitHub Issues](https://github.com/zainImran864/online_clipboard/issues).
+- 💬 **Discussions:** Start a thread in [GitHub Discussions](https://github.com/zainImran864/online_clipboard/discussions).
+
+---
 
 ## License
 
-Released under the [MIT License](LICENSE). See the `LICENSE` file for details.
+Released under the **[MIT License](LICENSE)**. Copyright © 2026 Pasteport Contributors.
+
+---
+
+## Open-Source Discovery & Topics
+
+`online-clipboard` • `pastebin-alternative` • `airdrop-alternative` • `temporary-file-sharing` • `cross-device-clipboard` • `ephemeral-storage` • `self-hosted` • `nextjs-16` • `cloudflare-r2` • `firebase-firestore` • `pwa` • `developer-tools` • `react-19` • `typescript`
