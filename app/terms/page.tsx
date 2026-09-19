@@ -76,8 +76,7 @@ export default function TermsOfServicePage() {
                 1. Description of the Service
               </h2>
               <p className="text-sm leading-relaxed text-slate-600 sm:text-base">
-                Pasteport is a free, ephemeral online clipboard and temporary file transfer utility designed for quick peer-to-peer sharing across devices using short access codes.
-                No registration or account creation is required.
+                Pasteport is a free, ephemeral online clipboard, developer toolkit, and temporary file transfer utility designed for quick peer-to-peer sharing across devices using short access codes. The service is accessible via our web application, native desktop client, and command-line interface (<code className="rounded bg-slate-100 px-1 font-mono text-xs">pasteport-cli</code>). No registration or account creation is required.
               </p>
             </section>
 
@@ -108,7 +107,10 @@ export default function TermsOfServicePage() {
                       <strong className="text-slate-900">Fraud & Identity Theft:</strong> Share stolen credit card data, unauthorized access credentials, social security numbers, or deceptive phishing sites.
                     </li>
                     <li>
-                      <strong className="text-slate-900">Infrastructure Abuse & DoS:</strong> Launch denial-of-service (DoS/DDoS) attacks, automated bot abuse, scraping, or attempts to bypass rate limits or storage quotas.
+                      <strong className="text-slate-900">Infrastructure Abuse, DoS & Brute-Forcing:</strong> Launch denial-of-service (DoS/DDoS) attacks, automated bot abuse, code brute-forcing (attempting to enumerate 6-digit codes or PINs), scraping, or attempts to bypass rate limits or storage quotas.
+                    </li>
+                    <li>
+                      <strong className="text-slate-900">CLI & Automated Scripting Limits:</strong> The CLI and programmatic endpoints are provided for individual developer workflows (e.g. piping build logs, sharing config snippets). Using automated scripts to flood the service as an unauthorized free CDN or bulk file host is strictly prohibited and subject to IP throttling or bans.
                     </li>
                     <li>
                       <strong className="text-slate-900">Executable Binaries:</strong> Upload desktop executables (such as <code className="rounded bg-slate-200 px-1 text-xs">.exe</code>, <code className="rounded bg-slate-200 px-1 text-xs">.msi</code>, <code className="rounded bg-slate-200 px-1 text-xs">.dll</code>, <code className="rounded bg-slate-200 px-1 text-xs">.com</code>, <code className="rounded bg-slate-200 px-1 text-xs">.scr</code>, <code className="rounded bg-slate-200 px-1 text-xs">.vbs</code>, <code className="rounded bg-slate-200 px-1 text-xs">.jar</code>, <code className="rounded bg-slate-200 px-1 text-xs">.lnk</code>).
