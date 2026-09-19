@@ -4,7 +4,7 @@ Share files, text, PDFs, and images instantly with a simple 6‑digit code. **No
 
 Built with Next.js (App Router), Firebase Firestore, and Cloudflare R2. Installable as a PWA.
 
-> **Live demo:** https://online-clipboard-beta.vercel.app
+> **Live demo:** https://pasteport.zain-imran.com
 
 ---
 
@@ -19,6 +19,7 @@ Built with Next.js (App Router), Firebase Firestore, and Cloudflare R2. Installa
   - [API endpoints](#api-endpoints)
 - [Supported file types](#supported-file-types)
 - [Security](#security)
+- [SEO & AI Optimization (GEO)](#seo--ai-optimization-geo)
 - [Environment variables](#environment-variables)
 - [Getting started](#getting-started)
 - [Firestore data model](#firestore-data-model)
@@ -82,22 +83,26 @@ Built with Next.js (App Router), Firebase Firestore, and Cloudflare R2. Installa
 | Styling          | Tailwind CSS v4                                        |
 | Database         | Firebase Firestore (client SDK)                       |
 | Object storage   | Cloudflare R2 (via the AWS S3 SDK)                    |
-| Hosting / Cron   | Vercel                                                 |
-| SEO / PWA        | `next-sitemap`, Web App Manifest + service worker     |
+| SEO / GEO / PWA  | Schema.org JSON-LD, `/llms.txt`, `next-sitemap`, Web App Manifest |
+| E2E Testing      | Playwright (`@playwright/test` on Chrome)             |
 
 ## Project structure
 
 ```
 my-clipboard/
 ├── app/
-│   ├── page.tsx                    # Home (splash + Send/Read cards)
-│   ├── send/page.tsx               # Create a clip (text + files)
+│   ├── page.tsx                    # Home (splash + Send/Read + Dev Tools + SEO FAQ)
+│   ├── send/page.tsx               # Create a clip (text + files + 4-char PIN + self-destruct)
 │   ├── read/page.tsx               # Open a clip by code or link
-│   ├── view/[code]/page.tsx        # Open a clip directly via /view/<code>
+│   ├── view/[code]/page.tsx        # Direct deep link with PIN unlock barrier & real-time sync
 │   ├── secure/page.tsx             # Secret share — direct‑to‑R2 upload/download by code
-│   ├── layout.tsx                  # Root layout, metadata, PWA tags
+│   ├── layout.tsx                  # Root layout, canonical domain, OpenGraph, JSON-LD
 │   ├── globals.css                 # Tailwind + global styles
 │   └── api/
+│       ├── clips/
+│       │   ├── delete/route.ts         # POST — self-destruct wipe (PIN verified)
+│       │   ├── verify-pin/route.ts     # POST — validate 4-character access PIN
+│       │   └── update-pin/route.ts     # POST — runtime enable/disable/edit 4-character PIN
 │       ├── files/upload/route.ts       # POST — validate, store file (inline or R2)
 │       ├── text/upload/route.ts        # POST — store oversized text in R2
 │       ├── secure/authorize/route.ts   # POST — validate code, presign R2 upload
@@ -107,10 +112,15 @@ my-clipboard/
 ├── components/
 │   ├── ContentViewer.tsx           # Renders text/file/both clips (code preview, images, docs)
 │   ├── FileUpload.tsx              # Drag‑and‑drop file picker with validation
-│   ├── ShareCodeCard.tsx           # Reusable generated code + QR + share-link card
+│   ├── ShareCodeCard.tsx           # Code digits, QR, runtime PIN switch, self-destruct button
+│   ├── JsonLd.tsx                  # Schema.org JSON-LD (WebApplication, WebSite, FAQPage)
 │   ├── PageLoading.tsx             # Shared route loading screen
 │   ├── NavigationProgress.tsx, ToastHost.tsx
 │   ├── Logo.tsx, SplashScreen.tsx, PWAInstall.tsx
+│   └── ClipboardMiniGame.tsx       # Retro canvas glider game for 404/expired pages
+├── e2e/
+│   ├── markdown.spec.ts            # Mobile responsiveness & preview tests
+│   └── self-destruct.spec.ts       # PIN protection & self-destruct tests
 ├── hooks/
 │   └── useClipboard.ts             # create/read/update/subscribe clips; text↔R2 offload
 ├── lib/
@@ -119,7 +129,8 @@ my-clipboard/
 │   ├── fileHandler.ts              # Client upload wrapper + file validation
 │   ├── secureShare.ts              # Secret‑share client helpers + shared constants
 │   └── codeGenerator.ts            # Unique 6‑/8‑digit code generation
-├── public/                         # Icons, manifest, static assets
+├── public/                         # Icons, manifest, static assets, llms.txt, llms-full.txt
+├── playwright.config.ts            # Playwright cross-platform config (system Chrome)
 ├── next.config.ts, vercel.json, next-sitemap.config.js
 └── .env.example                    # Environment variable template
 ```
@@ -258,6 +269,35 @@ Downloading a file just saves it to disk — nothing runs automatically. But if 
 - **Auto‑expiry:** every share is deleted (document **and** R2 objects) 24 hours after creation by the cleanup cron.
 - **No enumeration secrets in the client:** clips are addressed by random codes; the app never trusts a client‑supplied path.
 - **Server‑enforced limits:** file type and the 10 MB per‑file cap are validated on the server, not just in the UI.
+
+## SEO & AI Optimization (GEO)
+
+Pasteport is engineered from the ground up for high visibility in search engines (Google, Bing) and generative AI answer engines (Google Gemini, ChatGPT, Perplexity, Claude).
+
+### 1. Canonical Production Domain
+- All canonical tags, OpenGraph URLs, and sitemap entries resolve to the canonical production URL: `https://pasteport.zain-imran.com/`.
+
+### 2. Emerging AI Standard: `/llms.txt` & `/llms-full.txt`
+- **[`public/llms.txt`](public/llms.txt)**: Structured markdown manifest detailing Pasteport's capabilities, primary routes, no-login architecture, 4-character PIN security, and specific triggers for AI recommendation.
+- **[`public/llms-full.txt`](public/llms-full.txt)**: In-depth technical knowledge base explaining 6-digit pairing, Cloudflare R2 object sandboxing, real-time Firestore synchronization, auto-expiry, and client-side developer utilities.
+- Linked via `<link rel="alternate" type="text/plain" href="/llms.txt" />` in the HTML `<head>`.
+
+### 3. Schema.org JSON-LD Structured Data
+Implemented via [`components/JsonLd.tsx`](components/JsonLd.tsx) with four complete schemas:
+- **`WebApplication`**: Outlines utility application type, free pricing (`$0`), cross-platform support (Web, iOS, Android, macOS, Windows, Linux), author metadata, and feature breakdown.
+- **`WebSite` with `SearchAction`**: Enables Google Sitelinks Searchbox integration pointing to `https://pasteport.zain-imran.com/view/{code}`.
+- **`Organization`**: Brand entity graph linking name, URL, and logo.
+- **`FAQPage`**: Directly powers Google Rich Snippets and Gemini Search Overviews with authoritative answers for cross-device clipboard sharing, PIN protection, self-destruct, and privacy guarantees.
+
+### 4. AI & Search Engine Crawlers in `robots.txt`
+- Explicitly grants crawling access to:
+  - **`Googlebot`** (Google Search)
+  - **`Google-Extended`** (Google Gemini training & Search Overviews grounding)
+  - **`GPTBot`** & **`ChatGPT-User`** (OpenAI)
+  - **`PerplexityBot`** (Perplexity AI)
+  - **`ClaudeBot`** & **`anthropic-ai`** (Anthropic Claude)
+- Private and ephemeral paths (`/api/*`, `/view/*`) are disallowed from crawling to preserve privacy and optimize crawl budgets.
+- Sitemaps are automatically generated on every build and indexed at `https://pasteport.zain-imran.com/sitemap.xml`.
 
 ## Environment variables
 
