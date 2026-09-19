@@ -68,7 +68,7 @@ Every tool operates in browser memory with zero server data leakage and includes
 - Complete offline-first developer utilities suite embedded natively.
 
 ### Pasteport CLI (`/cli`)
-- Zero-dependency Node.js command-line interface (`npm i -g pasteport-cli` or `npx pasteport-cli`).
+- Zero-dependency Node.js and Python command-line interface (`npm i -g pasteport-zisphere`, `pip install pasteport-zisphere`, or `npx pasteport-zisphere`).
 - `pasteport send "text"`: Upload text snippet and receive 6-digit code.
 - `cat file.txt | pasteport send`: Pipe terminal outputs or CI logs directly to Pasteport.
 - `pasteport send ./build.zip`: Upload archives or binaries directly to Cloudflare R2 storage.

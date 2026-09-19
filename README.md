@@ -53,6 +53,8 @@ In addition to ephemeral clipboard sharing, Pasteport bundles **18 client-side d
 - [Why Pasteport? (Comparison Matrix)](#why-pasteport)
 - [Architecture](#architecture)
 - [Features](#features)
+- [Desktop App (Windows, macOS, Linux)](#desktop-app-windows-macos-linux)
+- [Command-Line Interface (CLI)](#command-line-interface-cli)
 - [How it works](#how-it-works)
 - [Tech stack](#tech-stack)
 - [Project structure](#project-structure)
@@ -191,17 +193,249 @@ flowchart TD
 - 🛡️ **Per‑file size limit** — up to 10 MB per file (600 MB on `/secure`), enforced client‑side and server‑side.
 - 📱 **Progressive Web App (PWA)** — installable on iOS, Android, macOS, and Windows with offline-ready service worker and app manifest.
 - 🖥️ **Pasteport Desktop App (Windows, macOS, Linux)**:
-  - **Global Hotkey (`Ctrl + Shift + P` / `Cmd + Shift + P`)**: Trigger the HUD quick-share popup from any active window.
+  - **Global Hotkey (`Ctrl + Shift + P` / `Cmd + Shift + P`)**: Trigger the HUD quick-share popup from any active window across the entire OS.
   - **1-Click Clipboard Upload**: Automatically captures clipboard content and generates a share code in ~200ms.
-  - **Background System Tray Daemon**: Feather-light tray app (<40MB RAM) with status indicator and quick actions.
+  - **Background System Tray Daemon**: Feather-light background tray app (<40MB RAM) with status indicator and quick actions.
   - **Native Notifications**: Non-intrusive system notifications in Windows Action Center and macOS Notification Center.
 - ⚡ **Command-Line Interface (`pasteport` CLI)**:
-  - Installable via `npm install -g pasteport-cli` or executed instantly with `npx pasteport-cli`.
-  - Send inline strings: `pasteport send "hello world"` → outputs 6-digit code and direct link.
-  - Pipe terminal outputs: `git diff | pasteport send` or `cat build.log | pasteport send --expiry 6`.
-  - Transfer files and archives: `pasteport send ./build.zip --pin 1234`.
-  - Retrieve content directly in terminal: `pasteport get 482193` or `pasteport get 482193 --raw > output.txt`.
+  - **Interactive 1-2-3-4 Mode**: Run `pasteport` without arguments to launch an interactive numbered menu:
+    - `[1] Standard Share` — send snippets or files up to 10 MB.
+    - `[2] Secret Share` — send massive files up to 600 MB directly to R2 using an 8-digit access code.
+    - `[3] Retrieve / Get` — preview text or download files using either a code or a full web URL.
+    - `[4] Delete / Wipe` — permanently destroy any clip with a Self-Destruct PIN.
+    - `[5] Exit`.
+  - **Zero External Dependencies**: Pure Node.js & Python implementations with native HTTP and ANSI color banners with structured troubleshooting suggestions.
+  - **Dual Input Resolution**: Accepts both 6-digit codes (`pasteport get 482193`) and full web URLs (`pasteport get https://pasteport.zain-imran.com/view/482193`).
+  - **Piping & Automation**: Pipe terminal outputs effortlessly: `git diff | pasteport send` or `cat build.log | pasteport send --expiry 6`.
+  - **Multi-Package Manager Support**: Run on-demand with `npx pasteport-zisphere` or install globally via `npm`, `pnpm`, `bun`, or `pip` (`pasteport-zisphere`).
 - 🔓 **No accounts & zero tracking** — nothing to sign up for; zero personal data collected.
+
+---
+
+## Desktop App (Windows, macOS, Linux)
+
+Pasteport Desktop packages the full power of Pasteport into a native, ultra-lightweight desktop daemon built with Electron:
+
+```
+desktop/
+├── package.json    # Electron app configuration & electron-builder packaging targets (.exe, .dmg, .rpm, .deb, .AppImage)
+├── main.js         # Tray lifecycle, global hotkey registration, HUD window, IPC handlers
+├── preload.js      # Context-isolated secure IPC bridge
+└── README.md       # Packaging & developer instructions
+```
+
+### Key Highlights
+- **Global Hotkey (`Ctrl + Shift + P` / `Cmd + Shift + P`)**: Instantly summons a borderless, floating HUD quick-share popup from any app or game.
+- **Auto Clipboard Ingestion**: Reads your operating system clipboard, detects whether it is plaintext or a copied file, and prepares an instant upload in ~200ms.
+- **System Tray Daemon**: Sits quietly in the notification area / menu bar consuming <40 MB RAM. Right-click to open Pasteport, launch Developer Tools, or quit.
+- **Native OS Notifications**: Displays native notifications upon code generation with 1-click clipboard link copying.
+
+### Desktop Installation by OS
+
+#### Windows
+```powershell
+# Install via Winget
+winget install pasteport-zisphere
+
+# Uninstall via Winget
+winget uninstall pasteport-zisphere
+```
+*Or download the standalone `Pasteport-Setup-1.0.0.exe` installer / portable binary.*
+
+#### macOS
+```bash
+# Install via Homebrew
+brew install --cask pasteport
+
+# Uninstall via Homebrew
+brew uninstall --cask pasteport
+```
+*Or download `Pasteport-1.0.0.dmg` and drag to `/Applications`.*
+
+#### Linux (Zypper, DNF, APT, Pacman & AppImage)
+```bash
+# openSUSE / SUSE Linux Enterprise (Zypper)
+sudo zypper install ./pasteport-1.0.0.rpm
+sudo zypper remove pasteport
+
+# RHEL / Oracle Linux / Fedora / CentOS / Rocky (DNF)
+sudo dnf install ./pasteport-1.0.0.rpm
+sudo dnf remove pasteport
+
+# Ubuntu / Debian / Linux Mint (APT)
+sudo apt install ./pasteport-1.0.0.deb
+sudo apt remove pasteport
+
+# Arch Linux / Manjaro (Pacman)
+sudo pacman -U ./pasteport-1.0.0.pkg.tar.zst
+sudo pacman -R pasteport
+
+# Universal AppImage (Runs on any Linux distribution)
+chmod +x Pasteport-1.0.0.AppImage && ./Pasteport-1.0.0.AppImage
+```
+
+### Build & Package Desktop Binaries
+```bash
+cd desktop
+npm install
+npm start              # Run in development
+npm run build:win      # Windows (.exe installer & portable)
+npm run build:mac      # macOS (.dmg for Apple Silicon + Intel)
+npm run build:linux    # Linux (.rpm, .deb & .AppImage)
+```
+
+---
+
+## Command-Line Interface (CLI)
+
+The `pasteport` CLI brings seamless clipboard sharing, piping, large file transfers, and remote wiping directly into your terminal. Available as both **Node.js** (`pasteport-zisphere`) and **pure Python** (`pip install pasteport-zisphere`) packages.
+
+### Installation & Execution (npm, pnpm, bun, pip)
+
+#### Global Installation
+```bash
+# via npm
+npm install -g pasteport-zisphere
+
+# via pnpm
+pnpm add -g pasteport-zisphere
+
+# via bun
+bun add -g pasteport-zisphere
+
+# via Python pip
+pip install pasteport-zisphere
+```
+
+#### Run Instantly (No Installation Required)
+```bash
+# via npx
+npx pasteport-zisphere send "hello world"
+
+# via pnpm dlx
+pnpm dlx pasteport-zisphere send "hello world"
+
+# via bunx
+bunx pasteport-zisphere send "hello world"
+```
+
+#### Install Directly from Local Repository (Pre-Publish)
+If you haven't published to public registries yet, install and use the CLI immediately from source:
+```bash
+# Node CLI (from repo root):
+npm install -g ./cli
+# or with pnpm:
+pnpm add -g ./cli
+# or with bun:
+bun add -g ./cli
+
+# Python CLI:
+pip install ./python
+# or symlink in dev:
+cd cli && npm link
+```
+
+#### Publish to Public Registries
+```bash
+# Publish to NPM:
+cd cli
+npm login
+npm publish --access public
+
+# Publish to PyPI:
+cd python
+python -m build
+twine upload dist/*
+```
+
+#### Complete Uninstallation
+```bash
+npm uninstall -g pasteport-zisphere
+pnpm remove -g pasteport-zisphere
+bun remove -g pasteport-zisphere
+pip uninstall pasteport-zisphere
+```
+
+### Interactive Menu Mode (`pasteport`)
+
+Running `pasteport` without arguments opens an interactive numbered menu:
+
+```
+  ┌────────────────────────────────────────────────────────┐
+  │   PASTEPORT CLI — Cross-Device Sharing & Dev Toolkit   │
+  └────────────────────────────────────────────────────────┘
+
+Select an action by typing 1, 2, 3, or 4:
+
+  [1] Standard Share  — Send text snippet or file (up to 10 MB)
+  [2] Secret Share    — Send large file (up to 600 MB via 8-digit Code)
+  [3] Retrieve / Get  — View text or download file (Code or Web URL)
+  [4] Delete / Wipe   — Permanently destroy a clip with Self-Destruct PIN
+  [5] Exit
+```
+
+### CLI Command Reference
+
+#### 1. Standard Share (up to 10 MB)
+```bash
+# Share inline text
+pasteport send "Hello from my terminal!"
+
+# Share local file with 4-character access PIN
+pasteport send ./package.json --pin 1234
+
+# Share with custom lifespan in hours (1–24)
+pasteport send ./notes.txt --expiry 12
+
+# Pipe terminal command output directly into a share
+git diff | pasteport send
+cat /var/log/nginx/error.log | pasteport send --expiry 3
+```
+
+#### 2. Secret Share (up to 600 MB Direct-to-R2)
+For large archives, dataset dumps, or binary ISOs exceeding standard limits:
+1. Mint a one-time 8-digit access code at [pasteport.zain-imran.com/secure](https://pasteport.zain-imran.com/secure).
+2. Run Secret Share in your terminal:
+```bash
+pasteport secret 88392014 ./dataset-archive.tar.gz
+```
+*The CLI negotiates a presigned Cloudflare R2 upload URL, streams the binary payload directly to S3-compatible storage, burns the authorization code, and prints the 8-digit download code.*
+
+#### 3. Retrieve / Download (Code or Web URL)
+Retrieve content effortlessly using either a 6/8-digit code or a full web link copied from a browser:
+```bash
+# Retrieve text and display in terminal
+pasteport get 482193
+
+# Retrieve via full web URL copied from web browser or mobile
+pasteport get https://pasteport.zain-imran.com/view/482193
+
+# Unlock PIN-protected share
+pasteport get 482193 --pin 1234
+
+# Download binary file to custom local destination
+pasteport get 482193 -o ./downloaded_build.zip
+
+# Stream raw text directly into a file or pipe
+pasteport get 482193 --raw > config.env
+```
+
+#### 4. Delete / Permanent Duress Wipe
+Permanently purge a clip's Firestore metadata and associated Cloudflare R2 storage objects:
+```bash
+# Wipe using 6-digit code and Self-Destruct PIN
+pasteport delete 482193 --pin 9999
+
+# Wipe using full share URL
+pasteport delete https://pasteport.zain-imran.com/view/482193 --pin 9999
+```
+
+### Storage Tiers in CLI
+
+| Share Mode | File Size Limit | Protocol / Backend | Requirements |
+| :--- | :---: | :--- | :--- |
+| **Standard Share (`[1]`)** | **10 MB** | Serverless Stream + Cloudflare R2 | None (Zero Login) |
+| **Secret Share (`[2]`)** | **600 MB** | Direct-to-R2 Presigned S3 Stream | 8-Digit Access Code from `/secure` |
 
 ---
 
@@ -649,8 +883,11 @@ Pasteport is optimized for deployment on **Vercel**:
 | `npm run build` | Compile Next.js production build and run `next-sitemap` |
 | `npm run start` | Run the compiled production server |
 | `npm run lint` | Run ESLint across the codebase |
+| `npm run cli` | Execute the Pasteport CLI directly in local development |
 | `npm run test:e2e` | Run Playwright end-to-end tests |
 | `npm run test:e2e:ui` | Open interactive Playwright UI runner |
+| `cd desktop && npm start` | Launch the Pasteport Desktop app in Electron development mode |
+| `cd desktop && npm run build:win` | Build Windows desktop executable installer & portable binary |
 
 ---
 
@@ -681,4 +918,4 @@ Released under the **[MIT License](LICENSE)**. Copyright © 2026 Pasteport Contr
 
 ## Open-Source Discovery & Topics
 
-`online-clipboard` • `cross-device-sharing` • `developer-toolkit` • `developer-tools` • `json-formatter` • `yaml-to-json` • `sql-formatter` • `regex-tester` • `uuid-generator` • `jwt-debugger` • `jwt-generator` • `hash-generator` • `timestamp-converter` • `cron-generator` • `pastebin-alternative` • `airdrop-alternative` • `temporary-file-sharing` • `self-hosted` • `nextjs-16` • `cloudflare-r2` • `firebase-firestore` • `pwa` • `react-19` • `typescript`
+`online-clipboard` • `cross-device-sharing` • `developer-toolkit` • `developer-tools` • `cli` • `desktop-app` • `electron` • `terminal-tool` • `command-line` • `json-formatter` • `yaml-to-json` • `sql-formatter` • `regex-tester` • `uuid-generator` • `jwt-debugger` • `jwt-generator` • `hash-generator` • `timestamp-converter` • `cron-generator` • `pastebin-alternative` • `airdrop-alternative` • `temporary-file-sharing` • `self-hosted` • `nextjs-16` • `cloudflare-r2` • `firebase-firestore` • `pwa` • `react-19` • `typescript`

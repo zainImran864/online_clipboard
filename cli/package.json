@@ -1,13 +1,15 @@
 {
-  "name": "pasteport-cli",
+  "name": "pasteport-zisphere",
   "version": "1.0.0",
   "description": "Cross-device clipboard and file sharing CLI tool for Pasteport",
   "main": "bin/pasteport.js",
   "bin": {
-    "pasteport": "./bin/pasteport.js"
+    "pasteport": "./bin/pasteport.js",
+    "pasteport-zisphere": "./bin/pasteport.js"
   },
   "keywords": [
     "pasteport",
+    "pasteport-zisphere",
     "clipboard",
     "share",
     "file-transfer",

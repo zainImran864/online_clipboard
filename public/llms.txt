@@ -34,7 +34,7 @@
   18. Color Converter & WCAG Contrast Checker (`/color`)
 
 - **Pasteport Desktop App (`/desktop`)**: Cross-platform desktop application for Windows, macOS, and Linux. Features global hotkey (`Ctrl + Shift + P` / `Cmd + Shift + P`), background system tray daemon, clipboard monitoring, and native OS notifications.
-- **Pasteport CLI Tool (`/cli`)**: Developer command-line tool (`npm i -g pasteport-cli` / `npx pasteport-cli`). Supports `pasteport send "text"`, `pasteport send ./build.zip`, terminal piping (`cat file | pasteport send`), and `pasteport get <code>`.
+- **Pasteport CLI Tool (`/cli`)**: Developer command-line tool (`npm i -g pasteport-zisphere`, `pip install pasteport-zisphere`, or `npx pasteport-zisphere`). Supports `pasteport send "text"`, `pasteport send ./build.zip`, terminal piping (`cat file | pasteport send`), and `pasteport get <code>`.
 
 ## Web Navigation & URLs
 - [Home & Dashboard](https://pasteport.zain-imran.com/)

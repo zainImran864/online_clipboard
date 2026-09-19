@@ -5,6 +5,64 @@ import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { showToast } from '@/lib/appEvents';
 
+interface LinuxDistro {
+    id: string;
+    name: string;
+    badge: string;
+    desc: string;
+    installCmd: string;
+    uninstallCmd: string;
+    filename: string;
+}
+
+const LINUX_DISTROS: LinuxDistro[] = [
+    {
+        id: 'rhel',
+        name: 'RHEL / Oracle Linux / Fedora / CentOS / Rocky',
+        badge: 'DNF / RPM',
+        desc: 'Red Hat Enterprise Linux, Oracle Linux 8/9, Fedora 39+, Rocky Linux, and CentOS Stream.',
+        installCmd: 'sudo dnf install ./pasteport-1.0.0.rpm',
+        uninstallCmd: 'sudo dnf remove pasteport',
+        filename: 'pasteport-1.0.0.rpm',
+    },
+    {
+        id: 'opensuse',
+        name: 'openSUSE / SUSE Linux Enterprise (SLES)',
+        badge: 'Zypper',
+        desc: 'openSUSE Leap, Tumbleweed, and SUSE Linux Enterprise Server.',
+        installCmd: 'sudo zypper install ./pasteport-1.0.0.rpm',
+        uninstallCmd: 'sudo zypper remove pasteport',
+        filename: 'pasteport-1.0.0.rpm',
+    },
+    {
+        id: 'debian',
+        name: 'Ubuntu / Debian / Linux Mint / Pop!_OS',
+        badge: 'APT / DEB',
+        desc: 'Ubuntu 20.04+, Debian 11+, Linux Mint, and Debian-derived distributions.',
+        installCmd: 'sudo apt install ./pasteport-1.0.0.deb',
+        uninstallCmd: 'sudo apt remove pasteport',
+        filename: 'pasteport-1.0.0.deb',
+    },
+    {
+        id: 'arch',
+        name: 'Arch Linux / Manjaro / EndeavourOS',
+        badge: 'Pacman / AUR',
+        desc: 'Rolling-release Arch Linux distributions and AUR package helpers.',
+        installCmd: 'sudo pacman -U ./pasteport-1.0.0.pkg.tar.zst',
+        uninstallCmd: 'sudo pacman -R pasteport',
+        filename: 'pasteport-1.0.0.pkg.tar.zst',
+    },
+    {
+        id: 'appimage',
+        name: 'Universal Standalone AppImage (Any Linux Distro)',
+        badge: 'Universal Binary',
+        desc: 'Zero dependencies. Runs self-contained on any Linux distribution.',
+        installCmd: 'chmod +x Pasteport-1.0.0.AppImage && ./Pasteport-1.0.0.AppImage',
+        uninstallCmd: 'rm -f ./Pasteport-1.0.0.AppImage',
+        filename: 'Pasteport-1.0.0.AppImage',
+    },
+];
+
 const PLATFORMS = [
     {
         id: 'windows',
@@ -14,7 +72,8 @@ const PLATFORMS = [
         badge: 'Installer + Portable',
         filename: 'Pasteport-Setup-1.0.0.exe',
         desc: 'Windows 10, 11 (x64 / ARM64). Includes NSIS installer & single-file portable EXE.',
-        command: 'winget install pasteport',
+        installCmd: 'winget install pasteport-zisphere',
+        uninstallCmd: 'winget uninstall pasteport-zisphere',
     },
     {
         id: 'macos',
@@ -24,17 +83,19 @@ const PLATFORMS = [
         badge: 'Apple Silicon & Intel',
         filename: 'Pasteport-1.0.0.dmg',
         desc: 'macOS 12 Monterey or newer. Native support for M1/M2/M3/M4 and Intel chips.',
-        command: 'brew install --cask pasteport',
+        installCmd: 'brew install --cask pasteport',
+        uninstallCmd: 'brew uninstall --cask pasteport',
     },
     {
         id: 'linux',
         name: 'Linux',
         icon: '🐧',
-        version: 'v1.0.0 (.AppImage & .deb)',
-        badge: 'Universal AppImage',
+        version: 'v1.0.0 (.rpm, .deb, AppImage)',
+        badge: 'RHEL, Oracle, openSUSE, Ubuntu, Arch',
         filename: 'Pasteport-1.0.0.AppImage',
-        desc: 'Ubuntu, Debian, Fedora, Arch Linux. Standalone AppImage and Debian package.',
-        command: 'sudo apt install ./pasteport.deb',
+        desc: 'Full distribution coverage for Zypper (openSUSE), DNF (RHEL/Oracle/Fedora), APT (Ubuntu/Debian), Pacman (Arch), and AppImage.',
+        installCmd: 'sudo dnf install ./pasteport-1.0.0.rpm  # or: sudo zypper install ./pasteport-1.0.0.rpm',
+        uninstallCmd: 'sudo dnf remove pasteport  # or: sudo zypper remove pasteport',
     },
 ];
 
@@ -73,6 +134,7 @@ const FEATURES = [
 
 export default function DesktopPage() {
     const [selectedTab, setSelectedTab] = useState<'windows' | 'macos' | 'linux'>('windows');
+    const [selectedDistroId, setSelectedDistroId] = useState<string>('rhel');
     const [simulatedHotkeyActive, setSimulatedHotkeyActive] = useState<boolean>(false);
     const [simulatedCopied, setSimulatedCopied] = useState<boolean>(false);
 
@@ -89,6 +151,8 @@ export default function DesktopPage() {
             showToast('Simulated: Clip uploaded! Share Code: 894215');
         }, 1200);
     };
+
+    const activeDistro = LINUX_DISTROS.find((d) => d.id === selectedDistroId) || LINUX_DISTROS[0];
 
     return (
         <div className="flex min-h-screen flex-col bg-slate-50">
@@ -238,39 +302,140 @@ export default function DesktopPage() {
                                             <div className="flex items-center gap-2">
                                                 <h3 className="text-xl font-black text-slate-900">{p.name}</h3>
                                                 <span className="rounded-md bg-blue-100 px-2 py-0.5 text-[11px] font-bold text-blue-700">
-                                                    {p.badge}
+                                                    {selectedTab === 'linux' ? activeDistro.badge : p.badge}
                                                 </span>
                                             </div>
-                                            <p className="text-xs text-slate-500 mt-1">{p.desc}</p>
+                                            <p className="text-xs text-slate-500 mt-1">
+                                                {selectedTab === 'linux' ? activeDistro.desc : p.desc}
+                                            </p>
                                         </div>
                                     </div>
 
                                     <div className="flex flex-wrap gap-2">
                                         <button
-                                            onClick={() => copyText(p.filename, 'Installer name')}
+                                            onClick={() => copyText(selectedTab === 'linux' ? activeDistro.filename : p.filename, 'Installer name')}
                                             className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 px-5 py-2.5 text-xs font-bold text-white shadow-md hover:brightness-105 active:scale-95"
                                         >
-                                            📥 Download {p.filename}
+                                            📥 Download {selectedTab === 'linux' ? activeDistro.filename : p.filename}
                                         </button>
                                     </div>
                                 </div>
 
+                                {/* Linux Distribution Picker */}
+                                {selectedTab === 'linux' && (
+                                    <div className="space-y-2 border-t border-slate-100 pt-4">
+                                        <label className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                                            Select your Linux distribution:
+                                        </label>
+                                        <div className="flex flex-wrap gap-2">
+                                            {LINUX_DISTROS.map((d) => (
+                                                <button
+                                                    key={d.id}
+                                                    onClick={() => setSelectedDistroId(d.id)}
+                                                    className={`rounded-xl px-3 py-1.5 text-xs font-bold transition-all ${
+                                                        selectedDistroId === d.id
+                                                            ? 'bg-slate-900 text-white shadow-xs'
+                                                            : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                                                    }`}
+                                                >
+                                                    {d.name.split(' / ')[0]} ({d.badge.split(' ')[0]})
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Install Command Card */}
                                 <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 space-y-2">
                                     <div className="flex items-center justify-between text-xs text-slate-500 font-bold uppercase tracking-wider">
-                                        <span>Or install via terminal:</span>
+                                        <span>Terminal Installation:</span>
                                         <button
-                                            onClick={() => copyText(p.command, 'Install command')}
+                                            onClick={() => copyText(selectedTab === 'linux' ? activeDistro.installCmd : p.installCmd, 'Install command')}
                                             className="text-blue-600 hover:text-blue-800 font-semibold"
                                         >
-                                            Copy Command
+                                            Copy Install Command
                                         </button>
                                     </div>
                                     <div className="rounded-xl border border-slate-200 bg-white p-3 font-mono text-xs font-bold text-slate-800 break-all select-all">
-                                        $ {p.command}
+                                        $ {selectedTab === 'linux' ? activeDistro.installCmd : p.installCmd}
+                                    </div>
+                                </div>
+
+                                {/* Uninstall Command Card */}
+                                <div className="rounded-2xl border border-rose-100 bg-rose-50/50 p-4 space-y-2">
+                                    <div className="flex items-center justify-between text-xs text-rose-600 font-bold uppercase tracking-wider">
+                                        <span>Terminal Uninstallation:</span>
+                                        <button
+                                            onClick={() => copyText(selectedTab === 'linux' ? activeDistro.uninstallCmd : p.uninstallCmd, 'Uninstall command')}
+                                            className="text-rose-700 hover:text-rose-900 font-semibold"
+                                        >
+                                            Copy Uninstall Command
+                                        </button>
+                                    </div>
+                                    <div className="rounded-xl border border-rose-200 bg-white p-3 font-mono text-xs font-bold text-slate-800 break-all select-all">
+                                        $ {selectedTab === 'linux' ? activeDistro.uninstallCmd : p.uninstallCmd}
                                     </div>
                                 </div>
                             </div>
                         ))}
+                    </div>
+
+                    {/* Complete Uninstallation Guide */}
+                    <div className="rounded-3xl border border-slate-200 bg-white p-6 sm:p-8 shadow-xs space-y-5">
+                        <div className="space-y-1">
+                            <h2 className="text-xl font-bold text-slate-900">
+                                🗑️ How to Completely Uninstall Pasteport Desktop
+                            </h2>
+                            <p className="text-xs text-slate-500">
+                                Complete removal instructions for every desktop operating system.
+                            </p>
+                        </div>
+
+                        <div className="grid gap-4 sm:grid-cols-3 text-xs">
+                            <div className="rounded-2xl border border-slate-100 bg-slate-50 p-4 space-y-2">
+                                <h3 className="font-bold text-slate-900">🪟 Windows</h3>
+                                <p className="text-slate-600">
+                                    Run in PowerShell / Command Prompt:
+                                </p>
+                                <code className="block rounded bg-white p-2 font-mono text-[11px] font-bold border border-slate-200 select-all">
+                                    winget uninstall pasteport-zisphere
+                                </code>
+                                <p className="text-slate-500 text-[11px]">
+                                    Or open <em>Settings &rarr; Apps &rarr; Installed Apps &rarr; Pasteport &rarr; Uninstall</em>.
+                                </p>
+                            </div>
+
+                            <div className="rounded-2xl border border-slate-100 bg-slate-50 p-4 space-y-2">
+                                <h3 className="font-bold text-slate-900">🍎 macOS</h3>
+                                <p className="text-slate-600">
+                                    Run in Terminal:
+                                </p>
+                                <code className="block rounded bg-white p-2 font-mono text-[11px] font-bold border border-slate-200 select-all">
+                                    brew uninstall --cask pasteport
+                                </code>
+                                <p className="text-slate-500 text-[11px]">
+                                    Or move <code>/Applications/Pasteport.app</code> directly to Trash.
+                                </p>
+                            </div>
+
+                            <div className="rounded-2xl border border-slate-100 bg-slate-50 p-4 space-y-2">
+                                <h3 className="font-bold text-slate-900">🐧 Linux</h3>
+                                <p className="text-slate-600">
+                                    Package manager removal:
+                                </p>
+                                <div className="space-y-1 text-[11px] font-mono font-bold">
+                                    <code className="block rounded bg-white p-1 border border-slate-200">
+                                        sudo dnf remove pasteport (RHEL/Oracle)
+                                    </code>
+                                    <code className="block rounded bg-white p-1 border border-slate-200">
+                                        sudo zypper remove pasteport (openSUSE)
+                                    </code>
+                                    <code className="block rounded bg-white p-1 border border-slate-200">
+                                        sudo apt remove pasteport (Ubuntu)
+                                    </code>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                     {/* Feature Grid */}

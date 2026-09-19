@@ -473,6 +473,46 @@ export default function Home() {
                     Yes! Press <kbd className="rounded bg-slate-100 px-1 py-0.5 font-mono text-[10px] text-slate-700">Ctrl + V</kbd> anywhere on the page to paste clipboard images, screenshots, or copied text directly without needing to save a file first.
                   </p>
                 </details>
+
+                <details className="group rounded-2xl border border-slate-200 bg-white p-4 shadow-xs transition-colors open:border-blue-300">
+                  <summary className="flex cursor-pointer items-center justify-between font-bold text-sm text-slate-800 hover:text-blue-600">
+                    <span>Is there a native Desktop App for Windows, macOS, and Linux?</span>
+                    <span className="ml-2 text-slate-400 group-open:rotate-180 transition-transform">▼</span>
+                  </summary>
+                  <p className="mt-3 text-xs text-slate-600 leading-relaxed">
+                    Yes! Pasteport Desktop runs as a lightweight background daemon in your system tray. Press the global hotkey <kbd className="rounded bg-slate-100 px-1 py-0.5 font-mono text-[10px] text-slate-700">Ctrl + Shift + P</kbd> (or <kbd className="rounded bg-slate-100 px-1 py-0.5 font-mono text-[10px] text-slate-700">Cmd + Shift + P</kbd> on macOS) anywhere in your operating system to summon the Quick Share HUD, auto-capture your clipboard, and generate an instant share code in ~200ms. Visit <Link href="/desktop" className="text-blue-600 font-medium underline hover:text-blue-700">Pasteport Desktop</Link> to download binaries for Windows (.exe), macOS (.dmg), or Linux (.AppImage).
+                  </p>
+                </details>
+
+                <details className="group rounded-2xl border border-slate-200 bg-white p-4 shadow-xs transition-colors open:border-blue-300">
+                  <summary className="flex cursor-pointer items-center justify-between font-bold text-sm text-slate-800 hover:text-blue-600">
+                    <span>How do I install and use the Pasteport Command-Line Interface (CLI)?</span>
+                    <span className="ml-2 text-slate-400 group-open:rotate-180 transition-transform">▼</span>
+                  </summary>
+                  <p className="mt-3 text-xs text-slate-600 leading-relaxed">
+                    You can run the CLI instantly via <code className="rounded bg-slate-100 px-1 py-0.5 font-mono text-[10px] text-emerald-600">npx pasteport-zisphere</code>, install via <code className="rounded bg-slate-100 px-1 py-0.5 font-mono text-[10px] text-emerald-600">npm install -g pasteport-zisphere</code>, or install via Python <code className="rounded bg-slate-100 px-1 py-0.5 font-mono text-[10px] text-emerald-600">pip install pasteport-zisphere</code>. Running <code className="rounded bg-slate-100 px-1 py-0.5 font-mono text-[10px] text-emerald-600">pasteport</code> opens an interactive 1-2-3-4 numbered menu for Standard Share, Secret Share (600 MB), Retrieval, and Wipe. You can also pipe commands directly: <code className="rounded bg-slate-100 px-1 py-0.5 font-mono text-[10px] text-emerald-600">git diff | pasteport</code> or <code className="rounded bg-slate-100 px-1 py-0.5 font-mono text-[10px] text-emerald-600">pasteport send ./build.zip</code>. Visit the <Link href="/cli" className="text-blue-600 font-medium underline hover:text-blue-700">CLI Documentation</Link> for full syntax.
+                  </p>
+                </details>
+
+                <details className="group rounded-2xl border border-slate-200 bg-white p-4 shadow-xs transition-colors open:border-blue-300">
+                  <summary className="flex cursor-pointer items-center justify-between font-bold text-sm text-slate-800 hover:text-blue-600">
+                    <span>Can I download files directly into my terminal from a share link or code?</span>
+                    <span className="ml-2 text-slate-400 group-open:rotate-180 transition-transform">▼</span>
+                  </summary>
+                  <p className="mt-3 text-xs text-slate-600 leading-relaxed">
+                    Yes! The CLI accepts both clean 6-digit codes and full web URLs created on the website. For example: <code className="rounded bg-slate-100 px-1 py-0.5 font-mono text-[10px] text-emerald-600">pasteport get https://pasteport.zain-imran.com/view/482193</code> extracts the code, verifies any PIN, and streams the binary file directly to your local working directory with the original filename preserved.
+                  </p>
+                </details>
+
+                <details className="group rounded-2xl border border-slate-200 bg-white p-4 shadow-xs transition-colors open:border-blue-300">
+                  <summary className="flex cursor-pointer items-center justify-between font-bold text-sm text-slate-800 hover:text-blue-600">
+                    <span>What is Secret Share and how does the 600 MB limit work?</span>
+                    <span className="ml-2 text-slate-400 group-open:rotate-180 transition-transform">▼</span>
+                  </summary>
+                  <p className="mt-3 text-xs text-slate-600 leading-relaxed">
+                    While Standard Share handles daily text and documents up to 10 MB, Secret Share on <Link href="/secure" className="text-blue-600 font-medium underline hover:text-blue-700">/secure</Link> enables transfers of large archives and datasets up to 600 MB. Senders generate a one-time 8-digit access code that issues a direct-to-R2 presigned upload URL, bypassing serverless body limits. The CLI supports this flow via Option 2 or <code className="rounded bg-slate-100 px-1 py-0.5 font-mono text-[10px] text-purple-600">pasteport secret &lt;8-digit-code&gt; &lt;file&gt;</code>.
+                  </p>
+                </details>
               </div>
             </div>
           </section>

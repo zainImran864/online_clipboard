@@ -201,7 +201,32 @@ export default function PrivacyPolicyPage() {
             {/* Section 5 */}
             <section className="space-y-3">
               <h2 className="text-xl font-bold text-slate-900 sm:text-2xl">
-                5. Content Security & Sandbox Isolation
+                5. Desktop Application & CLI Privacy Guarantees
+              </h2>
+              <div className="space-y-2 text-sm leading-relaxed text-slate-600 sm:text-base">
+                <p>
+                  Pasteport provides open-source native desktop clients (Electron) and command-line interfaces (<code className="rounded bg-slate-100 px-1 font-mono text-xs">pasteport-zisphere</code>). Both tools uphold our strict zero-tracking principles:
+                </p>
+                <ul className="list-disc space-y-1.5 pl-5 text-slate-700">
+                  <li>
+                    <strong className="text-slate-900">Zero Keystroke Logging or Background Monitoring:</strong> The desktop app registers the operating system shortcut (<kbd className="rounded bg-slate-100 px-1 py-0.5 font-mono text-xs">Ctrl+Shift+P</kbd> or <kbd className="rounded bg-slate-100 px-1 py-0.5 font-mono text-xs">Cmd+Shift+P</kbd>) strictly to display the HUD window. It does not monitor typing, capture background keystrokes, or log non-Pasteport window titles.
+                  </li>
+                  <li>
+                    <strong className="text-slate-900">Explicit Clipboard Access:</strong> The desktop client and CLI only read your clipboard when explicitly invoked (e.g. pressing the hotkey or running a command). Clipboard contents are never streamed or persisted in background daemon logs.
+                  </li>
+                  <li>
+                    <strong className="text-slate-900">No Analytics or Telemetry:</strong> Neither the desktop daemon nor the CLI bundles telemetry, crash analytics trackers, or usage metrics. All requests connect directly over encrypted HTTPS to Pasteport servers.
+                  </li>
+                </ul>
+              </div>
+            </section>
+
+            <hr className="border-slate-100" />
+
+            {/* Section 6 */}
+            <section className="space-y-3">
+              <h2 className="text-xl font-bold text-slate-900 sm:text-2xl">
+                6. Content Security & Sandbox Isolation
               </h2>
               <div className="space-y-2 text-sm leading-relaxed text-slate-600 sm:text-base">
                 <p>
@@ -223,10 +248,10 @@ export default function PrivacyPolicyPage() {
 
             <hr className="border-slate-100" />
 
-            {/* Section 6 */}
+            {/* Section 7 */}
             <section className="space-y-3">
               <h2 className="text-xl font-bold text-slate-900 sm:text-2xl">
-                6. Your Privacy Rights (GDPR & CCPA)
+                7. Your Privacy Rights (GDPR & CCPA)
               </h2>
               <div className="space-y-2 text-sm leading-relaxed text-slate-600 sm:text-base">
                 <p>
@@ -248,10 +273,10 @@ export default function PrivacyPolicyPage() {
 
             <hr className="border-slate-100" />
 
-            {/* Section 7 */}
+            {/* Section 8 */}
             <section className="space-y-3">
               <h2 className="text-xl font-bold text-slate-900 sm:text-2xl">
-                7. Contact & Inquiries
+                8. Contact & Inquiries
               </h2>
               <div className="space-y-2 text-sm leading-relaxed text-slate-600 sm:text-base">
                 <p>
