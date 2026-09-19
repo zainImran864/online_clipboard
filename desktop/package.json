@@ -11,10 +11,10 @@
   "scripts": {
     "start": "electron .",
     "pack": "electron-builder --dir",
-    "dist": "electron-builder",
-    "build:win": "electron-builder --win",
-    "build:mac": "electron-builder --mac",
-    "build:linux": "electron-builder --linux"
+    "dist": "electron-builder -p never",
+    "build:win": "electron-builder --win -p never",
+    "build:mac": "electron-builder --mac -p never",
+    "build:linux": "electron-builder --linux -p never"
   },
   "keywords": [
     "pasteport",
@@ -37,6 +37,7 @@
   "build": {
     "appId": "com.pasteport.desktop",
     "productName": "Pasteport",
+    "publish": null,
     "directories": {
       "output": "dist"
     },

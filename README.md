@@ -23,6 +23,11 @@
 
 <p align="center">
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square" alt="MIT License" /></a>
+  <a href="https://github.com/zainImran864/online_clipboard/actions/workflows/ci.yml"><img src="https://github.com/zainImran864/online_clipboard/actions/workflows/ci.yml/badge.svg" alt="CI Status" /></a>
+  <a href="https://github.com/zainImran864/online_clipboard/actions/workflows/cli-publish.yml"><img src="https://github.com/zainImran864/online_clipboard/actions/workflows/cli-publish.yml/badge.svg" alt="Publish CLI Status" /></a>
+  <a href="https://github.com/zainImran864/online_clipboard/actions/workflows/desktop-release.yml"><img src="https://github.com/zainImran864/online_clipboard/actions/workflows/desktop-release.yml/badge.svg" alt="Desktop Release Status" /></a>
+  <a href="https://www.npmjs.com/package/pasteport-zisphere"><img src="https://img.shields.io/npm/v/pasteport-zisphere?style=flat-square&logo=npm&color=CB3837" alt="NPM Version" /></a>
+  <a href="https://pypi.org/project/pasteport-zisphere/"><img src="https://img.shields.io/pypi/v/pasteport-zisphere?style=flat-square&logo=pypi&color=3775A9" alt="PyPI Version" /></a>
   <a href="https://nextjs.org/"><img src="https://img.shields.io/badge/Next.js-16-black?style=flat-square&logo=next.js" alt="Next.js 16" /></a>
   <a href="https://react.dev/"><img src="https://img.shields.io/badge/React-19-61dafb?style=flat-square&logo=react" alt="React 19" /></a>
   <a href="https://www.typescriptlang.org/"><img src="https://img.shields.io/badge/TypeScript-5-3178C6?style=flat-square&logo=typescript" alt="TypeScript 5" /></a>
@@ -72,6 +77,7 @@ In addition to ephemeral clipboard sharing, Pasteport bundles **18 client-side d
 - [Storage tiers & limits](#storage-tiers--limits)
 - [E2E Testing](#e2e-testing)
 - [Deployment](#deployment)
+- [CI/CD & Automated Workflows](#cicd--automated-workflows)
 - [Scripts](#scripts)
 - [Contributing](#contributing)
 - [License](#license)
@@ -883,6 +889,19 @@ Pasteport is optimized for deployment on **Vercel**:
 
 ---
 
+## CI/CD & Automated Workflows
+
+Pasteport features enterprise-grade continuous integration and continuous deployment pipelines powered by GitHub Actions:
+
+| Workflow | Trigger | Artifacts & Actions |
+| :--- | :--- | :--- |
+| **[CI](.github/workflows/ci.yml)** | `push`, `pull_request` (branches: `main`) | • Next.js TypeScript validation & compilation<br/>• ESLint syntax and rule validation<br/>• Playwright E2E testing across desktop & mobile viewports |
+| **[Publish CLI to NPM & PyPI](.github/workflows/cli-publish.yml)** | `release` [published], `push` [main on `cli/**` / `python/**`], `workflow_dispatch` | • Publishes Node.js CLI package **[`pasteport-zisphere`](https://www.npmjs.com/package/pasteport-zisphere)** to NPM Registry<br/>• Builds and uploads Python wheel & source distribution to **[PyPI](https://pypi.org/project/pasteport-zisphere/)** via Twine with idempotency checks (`--skip-existing`) |
+| **[Build & Release Desktop App](.github/workflows/desktop-release.yml)** | `push` [tags `v*`, branch `main` on `desktop/**`], `workflow_dispatch` | • **Windows**: NSIS Installer (`Pasteport Setup 1.0.0.exe`) & Standalone Portable (`Pasteport 1.0.0.exe`)<br/>• **macOS**: Apple Silicon & Intel DMG installer (`Pasteport-1.0.0.dmg`) & `.zip`<br/>• **Linux**: Debian package (`.deb`), Red Hat package (`.rpm`), & universal `AppImage`<br/>• Automatically attaches signed binaries to GitHub Releases with generated release notes |
+| **[Winget Manifest Publisher](scripts/publish-winget.ps1)** | On desktop release tags | • Generates Windows Package Manager manifests conforming to official `winget-pkgs` standards (`zainImran.Pasteport`) with automated SHA256 hashing |
+
+---
+
 ## Scripts
 
 | Command | Description |
@@ -894,8 +913,11 @@ Pasteport is optimized for deployment on **Vercel**:
 | `npm run cli` | Execute the Pasteport CLI directly in local development |
 | `npm run test:e2e` | Run Playwright end-to-end tests |
 | `npm run test:e2e:ui` | Open interactive Playwright UI runner |
+| `node scripts/generate-icons.js` | Generate 256x256 ICO and 512x512 PNG app icons from SVG |
 | `cd desktop && npm start` | Launch the Pasteport Desktop app in Electron development mode |
 | `cd desktop && npm run build:win` | Build Windows desktop executable installer & portable binary |
+| `cd desktop && npm run build:mac` | Build macOS DMG installer and zip bundles |
+| `cd desktop && npm run build:linux` | Build Linux .deb, .rpm, and AppImage packages |
 
 ---
 
@@ -926,4 +948,4 @@ Released under the **[MIT License](LICENSE)**. Copyright © 2026 Pasteport Contr
 
 ## Open-Source Discovery & Topics
 
-`online-clipboard` • `cross-device-sharing` • `developer-toolkit` • `developer-tools` • `cli` • `desktop-app` • `electron` • `terminal-tool` • `command-line` • `json-formatter` • `yaml-to-json` • `sql-formatter` • `regex-tester` • `uuid-generator` • `jwt-debugger` • `jwt-generator` • `hash-generator` • `timestamp-converter` • `cron-generator` • `pastebin-alternative` • `airdrop-alternative` • `temporary-file-sharing` • `self-hosted` • `nextjs-16` • `cloudflare-r2` • `firebase-firestore` • `pwa` • `react-19` • `typescript`
+`online-clipboard` • `cross-device-sharing` • `developer-toolkit` • `developer-tools` • `cli` • `desktop-app` • `electron` • `terminal-tool` • `command-line` • `npm-package` • `pypi-package` • `winget-package` • `github-actions-ci-cd` • `json-formatter` • `yaml-to-json` • `sql-formatter` • `regex-tester` • `uuid-generator` • `jwt-debugger` • `jwt-generator` • `hash-generator` • `timestamp-converter` • `cron-generator` • `pastebin-alternative` • `airdrop-alternative` • `temporary-file-sharing` • `self-hosted` • `nextjs-16` • `cloudflare-r2` • `firebase-firestore` • `pwa` • `react-19` • `typescript`
