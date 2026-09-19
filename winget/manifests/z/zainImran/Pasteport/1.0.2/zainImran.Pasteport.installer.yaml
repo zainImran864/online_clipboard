@@ -14,7 +14,7 @@ InstallModes:
 UpgradeBehavior: install
 Installers:
   - Architecture: x64
-    InstallerUrl: https://github.com/zainImran864/online_clipboard/releases/download/v1.0.2/Pasteport-Setup-1.0.2.exe
+    InstallerUrl: https://github.com/zainImran864/online_clipboard/releases/download/v1.0.2/Pasteport.Setup.1.0.2.exe
     InstallerSha256: 7B30E87BE1DA84489C2E63B2B563705CA16753E449D014B74C5802BA787BA063
     InstallerType: nullsoft
 ManifestType: installer
