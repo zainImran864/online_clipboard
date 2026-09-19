@@ -123,6 +123,7 @@ export interface SharedFile {
 export interface CreateClipOptions {
     expirationHours?: number; // 1 to 24
     deletePin?: string;
+    accessPin?: string;
     creatorToken?: string;
 }
 
@@ -138,6 +139,8 @@ export interface Clip {
     textStorageKey?: string;
     hasDeletePin?: boolean;
     deletePin?: string;
+    hasAccessPin?: boolean;
+    accessPin?: string;
     creatorToken?: string;
     expirationHours?: number;
     // Legacy fields for backward compatibility
@@ -183,6 +186,11 @@ export function useClipboard() {
 
                 if (options?.deletePin && options.deletePin.trim()) {
                     clipData.deletePin = options.deletePin.trim();
+                }
+
+                if (options?.accessPin && options.accessPin.trim()) {
+                    clipData.accessPin = options.accessPin.trim().toLowerCase();
+                    clipData.hasAccessPin = true;
                 }
 
                 if (options?.creatorToken && options.creatorToken.trim()) {
@@ -232,6 +240,8 @@ export function useClipboard() {
                     fileType: files?.[0]?.fileType,
                     hasDeletePin: Boolean(clipData.deletePin),
                     deletePin: clipData.deletePin,
+                    hasAccessPin: Boolean(clipData.accessPin || clipData.hasAccessPin),
+                    accessPin: clipData.accessPin,
                     creatorToken: clipData.creatorToken,
                     expirationHours,
                     createdAt: createdAt.toDate(),
@@ -309,9 +319,12 @@ export function useClipboard() {
             const data = docData.data();
 
             if (data.expiresAt && data.expiresAt.toMillis() <= Date.now()) {
-                // Treat as gone, but leave deletion to the cron so it can also
-                // remove any associated R2 objects (text/files) — the browser
-                // cannot delete from R2 and would orphan them.
+                // Instantly wipe and delete content from R2 and Firestore
+                void fetch('/api/clips/delete', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ code: data.code, expiredWipe: true }),
+                }).catch(() => {});
                 setLoading(false);
                 return null;
             }
@@ -328,6 +341,10 @@ export function useClipboard() {
                 textStorageProvider: data.textStorageProvider,
                 textStorageKey: data.textStorageKey,
                 hasDeletePin: Boolean(data.deletePin),
+                deletePin: data.deletePin,
+                hasAccessPin: Boolean(data.accessPin || data.hasAccessPin),
+                accessPin: data.accessPin,
+                creatorToken: data.creatorToken,
                 expirationHours: data.expirationHours,
                 files: data.files || (data.fileName ? [{
                     url: data.content,
@@ -349,44 +366,63 @@ export function useClipboard() {
     }, []);
 
     /**
-     * Subscribe to real-time updates for a clip
+     * Subscribe to real-time updates for a clip.
+     * When the clip is deleted/destroyed or expired, callback is called with null.
      */
-    const subscribeToClip = useCallback((clipId: string, callback: (clip: Clip) => void) => {
+    const subscribeToClip = useCallback((clipId: string, callback: (clip: Clip | null) => void) => {
         const clipRef = doc(db, 'clips', clipId);
 
-        const unsubscribe = onSnapshot(clipRef, (docSnap) => {
-            if (docSnap.exists()) {
-                const data = docSnap.data();
-                if (data.expiresAt && data.expiresAt.toMillis() <= Date.now()) {
-                    // Leave deletion to the cron so R2 objects are cleaned too.
-                    return;
-                }
-                void (async () => {
-                    const { content, textContent } = await resolveTextFromStorage(data);
-                    callback({
-                        id: docSnap.id,
-                        code: data.code,
-                        type: data.type,
-                        content,
-                        textContent,
-                        textStorageProvider: data.textStorageProvider,
-                        textStorageKey: data.textStorageKey,
-                        hasDeletePin: Boolean(data.deletePin),
-                        expirationHours: data.expirationHours,
-                        files: data.files || (data.fileName ? [{
-                            url: data.content,
+        const unsubscribe = onSnapshot(
+            clipRef,
+            (docSnap) => {
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    if (data.expiresAt && data.expiresAt.toMillis() <= Date.now()) {
+                        void fetch('/api/clips/delete', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ code: data.code, expiredWipe: true }),
+                        }).catch(() => {});
+                        callback(null);
+                        return;
+                    }
+                    void (async () => {
+                        const { content, textContent } = await resolveTextFromStorage(data);
+                        callback({
+                            id: docSnap.id,
+                            code: data.code,
+                            type: data.type,
+                            content,
+                            textContent,
+                            textStorageProvider: data.textStorageProvider,
+                            textStorageKey: data.textStorageKey,
+                            hasDeletePin: Boolean(data.deletePin),
+                            deletePin: data.deletePin,
+                            hasAccessPin: Boolean(data.accessPin || data.hasAccessPin),
+                            accessPin: data.accessPin,
+                            creatorToken: data.creatorToken,
+                            expirationHours: data.expirationHours,
+                            files: data.files || (data.fileName ? [{
+                                url: data.content,
+                                fileName: data.fileName,
+                                fileType: data.fileType,
+                                fileSize: 0
+                            }] : undefined),
                             fileName: data.fileName,
                             fileType: data.fileType,
-                            fileSize: 0
-                        }] : undefined),
-                        fileName: data.fileName,
-                        fileType: data.fileType,
-                        createdAt: data.createdAt.toDate(),
-                        expiresAt: data.expiresAt?.toDate(),
-                    } as Clip);
-                })();
+                            createdAt: data.createdAt.toDate(),
+                            expiresAt: data.expiresAt?.toDate(),
+                        } as Clip);
+                    })();
+                } else {
+                    // Document was deleted / self-destructed! Immediately notify callback.
+                    callback(null);
+                }
+            },
+            (err) => {
+                console.error('Real-time clip subscription error:', err);
             }
-        });
+        );
 
         return unsubscribe;
     }, []);

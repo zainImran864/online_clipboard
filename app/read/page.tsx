@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import Logo from '@/components/Logo';
 import Footer from '@/components/Footer';
 import { useClipboard } from '@/hooks/useClipboard';
-import { startNavigation } from '@/lib/appEvents';
+import { showToast, startNavigation } from '@/lib/appEvents';
 
 export default function ReadPage() {
     const router = useRouter();
@@ -19,7 +19,7 @@ export default function ReadPage() {
     // page so opening by code and by link render the exact same UI.
     const handleReadCode = async () => {
         if (!code.trim() || code.length !== 6) {
-            alert('Please enter a valid 6-digit code');
+            showToast('Please enter a valid 6-digit code');
             return;
         }
 
