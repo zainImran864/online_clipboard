@@ -280,6 +280,45 @@ export default function Home() {
             ))}
           </div>
 
+          {/* Desktop App & CLI Feature Banner */}
+          <div className="grid gap-4 sm:grid-cols-2 pt-2 text-left">
+            <Link
+              href="/desktop"
+              className="group flex items-center justify-between rounded-2xl border border-blue-200 bg-gradient-to-br from-blue-50 to-indigo-50/50 p-5 shadow-xs transition-all hover:border-blue-400 hover:shadow-md"
+            >
+              <div className="space-y-1">
+                <div className="inline-flex items-center gap-1.5 rounded-full bg-blue-100 px-2.5 py-0.5 text-[10px] font-bold text-blue-800">
+                  <span>🖥️ Native Desktop App</span>
+                </div>
+                <h4 className="text-base font-extrabold text-slate-900 group-hover:text-blue-600">
+                  Pasteport for Windows, macOS & Linux
+                </h4>
+                <p className="text-xs text-slate-500">
+                  Global hotkey <span className="font-mono font-bold text-blue-600">Ctrl+Shift+P</span>, background tray daemon, and instant clipboard sync.
+                </p>
+              </div>
+              <span className="text-xl text-blue-600 transition-transform group-hover:translate-x-1">→</span>
+            </Link>
+
+            <Link
+              href="/cli"
+              className="group flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-900 p-5 text-white shadow-xs transition-all hover:border-slate-700 hover:shadow-md"
+            >
+              <div className="space-y-1">
+                <div className="inline-flex items-center gap-1.5 rounded-full bg-slate-800 px-2.5 py-0.5 text-[10px] font-bold text-emerald-400">
+                  <span>⚡ Developer CLI Tool</span>
+                </div>
+                <h4 className="text-base font-extrabold text-white group-hover:text-emerald-400">
+                  Command-Line Support
+                </h4>
+                <p className="text-xs text-slate-400">
+                  <span className="font-mono text-emerald-400">pasteport send &quot;text&quot;</span> or pipe outputs directly from your terminal.
+                </p>
+              </div>
+              <span className="text-xl text-emerald-400 transition-transform group-hover:translate-x-1">→</span>
+            </Link>
+          </div>
+
           {/* Developer Utilities Suite Section */}
           <div className="space-y-4 pt-4 text-left">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">

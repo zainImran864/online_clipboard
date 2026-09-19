@@ -59,6 +59,22 @@ Every tool operates in browser memory with zero server data leakage and includes
 17. **HTTP Status Code Reference (`/http-status`)**: Searchable encyclopedia of standard RFC and Cloudflare HTTP status codes with troubleshooting tips.
 18. **Color Converter & Contrast (`/color`)**: Convert HEX, RGB, HSL, RGBA, calculate WCAG 2.1 accessibility contrast ratios, and generate tints & shades.
 
+## Native Desktop App & Developer CLI
+
+### Pasteport Desktop (`/desktop`)
+- Native desktop applications for Windows, macOS, and Linux.
+- Global Hotkey (`Ctrl + Shift + P` / `Cmd + Shift + P`) to summon the quick-share HUD from any application.
+- Background system tray daemon, clipboard monitoring mode, and native OS notifications.
+- Complete offline-first developer utilities suite embedded natively.
+
+### Pasteport CLI (`/cli`)
+- Zero-dependency Node.js command-line interface (`npm i -g pasteport-cli` or `npx pasteport-cli`).
+- `pasteport send "text"`: Upload text snippet and receive 6-digit code.
+- `cat file.txt | pasteport send`: Pipe terminal outputs or CI logs directly to Pasteport.
+- `pasteport send ./build.zip`: Upload archives or binaries directly to Cloudflare R2 storage.
+- `pasteport get <code>`: Retrieve text or download binary files locally (`-o ./downloaded.zip`).
+- Flags: `-p, --pin <4-char>`, `-e, --expiry <hours>`, `-d, --self-destruct`, `--raw`, `--json`.
+
 ## Developer Hub
 - URL: `https://pasteport.zain-imran.com/tools`
 - Categorized and searchable directory of all 18 developer utilities.

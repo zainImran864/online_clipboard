@@ -72,6 +72,26 @@ export default function Navbar() {
                     >
                         🔒 Secret Share
                     </Link>
+                    <Link
+                        href="/desktop"
+                        className={`rounded-xl px-3.5 py-2 text-xs font-bold transition-all ${
+                            pathname === '/desktop'
+                                ? 'bg-blue-50 text-blue-700 shadow-xs'
+                                : 'text-slate-600 hover:bg-slate-100/70 hover:text-slate-900'
+                        }`}
+                    >
+                        🖥️ Desktop
+                    </Link>
+                    <Link
+                        href="/cli"
+                        className={`rounded-xl px-3.5 py-2 text-xs font-bold transition-all ${
+                            pathname === '/cli'
+                                ? 'bg-blue-50 text-blue-700 shadow-xs'
+                                : 'text-slate-600 hover:bg-slate-100/70 hover:text-slate-900'
+                        }`}
+                    >
+                        ⚡ CLI
+                    </Link>
 
                     {/* Developer Tools Dropdown */}
                     <div
@@ -170,7 +190,7 @@ export default function Navbar() {
             {/* Mobile Navigation Drawer */}
             {mobileMenuOpen && (
                 <div className="border-t border-slate-200 bg-white p-4 md:hidden animate-fadeIn space-y-2">
-                    <div className="grid grid-cols-3 gap-2">
+                    <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
                         <Link
                             href="/send"
                             onClick={() => setMobileMenuOpen(false)}
@@ -194,6 +214,22 @@ export default function Navbar() {
                         >
                             <span className="text-lg">🔒</span>
                             <span>Secret</span>
+                        </Link>
+                        <Link
+                            href="/desktop"
+                            onClick={() => setMobileMenuOpen(false)}
+                            className="flex flex-col items-center justify-center rounded-xl border border-blue-100 bg-blue-50/50 p-2.5 text-center text-xs font-bold text-blue-700 hover:bg-blue-100"
+                        >
+                            <span className="text-lg">🖥️</span>
+                            <span>Desktop</span>
+                        </Link>
+                        <Link
+                            href="/cli"
+                            onClick={() => setMobileMenuOpen(false)}
+                            className="flex flex-col items-center justify-center rounded-xl border border-blue-100 bg-blue-50/50 p-2.5 text-center text-xs font-bold text-blue-700 hover:bg-blue-100"
+                        >
+                            <span className="text-lg">⚡</span>
+                            <span>CLI</span>
                         </Link>
                     </div>
 

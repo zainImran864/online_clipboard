@@ -190,6 +190,17 @@ flowchart TD
 - 🗂️ **Cloudflare R2 Object Storage** — all binary files and large text payloads (>100 KB) are stored directly in Cloudflare R2, keeping Firestore documents ultra-lightweight (<2 KB).
 - 🛡️ **Per‑file size limit** — up to 10 MB per file (600 MB on `/secure`), enforced client‑side and server‑side.
 - 📱 **Progressive Web App (PWA)** — installable on iOS, Android, macOS, and Windows with offline-ready service worker and app manifest.
+- 🖥️ **Pasteport Desktop App (Windows, macOS, Linux)**:
+  - **Global Hotkey (`Ctrl + Shift + P` / `Cmd + Shift + P`)**: Trigger the HUD quick-share popup from any active window.
+  - **1-Click Clipboard Upload**: Automatically captures clipboard content and generates a share code in ~200ms.
+  - **Background System Tray Daemon**: Feather-light tray app (<40MB RAM) with status indicator and quick actions.
+  - **Native Notifications**: Non-intrusive system notifications in Windows Action Center and macOS Notification Center.
+- ⚡ **Command-Line Interface (`pasteport` CLI)**:
+  - Installable via `npm install -g pasteport-cli` or executed instantly with `npx pasteport-cli`.
+  - Send inline strings: `pasteport send "hello world"` → outputs 6-digit code and direct link.
+  - Pipe terminal outputs: `git diff | pasteport send` or `cat build.log | pasteport send --expiry 6`.
+  - Transfer files and archives: `pasteport send ./build.zip --pin 1234`.
+  - Retrieve content directly in terminal: `pasteport get 482193` or `pasteport get 482193 --raw > output.txt`.
 - 🔓 **No accounts & zero tracking** — nothing to sign up for; zero personal data collected.
 
 ---
@@ -311,6 +322,8 @@ online_clipboard/
 | `/url` | **URL Parser & Query Editor**: Deconstruct URLs and edit query parameter keys & values live. |
 | `/http-status` | **HTTP Status Code Reference**: Encyclopedia of RFC and Cloudflare status codes with troubleshooting tips. |
 | `/color` | **Color Converter & Contrast**: HEX, RGB, HSL converter with WCAG 2.1 accessibility contrast analysis. |
+| `/desktop` | **Pasteport Desktop App**: Native Windows, macOS, and Linux client with global hotkey (`Ctrl+Shift+P`). |
+| `/cli` | **Pasteport CLI Tool**: Developer terminal client for piping, sending, and retrieving clips via CLI. |
 | `/privacy` | Privacy Policy: data handling, 24h retention, logs, and third-party services. |
 | `/terms` | Terms of Service: Acceptable Use Policy, takedown process, and disclaimers. |
 
@@ -370,6 +383,16 @@ Deletes all expired clips and their R2 objects (files **and** text). Intended to
 - **Behavior:** batches through documents where `expiresAt <= now`, deletes R2 objects first, then the Firestore document (so nothing is orphaned).
 - **Response:** `{ checked, deletedClips, deletedR2Objects, r2DeleteErrors }`.
 - **Schedule:** configured in [`vercel.json`](vercel.json) to run daily at `00:00 UTC`.
+
+#### `POST /api/cli/send`
+Handles programmatic clip creation from the command line or desktop client.
+- **Body:** JSON `{ text, expiryHours?, accessPin?, deletePin? }` or `multipart/form-data` with `file`.
+- **Response:** `{ success: true, code, url, type, expiresAt, hasAccessPin, hasDeletePin }`.
+
+#### `GET /api/cli/get`
+Retrieves clip content by 6-digit code for terminal clients and automated scripts.
+- **Parameters:** `?code=<code>&pin=<optional-pin>&raw=<true|false>`.
+- **Response:** JSON payload or raw UTF-8 text when `raw=true`.
 
 ---
 

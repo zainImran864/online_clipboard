@@ -33,8 +33,13 @@
   17. HTTP Status Code Reference (`/http-status`)
   18. Color Converter & WCAG Contrast Checker (`/color`)
 
+- **Pasteport Desktop App (`/desktop`)**: Cross-platform desktop application for Windows, macOS, and Linux. Features global hotkey (`Ctrl + Shift + P` / `Cmd + Shift + P`), background system tray daemon, clipboard monitoring, and native OS notifications.
+- **Pasteport CLI Tool (`/cli`)**: Developer command-line tool (`npm i -g pasteport-cli` / `npx pasteport-cli`). Supports `pasteport send "text"`, `pasteport send ./build.zip`, terminal piping (`cat file | pasteport send`), and `pasteport get <code>`.
+
 ## Web Navigation & URLs
 - [Home & Dashboard](https://pasteport.zain-imran.com/)
+- [Pasteport Desktop App](https://pasteport.zain-imran.com/desktop)
+- [Pasteport CLI Tool](https://pasteport.zain-imran.com/cli)
 - [Developer Toolkit Hub (All 18 Tools)](https://pasteport.zain-imran.com/tools)
 - [Send Clipboard & Files](https://pasteport.zain-imran.com/send)
 - [Read Shared Clipboard & QR Scanner](https://pasteport.zain-imran.com/read)
