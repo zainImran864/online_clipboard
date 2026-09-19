@@ -241,7 +241,7 @@ desktop/
 #### Windows (Winget & Executables)
 ```powershell
 # Install via Winget (Local / PR Manifest):
-winget install --manifest winget\manifests\z\zainImran\Pasteport\1.0.0\zainImran.Pasteport.yaml
+winget install --manifest winget\manifests\z\zainImran\Pasteport\1.0.1\zainImran.Pasteport.yaml
 
 # Once approved in official Microsoft winget-pkgs repository:
 winget install zainImran.Pasteport
@@ -252,8 +252,8 @@ winget install pasteport-zisphere
 winget uninstall zainImran.Pasteport
 ```
 *Or download the compiled binaries from [GitHub Releases](https://github.com/zainImran864/online_clipboard/releases):*
-- **`Pasteport Setup 1.0.0.exe`** — Complete NSIS Windows installer (start menu shortcut, desktop icon, uninstaller).
-- **`Pasteport 1.0.0.exe`** — Standalone single-file portable executable (no install required, runs immediately from USB or folder).
+- **`Pasteport Setup 1.0.1.exe`** — Complete NSIS Windows installer (start menu shortcut, desktop icon, uninstaller).
+- **`Pasteport 1.0.1.exe`** — Standalone single-file portable executable (no install required, runs immediately from USB or folder).
 
 
 #### macOS
@@ -264,28 +264,28 @@ brew install --cask pasteport
 # Uninstall via Homebrew
 brew uninstall --cask pasteport
 ```
-*Or download `Pasteport-1.0.0.dmg` and drag to `/Applications`.*
+*Or download `Pasteport-1.0.1.dmg` and drag to `/Applications`.*
 
 #### Linux (Zypper, DNF, APT, Pacman & AppImage)
 ```bash
 # openSUSE / SUSE Linux Enterprise (Zypper)
-sudo zypper install ./pasteport-1.0.0.rpm
+sudo zypper install ./pasteport-1.0.1.rpm
 sudo zypper remove pasteport
 
 # RHEL / Oracle Linux / Fedora / CentOS / Rocky (DNF)
-sudo dnf install ./pasteport-1.0.0.rpm
+sudo dnf install ./pasteport-1.0.1.rpm
 sudo dnf remove pasteport
 
 # Ubuntu / Debian / Linux Mint (APT)
-sudo apt install ./pasteport-1.0.0.deb
+sudo apt install ./pasteport-1.0.1.deb
 sudo apt remove pasteport
 
 # Arch Linux / Manjaro (Pacman)
-sudo pacman -U ./pasteport-1.0.0.pkg.tar.zst
+sudo pacman -U ./pasteport-1.0.1.pkg.tar.zst
 sudo pacman -R pasteport
 
 # Universal AppImage (Runs on any Linux distribution)
-chmod +x Pasteport-1.0.0.AppImage && ./Pasteport-1.0.0.AppImage
+chmod +x Pasteport-1.0.1.AppImage && ./Pasteport-1.0.1.AppImage
 ```
 
 ### Build & Package Desktop Binaries
@@ -897,7 +897,7 @@ Pasteport features enterprise-grade continuous integration and continuous deploy
 | :--- | :--- | :--- |
 | **[CI](.github/workflows/ci.yml)** | `push`, `pull_request` (branches: `main`) | • Next.js TypeScript validation & compilation<br/>• ESLint syntax and rule validation<br/>• Playwright E2E testing across desktop & mobile viewports |
 | **[Publish CLI to NPM & PyPI](.github/workflows/cli-publish.yml)** | `release` [published], `push` [main on `cli/**` / `python/**`], `workflow_dispatch` | • Publishes Node.js CLI package **[`pasteport-zisphere`](https://www.npmjs.com/package/pasteport-zisphere)** to NPM Registry<br/>• Builds and uploads Python wheel & source distribution to **[PyPI](https://pypi.org/project/pasteport-zisphere/)** via Twine with idempotency checks (`--skip-existing`) |
-| **[Build & Release Desktop App](.github/workflows/desktop-release.yml)** | `push` [tags `v*`, branch `main` on `desktop/**`], `workflow_dispatch` | • **Windows**: NSIS Installer (`Pasteport Setup 1.0.0.exe`) & Standalone Portable (`Pasteport 1.0.0.exe`)<br/>• **macOS**: Apple Silicon & Intel DMG installer (`Pasteport-1.0.0.dmg`) & `.zip`<br/>• **Linux**: Debian package (`.deb`), Red Hat package (`.rpm`), & universal `AppImage`<br/>• Automatically attaches signed binaries to GitHub Releases with generated release notes |
+| **[Build & Release Desktop App](.github/workflows/desktop-release.yml)** | `push` [tags `v*`, branch `main` on `desktop/**`], `workflow_dispatch` | • **Windows**: NSIS Installer (`Pasteport Setup 1.0.1.exe`) & Standalone Portable (`Pasteport 1.0.1.exe`)<br/>• **macOS**: Apple Silicon & Intel DMG installer (`Pasteport-1.0.1.dmg`) & `.zip`<br/>• **Linux**: Debian package (`.deb`), Red Hat package (`.rpm`), & universal `AppImage`<br/>• Automatically attaches signed binaries to GitHub Releases with generated release notes |
 | **[Winget Manifest Publisher](scripts/publish-winget.ps1)** | On desktop release tags | • Generates Windows Package Manager manifests conforming to official `winget-pkgs` standards (`zainImran.Pasteport`) with automated SHA256 hashing |
 
 ---

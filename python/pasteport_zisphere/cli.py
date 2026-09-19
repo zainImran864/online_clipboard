@@ -15,7 +15,7 @@ import mimetypes
 import uuid
 from pathlib import Path
 
-VERSION = "1.0.0"
+VERSION = "1.0.1"
 DEFAULT_SERVER = "https://pasteport.zain-imran.com"
 STANDARD_MAX_FILE_SIZE = 10 * 1024 * 1024       # 10 MB
 SECURE_MAX_FILE_SIZE = 600 * 1024 * 1024        # 600 MB

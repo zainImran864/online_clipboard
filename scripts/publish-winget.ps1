@@ -5,8 +5,14 @@ $ErrorActionPreference = "Stop"
 
 $repoRoot = Resolve-Path (Join-Path $PSScriptRoot "..")
 $distDir = Join-Path $repoRoot "desktop\dist"
-$manifestPath = Join-Path $repoRoot "winget\manifests\z\zainImran\Pasteport\1.0.0\zainImran.Pasteport.installer.yaml"
+$manifestBase = Join-Path $repoRoot "winget\manifests\z\zainImran\Pasteport"
 
+# Determine latest version folder
+$latestVersionDir = Get-ChildItem -Path $manifestBase -Directory | Sort-Object Name -Descending | Select-Object -First 1
+$version = if ($latestVersionDir) { $latestVersionDir.Name } else { "1.0.1" }
+$manifestPath = Join-Path $manifestBase "$version\zainImran.Pasteport.installer.yaml"
+
+Write-Host "Publishing Winget Manifest for Version: $version" -ForegroundColor Cyan
 Write-Host "Searching for built installer in: $distDir" -ForegroundColor Cyan
 
 $exeFile = Get-ChildItem -Path $distDir -Filter "*Setup*.exe" -ErrorAction SilentlyContinue | Select-Object -First 1
@@ -40,12 +46,12 @@ Write-Host "==========================================================" -Foregro
 Write-Host "Testing and Submitting to Winget:" -ForegroundColor Cyan
 Write-Host "==========================================================" -ForegroundColor Green
 Write-Host "1. Test local manifest installation on this machine:"
-Write-Host "   winget install --manifest winget\manifests\z\zainImran\Pasteport\1.0.0\zainImran.Pasteport.yaml" -ForegroundColor Yellow
+Write-Host "   winget install --manifest winget\manifests\z\zainImran\Pasteport\$version\zainImran.Pasteport.yaml" -ForegroundColor Yellow
 Write-Host ""
 Write-Host "2. Publish official GitHub Release:"
 Write-Host "   Upload '$($exeFile.Name)' to:"
-Write-Host "   https://github.com/zainImran864/online_clipboard/releases/new (Tag: v1.0.0)"
+Write-Host "   https://github.com/zainImran864/online_clipboard/releases/tag/v$version"
 Write-Host ""
 Write-Host "3. Submit to Microsoft official winget-pkgs catalog:"
-Write-Host "   wingetcreate submit https://github.com/zainImran864/online_clipboard/releases/download/v1.0.0/$($exeFile.Name)" -ForegroundColor Yellow
+Write-Host "   wingetcreate submit https://github.com/zainImran864/online_clipboard/releases/download/v$version/$($exeFile.Name)" -ForegroundColor Yellow
 Write-Host "==========================================================" -ForegroundColor Green

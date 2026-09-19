@@ -60,12 +60,15 @@ function createMainWindow() {
         return;
     }
 
+    const windowIcon = path.join(__dirname, 'assets', process.platform === 'win32' ? 'icon.ico' : 'icon.png');
+
     mainWindow = new BrowserWindow({
         width: 1200,
         height: 800,
         minWidth: 800,
         minHeight: 600,
         title: 'Pasteport — Cross-device sharing + Developer Toolkit',
+        icon: windowIcon,
         webPreferences: {
             preload: path.join(__dirname, 'preload.js'),
             nodeIntegration: false,
@@ -82,10 +85,16 @@ function createMainWindow() {
         }
         return false;
     });
+
+    mainWindow.on('closed', () => {
+        mainWindow = null;
+    });
 }
 
 // Create Quick Action HUD Popup Window
 function createQuickPopupWindow() {
+    const windowIcon = path.join(__dirname, 'assets', process.platform === 'win32' ? 'icon.ico' : 'icon.png');
+
     quickPopupWindow = new BrowserWindow({
         width: 440,
         height: 280,
@@ -94,6 +103,7 @@ function createQuickPopupWindow() {
         resizable: false,
         alwaysOnTop: true,
         skipTaskbar: true,
+        icon: windowIcon,
         webPreferences: {
             preload: path.join(__dirname, 'preload.js'),
             nodeIntegration: false,
@@ -157,8 +167,21 @@ function createQuickPopupWindow() {
 
     quickPopupWindow.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(popupHtml)}`);
 
+    quickPopupWindow.on('close', (event) => {
+        if (!app.isQuitting) {
+            event.preventDefault();
+            quickPopupWindow.hide();
+        }
+    });
+
+    quickPopupWindow.on('closed', () => {
+        quickPopupWindow = null;
+    });
+
     quickPopupWindow.on('blur', () => {
-        quickPopupWindow.hide();
+        if (quickPopupWindow && !quickPopupWindow.isDestroyed()) {
+            quickPopupWindow.hide();
+        }
     });
 }
 
@@ -166,27 +189,31 @@ function createQuickPopupWindow() {
 function showQuickPopup() {
     const text = clipboard.readText();
 
-    if (!quickPopupWindow) {
+    if (!quickPopupWindow || quickPopupWindow.isDestroyed()) {
         createQuickPopupWindow();
     }
 
-    const mousePos = screen.getCursorScreenPoint();
-    const currentDisplay = screen.getDisplayNearestPoint(mousePos);
-    const { width, height } = quickPopupWindow.getBounds();
+    try {
+        const mousePos = screen.getCursorScreenPoint();
+        const currentDisplay = screen.getDisplayNearestPoint(mousePos);
+        const { width, height } = quickPopupWindow.getBounds();
 
-    const x = Math.round(currentDisplay.bounds.x + (currentDisplay.bounds.width - width) / 2);
-    const y = Math.round(currentDisplay.bounds.y + (currentDisplay.bounds.height - height) / 2);
+        const x = Math.round(currentDisplay.bounds.x + (currentDisplay.bounds.width - width) / 2);
+        const y = Math.round(currentDisplay.bounds.y + (currentDisplay.bounds.height - height) / 2);
 
-    quickPopupWindow.setPosition(x, y);
-    quickPopupWindow.show();
-    quickPopupWindow.focus();
-    quickPopupWindow.webContents.send('hotkey-pressed', text);
+        quickPopupWindow.setPosition(x, y);
+        quickPopupWindow.show();
+        quickPopupWindow.focus();
+        quickPopupWindow.webContents.send('hotkey-pressed', text);
+    } catch (err) {
+        console.error('Error displaying quick popup:', err);
+    }
 }
 
 // Create System Tray Icon and Menu
 function createTray() {
-    // Note: in production, an icon asset is passed; fallback to empty image
-    const iconPath = path.join(__dirname, 'assets', 'icon.png');
+    const iconName = process.platform === 'win32' ? 'icon.ico' : 'icon.png';
+    const iconPath = path.join(__dirname, 'assets', iconName);
     tray = new Tray(iconPath);
 
     const contextMenu = Menu.buildFromTemplate([
@@ -281,7 +308,13 @@ ipcMain.on('copy-to-clipboard', (_, text) => {
 });
 
 ipcMain.on('close-quick-popup', () => {
-    if (quickPopupWindow) quickPopupWindow.hide();
+    if (quickPopupWindow && !quickPopupWindow.isDestroyed()) {
+        quickPopupWindow.hide();
+    }
+});
+
+process.on('uncaughtException', (err) => {
+    console.error('Unhandled Exception in main process:', err);
 });
 
 // App Lifecycle

@@ -12,7 +12,7 @@ const fs = require('fs');
 const path = require('path');
 const readline = require('readline');
 
-const VERSION = '1.0.0';
+const VERSION = '1.0.1';
 const DEFAULT_SERVER = process.env.PASTEPORT_API_URL || 'https://pasteport.zain-imran.com';
 const STANDARD_MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
 const SECURE_MAX_FILE_SIZE = 600 * 1024 * 1024; // 600 MB

@@ -20,7 +20,7 @@ const CLI_TABS = [
   ██╔═══╝ ██╔══██║╚════██║   ██║   ██╔══╝  ██╔═══╝ ██║   ██║██╔══██╗   ██║   
   ██║     ██║  ██║███████║   ██║   ███████╗██║     ╚██████╔╝██║  ██║   ██║   
   ╚═╝     ╚═╝  ╚═╝╚══════╝   ╚═╝   ╚══════╝╚═╝      ╚═════╝ ╚═╝  ╚═╝   ╚═╝   
-  Cross-device sharing + Developer Toolkit | v1.0.0
+  Cross-device sharing + Developer Toolkit | v1.0.1
 
 Select an action by typing 1, 2, 3, or 4:
 
@@ -388,7 +388,7 @@ export default function CliDocsPage() {
                                     <span className="h-3 w-3 rounded-full bg-emerald-500/80 inline-block" />
                                     <span className="ml-2 text-slate-400">bash — terminal session</span>
                                 </div>
-                                <span>Pasteport CLI v1.0.0</span>
+                                <span>Pasteport CLI v1.0.1</span>
                             </div>
 
                             <div className="text-emerald-400 font-bold select-all">

@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="pasteport-zisphere",
-    version="1.0.0",
+    version="1.0.1",
     description="Cross-device clipboard and file sharing CLI tool for Pasteport",
     author="Zain Imran",
     url="https://pasteport.zain-imran.com",
