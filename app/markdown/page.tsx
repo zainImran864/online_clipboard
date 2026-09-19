@@ -14,24 +14,24 @@ function parseMarkdown(md: string): string {
         .replace(/</g, '&lt;')
         .replace(/>/g, '&gt;')
         // Headers
-        .replace(/^### (.*$)/gim, '<h3 class="text-base font-bold text-slate-900 mt-4 mb-1">$1</h3>')
-        .replace(/^## (.*$)/gim, '<h2 class="text-lg font-extrabold text-slate-900 mt-5 mb-2 border-b border-slate-200 pb-1">$1</h2>')
-        .replace(/^# (.*$)/gim, '<h1 class="text-2xl font-black text-slate-900 mt-6 mb-3 border-b-2 border-slate-200 pb-2">$1</h1>')
+        .replace(/^### (.*$)/gim, '<h3 class="text-base font-bold text-slate-900 mt-4 mb-1 break-words">$1</h3>')
+        .replace(/^## (.*$)/gim, '<h2 class="text-lg font-extrabold text-slate-900 mt-5 mb-2 border-b border-slate-200 pb-1 break-words">$1</h2>')
+        .replace(/^# (.*$)/gim, '<h1 class="text-2xl font-black text-slate-900 mt-6 mb-3 border-b-2 border-slate-200 pb-2 break-words">$1</h1>')
         // Bold & Italic
         .replace(/\*\*\*(.*?)\*\*\*/gim, '<strong><em>$1</em></strong>')
         .replace(/\*\*(.*?)\*\*/gim, '<strong>$1</strong>')
         .replace(/\*(.*?)\*/gim, '<em>$1</em>')
         // Blockquotes
-        .replace(/^\> (.*$)/gim, '<blockquote class="border-l-4 border-blue-500 bg-blue-50/50 pl-3 py-1 my-2 text-slate-700 italic">$1</blockquote>')
+        .replace(/^\> (.*$)/gim, '<blockquote class="border-l-4 border-blue-500 bg-blue-50/50 pl-3 py-1 my-2 text-slate-700 italic break-words">$1</blockquote>')
         // Code blocks
-        .replace(/```([\s\S]*?)```/gim, '<pre class="bg-slate-900 text-slate-100 p-3 my-3 rounded-xl overflow-x-auto text-xs font-mono"><code>$1</code></pre>')
+        .replace(/```([\s\S]*?)```/gim, '<div class="my-3 w-full max-w-full overflow-hidden rounded-xl bg-slate-900"><pre class="p-3 text-slate-100 overflow-x-auto text-xs font-mono w-full max-w-full leading-relaxed"><code>$1</code></pre></div>')
         // Inline code
-        .replace(/`([^`]+)`/gim, '<code class="bg-slate-100 text-pink-600 px-1.5 py-0.5 rounded font-mono text-xs">$1</code>')
+        .replace(/`([^`]+)`/gim, '<code class="bg-slate-100 text-pink-600 px-1.5 py-0.5 rounded font-mono text-xs break-all">$1</code>')
         // Unordered lists
-        .replace(/^\s*\-\s(.*$)/gim, '<li class="ml-4 list-disc text-slate-700">$1</li>')
+        .replace(/^\s*\-\s(.*$)/gim, '<li class="ml-4 list-disc text-slate-700 break-words">$1</li>')
         // Checklists
-        .replace(/\[ \]\s(.*$)/gim, '<span class="inline-flex items-center gap-1.5"><input type="checkbox" disabled class="rounded" /> $1</span>')
-        .replace(/\[x\]\s(.*$)/gim, '<span class="inline-flex items-center gap-1.5"><input type="checkbox" checked disabled class="rounded text-blue-600" /> <del class="text-slate-400">$1</del></span>')
+        .replace(/\[ \]\s(.*$)/gim, '<span class="inline-flex items-center gap-1.5 break-words"><input type="checkbox" disabled class="rounded shrink-0" /> $1</span>')
+        .replace(/\[x\]\s(.*$)/gim, '<span class="inline-flex items-center gap-1.5 break-words"><input type="checkbox" checked disabled class="rounded text-blue-600 shrink-0" /> <del class="text-slate-400">$1</del></span>')
         // Line breaks
         .replace(/\n\n/gim, '<br /><br />')
         .replace(/\n/gim, '<br />');
@@ -66,6 +66,7 @@ console.log('Shared content:', clip.textContent);
 export default function MarkdownEditorPage() {
     const router = useRouter();
     const [markdown, setMarkdown] = useState(SAMPLE_MARKDOWN);
+    const [viewMode, setViewMode] = useState<'both' | 'edit' | 'preview'>('both');
 
     const renderedHtml = useMemo(() => parseMarkdown(markdown), [markdown]);
 
@@ -189,14 +190,14 @@ export default function MarkdownEditorPage() {
     };
 
     return (
-        <div className="flex min-h-screen flex-col bg-slate-50">
+        <div className="flex min-h-screen flex-col bg-slate-50 overflow-x-hidden">
             <Navbar />
 
-            <main className="flex-1 px-4 py-8 sm:px-6 sm:py-10">
-                <div className="mx-auto max-w-6xl space-y-6">
+            <main className="flex-1 w-full max-w-full px-3.5 py-6 sm:px-6 sm:py-10">
+                <div className="mx-auto w-full max-w-6xl space-y-4 sm:space-y-6">
                     {/* Header */}
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                        <div>
+                        <div className="min-w-0">
                             <div className="inline-flex items-center gap-2 rounded-full bg-blue-100 px-3 py-1 text-xs font-bold text-blue-800">
                                 📝 Developer Utility
                             </div>
@@ -208,18 +209,18 @@ export default function MarkdownEditorPage() {
                             </p>
                         </div>
 
-                        <div className="flex flex-wrap gap-2">
+                        <div className="flex flex-wrap items-center gap-2">
                             <button
                                 onClick={exportPdf}
                                 disabled={!markdown.trim()}
-                                className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-xs font-bold text-slate-700 shadow-xs transition-all hover:bg-slate-50 active:scale-95 disabled:opacity-50"
+                                className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-bold text-slate-700 shadow-xs transition-all hover:bg-slate-50 active:scale-95 disabled:opacity-50"
                             >
                                 📄 Export PDF
                             </button>
                             <button
                                 onClick={shareViaPasteport}
                                 disabled={!markdown.trim()}
-                                className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 px-4 py-2.5 text-xs font-bold text-white shadow-md transition-all hover:brightness-105 active:scale-95 disabled:opacity-50"
+                                className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 px-4 py-2 text-xs font-bold text-white shadow-md transition-all hover:brightness-105 active:scale-95 disabled:opacity-50"
                             >
                                 🚀 Share via Pasteport
                             </button>
@@ -227,69 +228,122 @@ export default function MarkdownEditorPage() {
                     </div>
 
                     {/* Toolbar */}
-                    <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white p-3 shadow-xs">
-                        <div className="flex items-center gap-4 text-xs font-medium text-slate-500">
-                            <span><b>{stats.words}</b> words</span>
-                            <span><b>{stats.chars}</b> characters</span>
-                            <span>~<b>{stats.readTime}</b> min read</span>
+                    <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-3 shadow-xs lg:flex-row lg:items-center lg:justify-between">
+                        {/* Left: View Mode Switcher & Stats */}
+                        <div className="flex flex-wrap items-center gap-3">
+                            {/* View Switcher */}
+                            <div className="flex rounded-xl bg-slate-100 p-1">
+                                <button
+                                    type="button"
+                                    onClick={() => setViewMode('both')}
+                                    className={`rounded-lg px-2.5 py-1 text-xs font-bold transition-all ${
+                                        viewMode === 'both' ? 'bg-white text-blue-700 shadow-xs' : 'text-slate-500 hover:text-slate-800'
+                                    }`}
+                                >
+                                    <span className="hidden sm:inline">↔️ </span>Split
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setViewMode('edit')}
+                                    className={`rounded-lg px-2.5 py-1 text-xs font-bold transition-all ${
+                                        viewMode === 'edit' ? 'bg-white text-blue-700 shadow-xs' : 'text-slate-500 hover:text-slate-800'
+                                    }`}
+                                >
+                                    ✏️ Edit
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setViewMode('preview')}
+                                    className={`rounded-lg px-2.5 py-1 text-xs font-bold transition-all ${
+                                        viewMode === 'preview' ? 'bg-white text-blue-700 shadow-xs' : 'text-slate-500 hover:text-slate-800'
+                                    }`}
+                                >
+                                    👁️ Preview
+                                </button>
+                            </div>
+
+                            {/* Word & char counters */}
+                            <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-xs font-medium text-slate-500">
+                                <span><b>{stats.words}</b> words</span>
+                                <span className="text-slate-300">•</span>
+                                <span><b>{stats.chars}</b> chars</span>
+                                <span className="text-slate-300">•</span>
+                                <span>~<b>{stats.readTime}</b>m read</span>
+                            </div>
                         </div>
 
-                        <div className="flex flex-wrap items-center gap-2">
+                        {/* Right: Action buttons */}
+                        <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
                             <button
                                 onClick={copyMarkdown}
-                                className="rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-700 hover:bg-slate-50 active:scale-95"
+                                title="Copy Markdown"
+                                className="rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-bold text-slate-700 hover:bg-slate-50 active:scale-95"
                             >
-                                📋 Copy Markdown
+                                📋 <span className="hidden sm:inline">Copy </span>MD
                             </button>
                             <button
                                 onClick={downloadMarkdown}
-                                className="rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-700 hover:bg-slate-50 active:scale-95"
+                                title="Download Markdown"
+                                className="rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-bold text-slate-700 hover:bg-slate-50 active:scale-95"
                             >
-                                ⬇ Download .md
+                                ⬇ <span className="hidden sm:inline">Download </span>.md
                             </button>
                             <button
                                 onClick={exportHtml}
-                                className="rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-700 hover:bg-slate-50 active:scale-95"
+                                title="Export HTML"
+                                className="rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-bold text-slate-700 hover:bg-slate-50 active:scale-95"
                             >
-                                🌐 Export HTML
+                                🌐 HTML
                             </button>
                             <button
                                 onClick={exportPdf}
-                                className="rounded-xl border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-bold text-blue-700 hover:bg-blue-100 active:scale-95"
+                                title="Export PDF"
+                                className="rounded-xl border border-blue-200 bg-blue-50 px-2.5 py-1.5 text-xs font-bold text-blue-700 hover:bg-blue-100 active:scale-95"
                             >
-                                📄 Export PDF
+                                📄 PDF
                             </button>
                             <button
                                 onClick={() => setMarkdown('')}
-                                className="rounded-xl border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-bold text-red-600 hover:bg-red-100 active:scale-95"
+                                title="Clear Editor"
+                                className="rounded-xl border border-red-200 bg-red-50 px-2.5 py-1.5 text-xs font-bold text-red-600 hover:bg-red-100 active:scale-95"
                             >
                                 ✕ Clear
                             </button>
                         </div>
                     </div>
 
-                    {/* Split Editor */}
-                    <div className="grid gap-4 lg:grid-cols-2">
+                    {/* Workspace: Split or Single View */}
+                    <div className={`grid min-w-0 max-w-full gap-4 ${viewMode === 'both' ? 'lg:grid-cols-2' : 'grid-cols-1'}`}>
                         {/* Editor */}
-                        <div className="space-y-1.5">
-                            <span className="text-xs font-bold text-slate-600">Markdown Source</span>
-                            <textarea
-                                value={markdown}
-                                onChange={(e) => setMarkdown(e.target.value)}
-                                placeholder="Type markdown here..."
-                                spellCheck={false}
-                                className="h-[520px] w-full rounded-2xl border-2 border-slate-200 bg-white p-4 font-mono text-xs leading-relaxed text-slate-800 focus:border-blue-500 focus:outline-none"
-                            />
-                        </div>
+                        {(viewMode === 'both' || viewMode === 'edit') && (
+                            <div className="flex min-w-0 max-w-full flex-col space-y-1.5">
+                                <div className="flex items-center justify-between px-1">
+                                    <span className="text-xs font-bold text-slate-600">Markdown Source</span>
+                                    <span className="text-[11px] text-slate-400">GitHub Flavored</span>
+                                </div>
+                                <textarea
+                                    value={markdown}
+                                    onChange={(e) => setMarkdown(e.target.value)}
+                                    placeholder="Type markdown here..."
+                                    spellCheck={false}
+                                    className="h-[440px] sm:h-[500px] lg:h-[540px] w-full min-w-0 max-w-full resize-none rounded-2xl border-2 border-slate-200 bg-white p-3.5 sm:p-4 font-mono text-xs leading-relaxed text-slate-800 focus:border-blue-500 focus:outline-none"
+                                />
+                            </div>
+                        )}
 
                         {/* Live Render */}
-                        <div className="space-y-1.5">
-                            <span className="text-xs font-bold text-slate-600">Rendered HTML Output</span>
-                            <div
-                                dangerouslySetInnerHTML={{ __html: renderedHtml }}
-                                className="h-[520px] w-full overflow-auto rounded-2xl border-2 border-slate-200 bg-white p-6 text-sm text-slate-800 leading-relaxed shadow-inner"
-                            />
-                        </div>
+                        {(viewMode === 'both' || viewMode === 'preview') && (
+                            <div className="flex min-w-0 max-w-full flex-col space-y-1.5">
+                                <div className="flex items-center justify-between px-1">
+                                    <span className="text-xs font-bold text-slate-600">Rendered HTML Output</span>
+                                    <span className="text-[11px] font-semibold text-emerald-600">● Live Preview</span>
+                                </div>
+                                <div
+                                    dangerouslySetInnerHTML={{ __html: renderedHtml }}
+                                    className="h-[440px] sm:h-[500px] lg:h-[540px] w-full min-w-0 max-w-full overflow-y-auto overflow-x-hidden break-words rounded-2xl border-2 border-slate-200 bg-white p-4 sm:p-6 text-sm leading-relaxed text-slate-800 shadow-inner"
+                                />
+                            </div>
+                        )}
                     </div>
                 </div>
             </main>
