@@ -4,13 +4,13 @@ export default function JsonLd() {
     const webApplicationSchema = {
         '@context': 'https://schema.org',
         '@type': 'WebApplication',
-        name: 'Pasteport — Online Clipboard',
+        name: 'Pasteport — Cross-Device Sharing + Developer Toolkit',
         url: siteUrl,
-        applicationCategory: 'UtilityApplication',
+        applicationCategory: 'DeveloperApplication, UtilityApplication',
         operatingSystem: 'All',
         browserRequirements: 'Requires a modern web browser with JavaScript enabled',
         description:
-            'Free online clipboard to share text, code, files, PDFs, and images instantly across devices with a 6-digit code. No login required. Features 4-character PIN protection, real-time live sync, and instant self-destruct.',
+            'Free cross-device sharing platform and developer toolkit. Transfer text, code, files, and screenshots across devices with 6-digit codes and QR scans. Features 18 client-side developer utilities including JSON Formatter, YAML Converter, SQL Formatter, Regex Tester, UUID Generator, JWT Signer, Hash Generator, and more.',
         offers: {
             '@type': 'Offer',
             price: '0',
@@ -18,14 +18,17 @@ export default function JsonLd() {
         },
         featureList: [
             'Instant cross-device clipboard sharing without login',
-            'Pair devices with 6-digit codes or QR codes',
+            'Pair devices with 6-digit codes or QR camera scanning',
+            'Offline viewing and downloading with IndexedDB caching',
             '4-character PIN protection with real-time screen locking',
             'Self-destruct PIN with instant permanent wipe',
             'Custom lifespan from 1 to 24 hours with auto-expiry purge',
             'Global Ctrl+V clipboard paste for screenshots and text',
-            'Cloudflare R2 sandboxed object storage up to 10MB per file',
+            'Cloudflare R2 sandboxed object storage up to 600MB',
             'Real-time live updates as the creator types',
-            'Developer Utilities: JSON Formatter, Diff Checker, JWT Debugger, Base64 Converter, Markdown Editor with PDF export',
+            'Developer Utilities: JSON Formatter & Tree, YAML ↔ JSON Converter, SQL Formatter, HTML Formatter, Markdown Live Preview with PDF export',
+            'Security & Crypto Tools: JWT Debugger, JWT Generator (HMAC Web Crypto), Hash Generator (MD5, SHA-256, SHA-512, HMAC), UUID Generator (v4, v7)',
+            'Web & Time Utilities: Regex Tester & Matcher, Unix Timestamp Converter, Cron Schedule Explainer, URL Parser & Query Editor, HTTP Status Code Reference, Color Converter with WCAG Contrast, Lorem Ipsum & Dummy JSON Generator',
         ],
         author: {
             '@type': 'Person',
@@ -38,7 +41,7 @@ export default function JsonLd() {
         '@context': 'https://schema.org',
         '@type': 'WebSite',
         name: 'Pasteport',
-        alternateName: 'Pasteport Online Clipboard',
+        alternateName: 'Pasteport — Cross-Device Sharing + Developer Toolkit',
         url: siteUrl,
         potentialAction: {
             '@type': 'SearchAction',

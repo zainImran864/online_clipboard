@@ -63,7 +63,15 @@ module.exports = {
     } else if (path === '/send' || path === '/read') {
       priority = 0.9;
       changefreq = 'daily';
-    } else if (['/markdown', '/json', '/diff', '/jwt', '/encode'].includes(path)) {
+    } else if (path === '/tools') {
+      priority = 0.85;
+      changefreq = 'daily';
+    } else if ([
+      '/markdown', '/json', '/diff', '/jwt', '/encode',
+      '/regex', '/uuid', '/timestamp', '/url', '/http-status',
+      '/color', '/sql', '/html', '/yaml', '/hash',
+      '/cron', '/jwt-gen', '/lorem'
+    ].includes(path)) {
       priority = 0.8;
       changefreq = 'weekly';
     } else if (path === '/secure') {

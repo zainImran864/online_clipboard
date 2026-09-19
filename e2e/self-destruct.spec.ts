@@ -42,6 +42,7 @@ test.describe('Self-Destruct & PIN Security Flow', () => {
 
   test('validates 6-digit code input on read page without alert() popups', async ({ page }) => {
     await page.goto('/read');
+    await expect(page.getByRole('heading', { name: /Read shared content/i })).toBeVisible({ timeout: 15000 });
 
     // Check no window.alert triggered
     page.on('dialog', () => {
