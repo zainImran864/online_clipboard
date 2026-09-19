@@ -12,13 +12,26 @@ export default function Navbar() {
 
     const devTools = [
         { href: '/json', name: 'JSON Formatter & Tree', icon: '🌲', desc: 'Beautify, validate & inspect JSON' },
-        { href: '/diff', name: 'Diff Checker', icon: '🔍', desc: 'Compare code, text & JSON differences' },
-        { href: '/jwt', name: 'JWT Debugger & Decoder', icon: '🔐', desc: 'Inspect header & payload claims locally' },
-        { href: '/encode', name: 'Base64 & URL Encoder', icon: '🔄', desc: 'Convert text, tokens & files to Base64' },
-        { href: '/markdown', name: 'Markdown Live Preview', icon: '📝', desc: 'Split-screen live markdown editor' },
+        { href: '/yaml', name: 'YAML ↔ JSON Converter', icon: '📑', desc: 'Bi-directional YAML & JSON' },
+        { href: '/sql', name: 'SQL Formatter', icon: '🗄️', desc: 'Clean, format & uppercase SQL' },
+        { href: '/regex', name: 'Regex Tester', icon: '⚡', desc: 'Test patterns & inspect groups' },
+        { href: '/uuid', name: 'UUID Generator (v4/v7)', icon: '🎲', desc: 'RFC compliant UUIDs & GUIDs' },
+        { href: '/timestamp', name: 'Unix Timestamp Converter', icon: '⏱️', desc: 'Epoch to human dates & relative' },
+        { href: '/jwt', name: 'JWT Debugger', icon: '🔐', desc: 'Inspect header & claims' },
+        { href: '/jwt-gen', name: 'JWT Generator', icon: '✍️', desc: 'Sign HMAC tokens in-browser' },
+        { href: '/hash', name: 'Hash & Checksum', icon: '🛡️', desc: 'MD5, SHA-256, SHA-512, HMAC' },
+        { href: '/url', name: 'URL Parser & Params', icon: '🔗', desc: 'Deconstruct & edit queries' },
+        { href: '/http-status', name: 'HTTP Status Reference', icon: '📖', desc: 'RFC & Cloudflare status codes' },
+        { href: '/color', name: 'Color Converter & WCAG', icon: '🎨', desc: 'HEX, RGB, HSL & contrast' },
+        { href: '/html', name: 'HTML Formatter & Preview', icon: '🌐', desc: 'Beautify & sandbox preview' },
+        { href: '/diff', name: 'Diff Checker', icon: '🔍', desc: 'Compare code & text changes' },
+        { href: '/encode', name: 'Base64 & URL Encoder', icon: '🔄', desc: 'Text & binary to Base64' },
+        { href: '/markdown', name: 'Markdown Live Preview', icon: '📝', desc: 'Live preview with PDF export' },
+        { href: '/cron', name: 'Cron Expression Generator', icon: '⏰', desc: 'Build & explain schedules' },
+        { href: '/lorem', name: 'Lorem & Dummy JSON', icon: '📦', desc: 'Mock text & JSON generator' },
     ];
 
-    const isToolActive = devTools.some(tool => pathname.startsWith(tool.href));
+    const isToolActive = pathname === '/tools' || devTools.some(tool => pathname.startsWith(tool.href));
 
     return (
         <header className="sticky top-0 z-40 border-b border-slate-200/80 bg-white/80 backdrop-blur-md">
@@ -75,6 +88,9 @@ export default function Navbar() {
                             }`}
                         >
                             <span>🛠️ Dev Tools</span>
+                            <span className="rounded-full bg-blue-100/80 px-1.5 py-0.2 text-[10px] font-bold text-blue-900">
+                                18
+                            </span>
                             <svg
                                 className={`h-3.5 w-3.5 transition-transform ${toolsOpen ? 'rotate-180' : ''}`}
                                 fill="none"
@@ -86,29 +102,49 @@ export default function Navbar() {
                         </button>
 
                         {toolsOpen && (
-                            <div className="absolute right-0 top-full pt-2 animate-fadeIn">
-                                <div className="w-72 rounded-2xl border border-slate-200 bg-white p-2 shadow-2xl">
-                                    <div className="px-3 py-1.5 text-[10px] font-extrabold uppercase tracking-wider text-slate-400">
-                                        Client-Side Utilities
-                                    </div>
-                                    {devTools.map((tool) => (
+                            <div className="absolute right-0 top-full pt-2 animate-fadeIn z-50">
+                                <div className="w-80 rounded-2xl border border-slate-200 bg-white p-2 shadow-2xl">
+                                    <div className="flex items-center justify-between px-3 py-1.5 text-[10px] font-extrabold uppercase tracking-wider text-slate-400">
+                                        <span>18 Client-Side Utilities</span>
                                         <Link
-                                            key={tool.href}
-                                            href={tool.href}
+                                            href="/tools"
                                             onClick={() => setToolsOpen(false)}
-                                            className={`flex items-start gap-2.5 rounded-xl p-2.5 transition-colors ${
-                                                pathname === tool.href
-                                                    ? 'bg-blue-50 text-blue-900'
-                                                    : 'hover:bg-slate-50 text-slate-700'
-                                            }`}
+                                            className="text-blue-600 hover:underline"
                                         >
-                                            <span className="text-lg">{tool.icon}</span>
-                                            <div>
-                                                <p className="text-xs font-bold">{tool.name}</p>
-                                                <p className="text-[11px] text-slate-400">{tool.desc}</p>
-                                            </div>
+                                            View All →
                                         </Link>
-                                    ))}
+                                    </div>
+
+                                    <div className="max-h-96 overflow-y-auto space-y-0.5 pr-1">
+                                        {devTools.map((tool) => (
+                                            <Link
+                                                key={tool.href}
+                                                href={tool.href}
+                                                onClick={() => setToolsOpen(false)}
+                                                className={`flex items-start gap-2.5 rounded-xl p-2 transition-colors ${
+                                                    pathname === tool.href
+                                                        ? 'bg-blue-50 text-blue-900'
+                                                        : 'hover:bg-slate-50 text-slate-700'
+                                                }`}
+                                            >
+                                                <span className="text-base">{tool.icon}</span>
+                                                <div className="min-w-0 flex-1">
+                                                    <p className="text-xs font-bold truncate">{tool.name}</p>
+                                                    <p className="text-[10px] text-slate-400 truncate">{tool.desc}</p>
+                                                </div>
+                                            </Link>
+                                        ))}
+                                    </div>
+
+                                    <div className="border-t border-slate-100 p-1.5 mt-1 text-center">
+                                        <Link
+                                            href="/tools"
+                                            onClick={() => setToolsOpen(false)}
+                                            className="block rounded-xl bg-slate-50 py-2 text-xs font-bold text-blue-600 hover:bg-blue-50 transition-colors"
+                                        >
+                                            Explore All 18 Dev Tools Hub 🚀
+                                        </Link>
+                                    </div>
                                 </div>
                             </div>
                         )}
@@ -162,16 +198,25 @@ export default function Navbar() {
                     </div>
 
                     <div className="pt-2 border-t border-slate-100">
-                        <p className="px-1 text-[10px] font-extrabold uppercase tracking-wider text-slate-400">
-                            Developer Tools
-                        </p>
-                        <div className="mt-1 space-y-1">
+                        <div className="flex items-center justify-between px-1 mb-1">
+                            <p className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">
+                                18 Developer Tools
+                            </p>
+                            <Link
+                                href="/tools"
+                                onClick={() => setMobileMenuOpen(false)}
+                                className="text-[11px] font-bold text-blue-600 hover:underline"
+                            >
+                                View Hub →
+                            </Link>
+                        </div>
+                        <div className="mt-1 max-h-60 overflow-y-auto space-y-1 pr-1">
                             {devTools.map((tool) => (
                                 <Link
                                     key={tool.href}
                                     href={tool.href}
                                     onClick={() => setMobileMenuOpen(false)}
-                                    className="flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100"
+                                    className="flex items-center gap-2 rounded-xl px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100"
                                 >
                                     <span>{tool.icon}</span>
                                     <span>{tool.name}</span>

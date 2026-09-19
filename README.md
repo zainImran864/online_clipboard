@@ -4,18 +4,19 @@
   </a>
 </p>
 
-<h1 align="center">Pasteport — Open-Source Online Clipboard & Ephemeral File Sharing</h1>
+<h1 align="center">Pasteport — Cross-Device Sharing + Developer Toolkit</h1>
 
 <p align="center">
-  <strong>Share files, text, snippets, and images across any device instantly with a simple 6-digit code.</strong><br/>
-  <em>No login required. 100% open-source, privacy-first, and self-hostable.</em>
+  <strong>Cross-device clipboard sharing paired with 18 client-side developer workflow utilities.</strong><br/>
+  <em>Instant 6-digit codes, QR camera scanning, offline downloads, and zero server transmission. 100% open-source, privacy-first, and self-hostable.</em>
 </p>
 
 <p align="center">
   <a href="https://pasteport.zain-imran.com"><strong>🚀 Live Demo</strong></a> •
+  <a href="https://pasteport.zain-imran.com/tools"><strong>🛠️ Dev Toolkit Hub (18 Tools)</strong></a> •
   <a href="https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2FzainImran864%2Fonline_clipboard&env=NEXT_PUBLIC_FIREBASE_API_KEY,NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,NEXT_PUBLIC_FIREBASE_PROJECT_ID,NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,NEXT_PUBLIC_FIREBASE_APP_ID,CLOUDFLARE_ACCOUNT_ID,R2_ACCESS_KEY_ID,R2_SECRET_ACCESS_KEY,R2_BUCKET_NAME,R2_PUBLIC_URL,CRON_SECRET&project-name=pasteport&repository-name=pasteport"><strong>⚡ Deploy to Vercel</strong></a> •
   <a href="#why-pasteport"><strong>✨ Why Pasteport?</strong></a> •
-  <a href="#architecture"><strong>📐 Architecture</strong></a> •
+  <a href="#developer-toolkit-suite"><strong>🧰 Developer Toolkit</strong></a> •
   <a href="#getting-started"><strong>🛠️ Quickstart</strong></a> •
   <a href="CONTRIBUTING.md"><strong>🤝 Contributing</strong></a>
 </p>
@@ -38,12 +39,11 @@
 
 ## Overview
 
-**Pasteport** is a privacy-first, lightning-fast, open-source online clipboard and temporary file transfer platform. It solves the friction of moving text, code snippets, photos, PDFs, and documents between different operating systems and devices (iOS, Android, macOS, Windows, Linux) without requiring email logins, messaging apps, browser extensions, or cloud subscriptions.
+**Pasteport** is a privacy-first, lightning-fast cross-device sharing platform and complete developer toolkit. It eliminates the friction of moving text, code snippets, photos, PDFs, and documents between different operating systems and devices (iOS, Android, macOS, Windows, Linux) without requiring email logins, messaging apps, browser extensions, or cloud subscriptions.
 
-Share anything with a **temporary 6-digit pairing code** or direct URL. Content is sandboxed, encrypted in transit, and permanently wiped either automatically after its chosen lifespan (1h–24h) or instantly via manual **Self-Destruct PIN / Duress Wipe**.
+Pair devices instantly with a **temporary 6-digit access code** or QR scan, view and download content offline via IndexedDB caching, protect sensitive shares with **4-character access PIN locks**, or permanently destroy clips on demand using **Self-Destruct PIN duress wipes**.
 
-> 💡 **Looking for a modern, open-source Pastebin or AirDrop alternative?**
-> Pasteport works universally across web browsers and can be installed as a Progressive Web App (PWA) with zero device lock-in.
+In addition to ephemeral clipboard sharing, Pasteport bundles **18 client-side developer utilities** that run 100% in browser memory with zero server transmission. Every tool features 1-click **"Share via Pasteport"** to streamline modern developer workflows.
 
 ---
 
@@ -93,7 +93,8 @@ Most clipboard and file-sharing utilities require account registrations, bombard
 | **Zero Egress Cloud Object Storage** | ✅ **Cloudflare R2** | ❌ Text only | ❌ P2P Local | ❌ Quota caps | ❌ Expired link caps |
 | **Real-Time Synchronized Editing** | ✅ **Yes** (Firestore live mode) | ❌ Static | ❌ No | ❌ No | ❌ No |
 | **Self-Hostable with 1-Click Deploy**| ✅ **Yes** (Vercel + R2) | ❌ No | ❌ No | ❌ No | ❌ No |
-| **Client-Side Dev Utilities Suite** | ✅ **JSON, Diff, JWT, Base64, MD** | ❌ No | ❌ No | ❌ No | ❌ No |
+| **Client-Side Dev Utilities Suite** | ✅ **18 In-Browser Tools** | ❌ No | ❌ No | ❌ No | ❌ No |
+| **Camera QR Scanner & Offline Cache**| ✅ **Yes (jsQR + IndexedDB)** | ❌ No | ❌ No | ❌ No | ❌ No |
 | **PWA (Installable Offline App)** | ✅ **Yes** | ❌ No | ❌ Native Apple | ❌ Proprietary App | ❌ No |
 
 ---
@@ -106,7 +107,7 @@ Pasteport leverages a modern serverless JAMstack architecture engineered for sub
 flowchart TD
     subgraph Clients["📱 Cross-Platform Clients (iOS, Android, macOS, Windows, Linux)"]
         Sender["Sender (Web / PWA)<br/>• Ctrl+V Clipboard Paste<br/>• File Drag & Drop (≤10MB)<br/>• 4-Char PIN & Lifespan Setup<br/>• Self-Destruct PIN"]
-        Receiver["Recipient (Web / PWA)<br/>• 6-Digit Code / Deep Link<br/>• 4-Char PIN Unlock Barrier<br/>• Real-Time Snapshot Sync<br/>• Conditional Self-Destruct Wipe"]
+        Receiver["Recipient (Web / PWA)<br/>• 6-Digit Code / Deep Link / QR Scan<br/>• 4-Char PIN Unlock Barrier<br/>• IndexedDB Offline Cache<br/>• Real-Time Snapshot Sync"]
     end
 
     subgraph App["⚡ Next.js 16 App Router (Vercel Serverless)"]
@@ -145,8 +146,14 @@ flowchart TD
 
 ## Features
 
-- 📋 **Share text, code, and files** — send plain text, source code, PDFs, images, Office documents, archives, or any combination.
-- 🔢 **6-digit share codes & deep links** — recipients open content instantly by typing a 6-digit code or clicking a share URL (`/view/[code]`).
+- 📋 **Cross-Device Clipboard Sharing** — send plain text, source code, PDFs, images, Office documents, archives, or any combination without accounts or software installs.
+- 🔢 **6-Digit Share Codes & Direct Links** — recipients open content instantly by typing a 6-digit code or clicking a share URL (`/view/[code]`).
+- 📷 **Mobile QR Code & Camera Scanner**:
+  - Full-screen high-res QR code view with 1-click **Save QR (PNG)** and native Web Share API.
+  - Reader page (`/read`) includes an interactive HTML5 camera scanner with real-time video viewfinder and reticle, plus photo gallery fallback powered by `jsQR`.
+- 💾 **Offline Download & Viewing Engine**:
+  - Client-side IndexedDB caching (`pasteport_offline_db`) allows users to toggle **"Save Offline"** on any clip.
+  - Cached text, metadata, and binary file blobs (as Data URLs) load in ~2ms on mobile viewports and remain 100% viewable and downloadable with zero internet connection.
 - 🔐 **4-Character Access PIN Protection**:
   - **Composer switch**: optionally require a 4-character PIN before generating the code.
   - **Runtime toggle & edit**: switch PIN protection ON/OFF or edit the PIN at runtime directly from the generated share card.
@@ -159,17 +166,29 @@ flowchart TD
 - ⏳ **Custom Lifespan (1h–24h) & Instant Auto-Expiry Wipe** — customize the auto-deletion window (1h, 3h, 6h, 12h, 24h) with live countdown timers. Expired clips are instantly purged upon access or swept by the automated cron job.
 - 🔴 **Real‑time updates** — recipients can enable *Live Mode* to watch the sender's text updates stream in real-time as they type.
 - 📋 **Drop-to-Upload & Clipboard Paste (`Ctrl + V` anywhere)** — paste screenshots or copied text directly from clipboard anywhere on the page, or drag & drop files onto the global drop zone.
-- 🚫 **Zero Blocking Native Alerts** — non-blocking accessible toast notifications (`showToast`) replace all native browser `alert()` popups.
-- 🕹️ **Interactive Error Mini-Game** — retro paper-plane canvas glider game on 404, invalid code, and expired link pages.
-- 🧰 **Developer Utilities Suite (100% Client-Side & Zero Server Leakage)**:
+- 🧰 **Developer Utilities Suite (18 In-Browser Tools · 100% Client-Side Privacy)**:
   - **JSON Formatter & Tree Inspector (`/json`)** — format, minify, validate syntax, and inspect collapsible JSON trees.
+  - **YAML ↔ JSON Converter (`/yaml`)** — bi-directional YAML and JSON conversion with live syntax error detection.
+  - **SQL Formatter & Beautifier (`/sql`)** — beautify queries, uppercase keywords, customize indentations, and minify SQL.
+  - **HTML Formatter & Live Preview (`/html`)** — beautify/minify HTML with split-screen sandboxed DOM rendering.
   - **Diff Checker (`/diff`)** — side-by-side and unified text/code comparison with additions/deletions counters.
-  - **JWT Debugger & Decoder (`/jwt`)** — decode header and payload claims locally with live expiration countdowns.
+  - **Markdown Live Preview & Exporter (`/markdown`)** — split-screen live preview with GitHub Flavored Markdown and PDF/HTML export.
   - **Base64 / URL Encoder & Decoder (`/encode`)** — convert strings, tokens, and binary files/images directly to Data URIs.
-  - **Markdown Live Preview & Exporter (`/markdown`)** — fully mobile-responsive markdown editor with `Split`/`Edit`/`Preview` switcher, table/checklist support, PDF export, HTML export, `.md` download, and one-click Pasteport sharing.
+  - **Regex Tester & Matcher (`/regex`)** — real-time regex testing with match highlighter, capture group inspector, and common regex presets.
+  - **UUID & GUID Generator (`/uuid`)** — generate RFC 4122 (v4) and RFC 9562 (v7) UUIDs in bulk with custom casing, hyphens, and braces.
+  - **Unix Timestamp & Epoch Converter (`/timestamp`)** — live ticking epoch clock with bi-directional seconds/ms conversion, ISO-8601, RFC 2822, and relative time offsets.
+  - **Cron Schedule Generator & Explainer (`/cron`)** — 5-field interactive schedule builder, plain English schedule explainer, and next 5 execution times calculator.
+  - **Lorem Ipsum & Dummy JSON Generator (`/lorem`)** — generate placeholder text or mock structured JSON datasets (Users, Products, Posts, Orders).
+  - **JWT Debugger & Decoder (`/jwt`)** — inspect header and payload claims locally with live expiration countdowns.
+  - **JWT Generator & HMAC Signer (`/jwt-gen`)** — construct claims and cryptographically sign HMAC-SHA256/384/512 tokens with Web Crypto.
+  - **Cryptographic Hash Generator (`/hash`)** — compute MD5, SHA-1, SHA-256, SHA-384, SHA-512, and HMAC signatures for text and local files.
+  - **URL Parser & Query Parameter Editor (`/url`)** — deconstruct URLs, inspect components, and edit query parameter keys and values in real time.
+  - **HTTP Status Code Reference (`/http-status`)** — searchable encyclopedia of standard RFC and Cloudflare HTTP status codes with troubleshooting tips.
+  - **Color Converter & WCAG Contrast (`/color`)** — convert HEX, RGB, HSL, RGBA, calculate WCAG 2.1 accessibility contrast ratios, and generate tints & shades.
+  - **Toolkit Hub (`/tools`)** — centralized searchable directory to discover and filter all 18 tools by category.
 - 🧪 **Playwright E2E Testing** — automated cross-platform end-to-end testing suite for desktop and mobile viewports (`channel: 'chrome'`).
 - 🗂️ **Cloudflare R2 Object Storage** — all binary files and large text payloads (>100 KB) are stored directly in Cloudflare R2, keeping Firestore documents ultra-lightweight (<2 KB).
-- 🛡️ **Per‑file size limit** — up to 10 MB per file, enforced client‑side and server‑side. No daily/total quota.
+- 🛡️ **Per‑file size limit** — up to 10 MB per file (600 MB on `/secure`), enforced client‑side and server‑side.
 - 📱 **Progressive Web App (PWA)** — installable on iOS, Android, macOS, and Windows with offline-ready service worker and app manifest.
 - 🔓 **No accounts & zero tracking** — nothing to sign up for; zero personal data collected.
 
@@ -269,15 +288,29 @@ online_clipboard/
 | Path | Description |
 | :--- | :--- |
 | `/` | Landing page with animated splash, *Send File* / *Read File* cards, and Dev Tools. |
+| `/tools` | **Developer Toolkit Hub**: Search, filter, and discover all 18 in-browser utilities. |
 | `/send` | Compose a clip: enter text, attach files, Ctrl+V paste, custom expiry & self-destruct. |
-| `/read` | Enter a 6‑digit code **or** paste a share link to view content. |
-| `/view/[code]` | Direct deep link to a clip with live countdown timer, auto-expiry & mini-game. |
+| `/read` | Enter a 6‑digit code, paste a share link, or **scan QR with live device camera**. |
+| `/view/[code]` | Direct deep link to a clip with PIN unlock barrier, live sync, offline IndexedDB cache & mini-game. |
 | `/secure` | Secret share: upload a large file directly to R2 with a one‑time access code, or download by send code. |
-| `/json` | JSON Formatter: Beautify, minify, validate syntax, and collapsible tree viewer. |
-| `/diff` | Diff Checker: Side-by-side & unified text/code comparison with change stats. |
-| `/jwt` | JWT Debugger: Inspect header and payload claims locally with expiry countdown. |
-| `/encode` | Base64 & URL Encoder: Convert strings, tokens & binary files into Data URIs. |
-| `/markdown` | Markdown Live Preview: Split-screen markdown editor with export & paste sharing. |
+| `/json` | **JSON Formatter & Tree**: Beautify, minify, validate syntax, and collapsible tree viewer. |
+| `/yaml` | **YAML ↔ JSON Converter**: Bi-directional conversion between YAML and JSON formats. |
+| `/sql` | **SQL Formatter & Beautifier**: Beautify queries, uppercase keywords, customize indentations, and minify SQL. |
+| `/html` | **HTML Formatter & Preview**: Beautify/minify HTML with split-screen sandboxed DOM rendering. |
+| `/diff` | **Diff Checker**: Side-by-side & unified text/code comparison with change stats. |
+| `/markdown` | **Markdown Live Preview**: Split-screen markdown editor with export & paste sharing. |
+| `/encode` | **Base64 & URL Encoder**: Convert strings, tokens & binary files into Data URIs. |
+| `/regex` | **Regex Tester & Matcher**: Real-time regex testing with match highlighter, capture groups, and presets. |
+| `/uuid` | **UUID & GUID Generator**: Generate RFC 4122 (v4) and RFC 9562 (v7) UUIDs in bulk. |
+| `/timestamp` | **Unix Timestamp Converter**: Epoch seconds/ms to ISO-8601, RFC 2822, and relative time offsets. |
+| `/cron` | **Cron Schedule Generator**: 5-field interactive schedule builder and plain English explainer. |
+| `/lorem` | **Lorem Ipsum & Mock JSON**: Generate placeholder text or mock structured JSON datasets. |
+| `/jwt` | **JWT Debugger & Decoder**: Inspect header and payload claims locally with expiry countdown. |
+| `/jwt-gen` | **JWT Generator & Signer**: Construct claims and cryptographically sign HMAC tokens with Web Crypto. |
+| `/hash` | **Hash & Checksum Generator**: Compute MD5, SHA-256, SHA-512, and HMAC signatures for text and files. |
+| `/url` | **URL Parser & Query Editor**: Deconstruct URLs and edit query parameter keys & values live. |
+| `/http-status` | **HTTP Status Code Reference**: Encyclopedia of RFC and Cloudflare status codes with troubleshooting tips. |
+| `/color` | **Color Converter & Contrast**: HEX, RGB, HSL converter with WCAG 2.1 accessibility contrast analysis. |
 | `/privacy` | Privacy Policy: data handling, 24h retention, logs, and third-party services. |
 | `/terms` | Terms of Service: Acceptable Use Policy, takedown process, and disclaimers. |
 
@@ -625,4 +658,4 @@ Released under the **[MIT License](LICENSE)**. Copyright © 2026 Pasteport Contr
 
 ## Open-Source Discovery & Topics
 
-`online-clipboard` • `pastebin-alternative` • `airdrop-alternative` • `temporary-file-sharing` • `cross-device-clipboard` • `ephemeral-storage` • `self-hosted` • `nextjs-16` • `cloudflare-r2` • `firebase-firestore` • `pwa` • `developer-tools` • `react-19` • `typescript`
+`online-clipboard` • `cross-device-sharing` • `developer-toolkit` • `developer-tools` • `json-formatter` • `yaml-to-json` • `sql-formatter` • `regex-tester` • `uuid-generator` • `jwt-debugger` • `jwt-generator` • `hash-generator` • `timestamp-converter` • `cron-generator` • `pastebin-alternative` • `airdrop-alternative` • `temporary-file-sharing` • `self-hosted` • `nextjs-16` • `cloudflare-r2` • `firebase-firestore` • `pwa` • `react-19` • `typescript`

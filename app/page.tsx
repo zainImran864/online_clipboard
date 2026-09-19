@@ -87,10 +87,17 @@ const cards: ActionCard[] = [
 
 const devTools = [
   { href: '/json', name: 'JSON Formatter & Tree', icon: '🌲', desc: 'Auto-beautify, minify, validate & explore nested JSON' },
-  { href: '/diff', name: 'Diff Checker', icon: '🔍', desc: 'Compare text and code changes side-by-side or unified' },
-  { href: '/jwt', name: 'JWT Debugger', icon: '🔐', desc: 'Inspect header and payload claims with live expiry countdown' },
-  { href: '/encode', name: 'Base64 & URL Converter', icon: '🔄', desc: 'Encode strings, query params & binary files into Data URIs' },
-  { href: '/markdown', name: 'Markdown Live Preview', icon: '📝', desc: 'Split-screen live markdown editor with HTML/export' },
+  { href: '/yaml', name: 'YAML ↔ JSON Converter', icon: '📑', desc: 'Convert seamlessly between YAML and JSON formats' },
+  { href: '/sql', name: 'SQL Formatter & Beautifier', icon: '🗄️', desc: 'Beautify SQL queries, uppercase keywords, and clean indentation' },
+  { href: '/regex', name: 'Regex Tester & Matcher', icon: '⚡', desc: 'Live regex tester with capture groups & common presets' },
+  { href: '/uuid', name: 'UUID & GUID Generator', icon: '🎲', desc: 'Generate RFC 4122 (v4) and RFC 9562 (v7) UUIDs in bulk' },
+  { href: '/timestamp', name: 'Unix Timestamp Converter', icon: '⏱️', desc: 'Convert Epoch seconds & ms to ISO-8601 & relative dates' },
+  { href: '/jwt', name: 'JWT Debugger & Decoder', icon: '🔐', desc: 'Inspect header and payload claims with live expiry countdown' },
+  { href: '/jwt-gen', name: 'JWT Generator & Signer', icon: '✍️', desc: 'Construct and sign HMAC-SHA256 tokens using Web Crypto' },
+  { href: '/hash', name: 'Hash & Checksum Generator', icon: '🛡️', desc: 'Compute MD5, SHA-256, SHA-512 & HMAC for text and files' },
+  { href: '/url', name: 'URL Parser & Query Editor', icon: '🔗', desc: 'Deconstruct URLs and live-edit query parameter keys & values' },
+  { href: '/http-status', name: 'HTTP Status Code Reference', icon: '📖', desc: 'Encyclopedia of RFC & Cloudflare HTTP status codes' },
+  { href: '/color', name: 'Color Converter & WCAG', icon: '🎨', desc: 'HEX, RGB, HSL converter with WCAG contrast checker' },
 ];
 
 function getStoredLastShare(): LastShare | null {
@@ -170,14 +177,14 @@ export default function Home() {
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
                 <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
               </span>
-              No login · No tracking · Share in seconds
+              Cross-Device Sharing · Developer Toolkit · Zero Login
             </span>
 
             <h1 className="text-4xl font-extrabold tracking-tight text-slate-900 sm:text-5xl md:text-6xl">
-              Share Anything, <span className="text-blue-600">Instantly</span>
+              Cross-Device Sharing <span className="text-blue-600">+ Developer Toolkit</span>
             </h1>
-            <p className="mx-auto max-w-xl text-base text-slate-600 sm:text-lg">
-              Upload files, write text, or press <kbd className="rounded bg-slate-200 px-1.5 py-0.5 text-xs font-semibold font-mono text-slate-700">Ctrl + V</kbd> anywhere. Get a short code and share across any device with custom auto-expiry.
+            <p className="mx-auto max-w-2xl text-base text-slate-600 sm:text-lg">
+              Transfer text, code, files, and screenshots across phones and PCs with 6-digit codes and QR scans. Plus 18 client-side developer utilities with direct 1-click sharing.
             </p>
           </div>
 
@@ -275,15 +282,22 @@ export default function Home() {
 
           {/* Developer Utilities Suite Section */}
           <div className="space-y-4 pt-4 text-left">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
               <div>
                 <h3 className="text-lg font-extrabold text-slate-900 sm:text-xl">
-                  🛠️ Developer Utilities Suite
+                  🛠️ Developer Utilities Suite (18 Tools)
                 </h3>
                 <p className="text-xs text-slate-500">
                   Zero-server overhead, 100% client-side privacy-first web utilities.
                 </p>
               </div>
+              <Link
+                href="/tools"
+                className="inline-flex items-center gap-1.5 text-xs font-bold text-blue-600 hover:text-blue-700"
+              >
+                <span>View All 18 Dev Tools</span>
+                <span>→</span>
+              </Link>
             </div>
 
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -309,16 +323,26 @@ export default function Home() {
                 </Link>
               ))}
             </div>
+
+            <div className="text-center pt-2">
+              <Link
+                href="/tools"
+                className="inline-flex items-center gap-2 rounded-xl border border-blue-200 bg-blue-50 px-5 py-2.5 text-xs font-bold text-blue-700 hover:bg-blue-100 transition-colors shadow-2xs"
+              >
+                <span>🚀 Explore All 18 Developer Utilities in the Toolkit Hub</span>
+                <span>→</span>
+              </Link>
+            </div>
           </div>
 
           {/* SEO Guide & Value Props Section */}
           <section className="space-y-6 pt-6 text-left border-t border-slate-200">
             <div>
               <h2 className="text-xl font-extrabold text-slate-900 sm:text-2xl">
-                The Fastest Online Clipboard for Cross-Device Sharing
+                Pasteport — Cross-Device Sharing + Developer Toolkit
               </h2>
               <p className="mt-1 text-sm text-slate-600 leading-relaxed">
-                Pasteport solves the friction of moving text, code snippets, photos, PDFs, and files between devices. Whether transferring from your iPhone to a work PC or sending notes between Android and Mac, Pasteport pairs devices in seconds without accounts or software installs.
+                Pasteport unites frictionless cross-device sharing with an expansive suite of 18 client-side developer utilities. Move text, code snippets, photos, and files between devices with instant 6-digit codes or QR scans—no account required. Format JSON, convert YAML, test regular expressions, generate UUIDs, sign JWTs, and compute cryptographic hashes locally without data ever touching a server.
               </p>
             </div>
 
