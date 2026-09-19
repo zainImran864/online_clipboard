@@ -253,20 +253,62 @@ npm run build:linux    # Linux (.AppImage & .deb)
 
 The `pasteport` CLI brings seamless clipboard sharing, piping, large file transfers, and remote wiping directly into your terminal.
 
-### Installation & Quickstart
+### Installation & Execution (npm, pnpm, bun)
 
+#### Global Installation
 ```bash
-# Execute instantly without installation via npx
-npx pasteport-cli
-
-# Or install globally across your operating system
+# via npm
 npm install -g pasteport-cli
 
-# Check installation
-pasteport --version
+# via pnpm
+pnpm add -g pasteport-cli
 
-# Uninstall globally anytime
+# via bun
+bun add -g pasteport-cli
+```
+
+#### Run Instantly (No Installation Required)
+```bash
+# via npx
+npx pasteport-cli send "hello world"
+
+# via pnpm dlx
+pnpm dlx pasteport-cli send "hello world"
+
+# via bunx
+bunx pasteport-cli send "hello world"
+```
+
+#### Install Directly from Local Repository or Git (Pre-Publish)
+If you haven't published to the public NPM registry yet, you can use the CLI right now directly on your system:
+```bash
+# Option A: Install globally from local repository
+npm install -g ./cli
+# or with pnpm
+pnpm add -g ./cli
+# or with bun
+bun add -g ./cli
+
+# Option B: Symlink during local development
+cd cli && npm link
+
+# Option C: Install directly from GitHub
+npm install -g github:zainImran864/online_clipboard#feat/desktop-app-and-cli
+```
+
+#### Publish to NPM Registry
+To make `pasteport-cli` installable by anyone worldwide via standard `npm install -g pasteport-cli`:
+```bash
+cd cli
+npm login
+npm publish --access public
+```
+
+#### Uninstallation
+```bash
 npm uninstall -g pasteport-cli
+pnpm remove -g pasteport-cli
+bun remove -g pasteport-cli
 ```
 
 ### Interactive Menu Mode (`pasteport`)

@@ -118,16 +118,40 @@ Metadata in Firestore and associated Cloudflare R2 objects wiped instantly.`,
 
 const INSTALL_COMMANDS = [
     {
-        title: 'Global Installation',
-        subtitle: 'Install once, access `pasteport` anywhere on your machine.',
+        title: 'Install via NPM',
+        subtitle: 'Global installation via standard Node package manager.',
         cmd: 'npm install -g pasteport-cli',
-        type: 'install',
+        type: 'npm',
     },
     {
-        title: 'Run Instantly with NPX',
-        subtitle: 'Zero install needed. Executes latest version in ephemeral memory.',
+        title: 'Install via PNPM',
+        subtitle: 'Fast, disk space efficient global installation.',
+        cmd: 'pnpm add -g pasteport-cli',
+        type: 'pnpm',
+    },
+    {
+        title: 'Install via Bun',
+        subtitle: 'Lightning-fast native global install with Bun runtime.',
+        cmd: 'bun add -g pasteport-cli',
+        type: 'bun',
+    },
+    {
+        title: 'Run Instantly (NPX / Bunx / PNPM)',
+        subtitle: 'Zero permanent install required. Executes in memory.',
         cmd: 'npx pasteport-cli send "hello world"',
         type: 'npx',
+    },
+    {
+        title: 'Install from Local Source / Git',
+        subtitle: 'Use immediately before public NPM registry publication.',
+        cmd: 'npm install -g ./cli',
+        type: 'local',
+    },
+    {
+        title: 'Publish to NPM Registry',
+        subtitle: 'Publish package to npmjs.org so anyone can install it.',
+        cmd: 'cd cli && npm publish --access public',
+        type: 'publish',
     },
     {
         title: 'Delete a Clip from Terminal',
@@ -164,8 +188,38 @@ const TIERS = [
     },
 ];
 
+type PkgType = 'npm' | 'pnpm' | 'bun' | 'local';
+
+const PKG_CONFIGS: Record<PkgType, { name: string; icon: string; installCmd: string; execCmd: string }> = {
+    npm: {
+        name: 'npm',
+        icon: '📦',
+        installCmd: 'npm install -g pasteport-cli',
+        execCmd: 'npx pasteport-cli',
+    },
+    pnpm: {
+        name: 'pnpm',
+        icon: '⚡',
+        installCmd: 'pnpm add -g pasteport-cli',
+        execCmd: 'pnpm dlx pasteport-cli',
+    },
+    bun: {
+        name: 'bun',
+        icon: '🥟',
+        installCmd: 'bun add -g pasteport-cli',
+        execCmd: 'bunx pasteport-cli',
+    },
+    local: {
+        name: 'local source',
+        icon: '🛠️',
+        installCmd: 'npm install -g ./cli',
+        execCmd: 'node cli/bin/pasteport.js',
+    },
+};
+
 export default function CliDocsPage() {
     const [activeTab, setActiveTab] = useState<string>('menu');
+    const [selectedPkg, setSelectedPkg] = useState<PkgType>('npm');
 
     const copyText = async (text: string, label = 'Command') => {
         await navigator.clipboard.writeText(text);
@@ -173,6 +227,7 @@ export default function CliDocsPage() {
     };
 
     const currentTab = CLI_TABS.find((t) => t.id === activeTab) || CLI_TABS[0];
+    const currentPkg = PKG_CONFIGS[selectedPkg];
 
     return (
         <div className="flex min-h-screen flex-col bg-slate-50">
@@ -192,19 +247,44 @@ export default function CliDocsPage() {
                             Pipe terminal logs, transfer files up to 600 MB, retrieve clips via 6-digit codes or web URLs, and automate cross-device sharing from bash, zsh, or CI/CD pipelines.
                         </p>
 
-                        <div className="pt-2 flex flex-wrap items-center justify-center gap-3">
-                            <button
-                                onClick={() => copyText('npm install -g pasteport-cli', 'Install command')}
-                                className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-3 text-sm font-bold text-white shadow-md transition-all hover:brightness-105 active:scale-95"
-                            >
-                                📦 npm install -g pasteport-cli
-                            </button>
-                            <button
-                                onClick={() => copyText('npx pasteport-cli', 'NPX command')}
-                                className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm font-bold text-slate-700 shadow-xs hover:bg-slate-50 active:scale-95"
-                            >
-                                ⚡ Run with NPX
-                            </button>
+                        {/* Package Manager Selector Tabs */}
+                        <div className="pt-2 flex flex-col items-center gap-3">
+                            <div className="inline-flex items-center rounded-2xl border border-slate-200 bg-white p-1 shadow-2xs">
+                                {(['npm', 'pnpm', 'bun', 'local'] as PkgType[]).map((pkg) => (
+                                    <button
+                                        key={pkg}
+                                        onClick={() => setSelectedPkg(pkg)}
+                                        className={`rounded-xl px-3.5 py-1.5 text-xs font-bold transition-all ${
+                                            selectedPkg === pkg
+                                                ? 'bg-slate-900 text-white shadow-xs'
+                                                : 'text-slate-600 hover:text-slate-900'
+                                        }`}
+                                    >
+                                        <span className="mr-1">{PKG_CONFIGS[pkg].icon}</span>
+                                        {PKG_CONFIGS[pkg].name}
+                                    </button>
+                                ))}
+                            </div>
+
+                            <div className="flex flex-wrap items-center justify-center gap-3">
+                                <button
+                                    onClick={() => copyText(currentPkg.installCmd, `${currentPkg.name} install command`)}
+                                    className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-3 text-sm font-bold text-white shadow-md transition-all hover:brightness-105 active:scale-95"
+                                >
+                                    <span>{currentPkg.icon}</span>
+                                    <span>{currentPkg.installCmd}</span>
+                                </button>
+                                <button
+                                    onClick={() => copyText(currentPkg.execCmd, `${currentPkg.name} run command`)}
+                                    className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm font-bold text-slate-700 shadow-xs hover:bg-slate-50 active:scale-95"
+                                >
+                                    <span>⚡ Run: {currentPkg.execCmd}</span>
+                                </button>
+                            </div>
+
+                            <div className="max-w-xl text-left rounded-xl border border-amber-200 bg-amber-50/80 p-3 text-[11px] text-amber-900 leading-relaxed">
+                                <span className="font-bold">💡 Note on NPM Registry & Local Usage:</span> If installing before public publication to <code className="font-mono bg-amber-100 px-1 rounded">registry.npmjs.org</code>, run <code className="font-mono bg-amber-100 px-1 font-bold rounded">npm install -g ./cli</code> (or <code className="font-mono bg-amber-100 px-1 rounded">npm link</code> inside the <code className="font-mono bg-amber-100 px-1 rounded">cli/</code> directory) to use the <code className="font-mono font-bold">pasteport</code> command immediately!
+                            </div>
                         </div>
                     </div>
 

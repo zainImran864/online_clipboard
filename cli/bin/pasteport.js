@@ -86,15 +86,25 @@ ${colors.bold}OPTIONS FOR GET:${colors.reset}
   ${colors.cyan}--json${colors.reset}                   Output clip metadata and content as JSON
   ${colors.cyan}--server${colors.reset} <url>           Override backend server endpoint
 
-${colors.bold}INSTALLATION & UNINSTALLATION:${colors.reset}
-  ${colors.dim}# Install globally via npm:${colors.reset}
+${colors.bold}INSTALLATION & EXECUTION (npm, pnpm, bun):${colors.reset}
+  ${colors.dim}# Global Install:${colors.reset}
   npm install -g pasteport-cli
+  pnpm add -g pasteport-cli
+  bun add -g pasteport-cli
 
   ${colors.dim}# Run immediately without installing:${colors.reset}
   npx pasteport-cli send "hello world"
+  pnpm dlx pasteport-cli send "hello world"
+  bunx pasteport-cli send "hello world"
+
+  ${colors.dim}# Install from local repo (or before npm publish):${colors.reset}
+  npm install -g ./cli
+  npm install -g github:zainImran864/online_clipboard#feat/desktop-app-and-cli
 
   ${colors.dim}# Uninstall from system:${colors.reset}
   npm uninstall -g pasteport-cli
+  pnpm remove -g pasteport-cli
+  bun remove -g pasteport-cli
 
 ${colors.bold}EXAMPLES:${colors.reset}
   ${colors.dim}# Send inline text snippet:${colors.reset}
@@ -238,15 +248,16 @@ async function handleSend(target, options, existingRl = null) {
     let isFile = false;
     let filePath = '';
 
-    // Check if stdin is piped
-    if (!process.stdin.isTTY) {
-        contentToSend = await readStdin();
-    } else if (target && fs.existsSync(target)) {
+    // Check if target is a local file
+    if (target && fs.existsSync(target)) {
         const stat = fs.statSync(target);
         if (stat.isFile()) {
             isFile = true;
             filePath = path.resolve(target);
         }
+    } else if (!target && !process.stdin.isTTY) {
+        // Read piped stdin only when no target argument was supplied
+        contentToSend = await readStdin();
     } else if (!contentToSend) {
         contentToSend = await promptInput(`${colors.cyan}Enter text to send to Pasteport:${colors.reset} `, existingRl);
     }
