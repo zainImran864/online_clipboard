@@ -241,7 +241,7 @@ desktop/
 #### Windows (Winget & Executables)
 ```powershell
 # Install via Winget (Local / PR Manifest):
-winget install --manifest winget\manifests\z\zainImran\Pasteport\1.0.1\zainImran.Pasteport.yaml
+winget install --manifest winget\manifests\z\zainImran\Pasteport\1.0.2\zainImran.Pasteport.yaml
 
 # Once approved in official Microsoft winget-pkgs repository:
 winget install zainImran.Pasteport
@@ -251,9 +251,9 @@ winget install pasteport-zisphere
 # Uninstall via Winget:
 winget uninstall zainImran.Pasteport
 ```
-*Or download the compiled binaries from [GitHub Releases](https://github.com/zainImran864/online_clipboard/releases):*
-- **`Pasteport Setup 1.0.1.exe`** — Complete NSIS Windows installer (start menu shortcut, desktop icon, uninstaller).
-- **`Pasteport 1.0.1.exe`** — Standalone single-file portable executable (no install required, runs immediately from USB or folder).
+*Or download the compiled binaries from [GitHub Releases v1.0.2](https://github.com/zainImran864/online_clipboard/releases/tag/v1.0.2):*
+- **`Pasteport.Setup.1.0.2.exe`** — Complete NSIS Windows installer (start menu shortcut, desktop icon, uninstaller).
+- **`Pasteport.1.0.2.exe`** — Standalone single-file portable executable (no install required, runs immediately from USB or folder).
 
 
 #### macOS
@@ -264,28 +264,24 @@ brew install --cask pasteport
 # Uninstall via Homebrew
 brew uninstall --cask pasteport
 ```
-*Or download `Pasteport-1.0.1.dmg` and drag to `/Applications`.*
+*Or download `Pasteport-1.0.2-arm64.dmg` / `Pasteport-1.0.2-arm64-mac.zip` and drag to `/Applications`.*
 
 #### Linux (Zypper, DNF, APT, Pacman & AppImage)
 ```bash
 # openSUSE / SUSE Linux Enterprise (Zypper)
-sudo zypper install ./pasteport-1.0.1.rpm
+sudo zypper install ./pasteport-desktop-1.0.2.x86_64.rpm
 sudo zypper remove pasteport
 
 # RHEL / Oracle Linux / Fedora / CentOS / Rocky (DNF)
-sudo dnf install ./pasteport-1.0.1.rpm
+sudo dnf install ./pasteport-desktop-1.0.2.x86_64.rpm
 sudo dnf remove pasteport
 
 # Ubuntu / Debian / Linux Mint (APT)
-sudo apt install ./pasteport-1.0.1.deb
+sudo apt install ./pasteport-desktop_1.0.2_amd64.deb
 sudo apt remove pasteport
 
-# Arch Linux / Manjaro (Pacman)
-sudo pacman -U ./pasteport-1.0.1.pkg.tar.zst
-sudo pacman -R pasteport
-
 # Universal AppImage (Runs on any Linux distribution)
-chmod +x Pasteport-1.0.1.AppImage && ./Pasteport-1.0.1.AppImage
+chmod +x Pasteport-1.0.2.AppImage && ./Pasteport-1.0.2.AppImage
 ```
 
 ### Build & Package Desktop Binaries
@@ -388,6 +384,15 @@ Select an action by typing 1, 2, 3, or 4:
   [5] Exit
 ```
 
+When choosing **`[1] Standard Share`**, you are prompted with an interactive sub-selection:
+- **`[1] Send a File (from your computer)`**:
+  1. Prompt for path to your local file (supports drag-and-drop paths with quotes).
+  2. Automatic file existence & directory validation.
+  3. Pre-flight file size calculation & formatting (e.g. `✔ Found local file: report.pdf (Size: 2.45 MB)`).
+  4. Optional accompanying text note/description to send along with the file.
+  5. Optional 4-character PIN lock and customizable lifespan in hours (1–72).
+- **`[2] Send Text Snippet`**: Enter text inline with optional PIN and lifespan.
+
 ### CLI Command Reference
 
 #### 1. Standard Share (up to 10 MB)
@@ -398,7 +403,10 @@ pasteport send "Hello from my terminal!"
 # Share local file with 4-character access PIN
 pasteport send ./package.json --pin 1234
 
-# Share with custom lifespan in hours (1–24)
+# Share a file with an accompanying description/note
+pasteport send ./document.pdf --note "Reviewed architectural RFC for v1.0.2"
+
+# Share with custom lifespan in hours (1–72)
 pasteport send ./notes.txt --expiry 12
 
 # Pipe terminal command output directly into a share
@@ -718,7 +726,11 @@ Implemented via [`components/JsonLd.tsx`](components/JsonLd.tsx):
 - **`Organization`**: Connects brand entity, logo, and author social links.
 - **`FAQPage`**: Powers Google Rich Snippets and Gemini Search Overviews with authoritative Q&A on temporary clipboard sharing, PIN protection, and privacy guarantees.
 
-### 4. Search & AI Bot Access Policy (`robots.txt`)
+### 4. Semantic OpenGraph & Twitter Social Cards
+- Every developer tool route (`/tools`, `/json`, `/yaml`, `/sql`, `/jwt`, `/markdown`, `/diff`, `/hash`, `/desktop`, `/cli`, etc.) possesses tailored metadata, semantic keyword targeting, and OpenGraph/Twitter summary cards with crisp high-DPI branding for social discovery across GitHub, Discord, Twitter/X, and Slack.
+- Dynamic tool titles and meta descriptions are tuned for high click-through rates (CTR) on queries like *"online temporary clipboard without login"*, *"in-browser JWT debugger with offline privacy"*, and *"free cross-device text sharing"*.
+
+### 5. Search & AI Bot Access Policy (`robots.txt`)
 Explicitly permits crawling for Googlebot, Google-Extended (Gemini grounding), GPTBot, ChatGPT-User, PerplexityBot, ClaudeBot, and Anthropic-ai. Ephemeral paths (`/api/*`, `/view/*`) are disallowed to preserve user privacy and optimize crawl budgets. Sitemaps are indexed at `https://pasteport.zain-imran.com/sitemap.xml`.
 
 ---
@@ -897,7 +909,7 @@ Pasteport features enterprise-grade continuous integration and continuous deploy
 | :--- | :--- | :--- |
 | **[CI](.github/workflows/ci.yml)** | `push`, `pull_request` (branches: `main`) | • Next.js TypeScript validation & compilation<br/>• ESLint syntax and rule validation<br/>• Playwright E2E testing across desktop & mobile viewports |
 | **[Publish CLI to NPM & PyPI](.github/workflows/cli-publish.yml)** | `release` [published], `push` [main on `cli/**` / `python/**`], `workflow_dispatch` | • Publishes Node.js CLI package **[`pasteport-zisphere`](https://www.npmjs.com/package/pasteport-zisphere)** to NPM Registry<br/>• Builds and uploads Python wheel & source distribution to **[PyPI](https://pypi.org/project/pasteport-zisphere/)** via Twine with idempotency checks (`--skip-existing`) |
-| **[Build & Release Desktop App](.github/workflows/desktop-release.yml)** | `push` [tags `v*`, branch `main` on `desktop/**`], `workflow_dispatch` | • **Windows**: NSIS Installer (`Pasteport Setup 1.0.1.exe`) & Standalone Portable (`Pasteport 1.0.1.exe`)<br/>• **macOS**: Apple Silicon & Intel DMG installer (`Pasteport-1.0.1.dmg`) & `.zip`<br/>• **Linux**: Debian package (`.deb`), Red Hat package (`.rpm`), & universal `AppImage`<br/>• Automatically attaches signed binaries to GitHub Releases with generated release notes |
+| **[Build & Release Desktop App](.github/workflows/desktop-release.yml)** | `push` [tags `v*`, branch `main` on `desktop/**`], `workflow_dispatch` | • **Windows**: NSIS Installer (`Pasteport.Setup.1.0.2.exe`) & Standalone Portable (`Pasteport.1.0.2.exe`)<br/>• **macOS**: Apple Silicon & Intel DMG installer (`Pasteport-1.0.2-arm64.dmg`) & `.zip`<br/>• **Linux**: Debian package (`.deb`), Red Hat package (`.rpm`), & universal `AppImage`<br/>• Automatically attaches signed binaries to GitHub Releases with generated release notes |
 | **[Winget Manifest Publisher](scripts/publish-winget.ps1)** | On desktop release tags | • Generates Windows Package Manager manifests conforming to official `winget-pkgs` standards (`zainImran.Pasteport`) with automated SHA256 hashing |
 
 ---
