@@ -3,6 +3,12 @@ name: Publish CLI to NPM & PyPI
 on:
   release:
     types: [published]
+  push:
+    branches:
+      - main
+    paths:
+      - 'cli/**'
+      - 'python/**'
   workflow_dispatch:
     inputs:
       publish_npm:
@@ -35,11 +41,24 @@ jobs:
           npm ci || npm install
           node bin/pasteport.js --version
 
-      - name: Publish to NPM
+      - name: Check Secret & Publish to NPM
         working-directory: cli
-        run: npm publish --access public
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN || secrets.NPM_AUTH_TOKEN }}
+        run: |
+          if [ -z "$NODE_AUTH_TOKEN" ]; then
+            echo "::error title=Missing NPM_TOKEN::The secret NPM_TOKEN (or NPM_AUTH_TOKEN) is not set in GitHub repository Secrets. Please go to Settings -> Secrets and variables -> Actions to add your NPM access token."
+            exit 1
+          fi
+          echo "//registry.npmjs.org/:_authToken=${NODE_AUTH_TOKEN}" > .npmrc
+          PKG_NAME=$(node -p "require('./package.json').name")
+          PKG_VER=$(node -p "require('./package.json').version")
+          if npm view "$PKG_NAME@$PKG_VER" version >/dev/null 2>&1; then
+            echo "$PKG_NAME@$PKG_VER is already published on npm. Skipping publish."
+          else
+            echo "Publishing $PKG_NAME@$PKG_VER to npm..."
+            npm publish --access public
+          fi
 
   publish-pypi:
     name: Publish to PyPI
@@ -63,9 +82,14 @@ jobs:
         working-directory: python
         run: python -m build
 
-      - name: Publish to PyPI
+      - name: Check Secret & Publish to PyPI
         working-directory: python
         env:
           TWINE_USERNAME: __token__
-          TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
-        run: twine upload dist/*
+          TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN || secrets.PYPI_TOKEN }}
+        run: |
+          if [ -z "$TWINE_PASSWORD" ]; then
+            echo "::error title=Missing PYPI_API_TOKEN::The secret PYPI_API_TOKEN (or PYPI_TOKEN) is not set in GitHub repository Secrets. Please go to Settings -> Secrets and variables -> Actions to add your PyPI API token (scope: Entire account)."
+            exit 1
+          fi
+          twine upload --skip-existing --verbose dist/*
