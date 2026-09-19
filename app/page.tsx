@@ -310,6 +310,109 @@ export default function Home() {
               ))}
             </div>
           </div>
+
+          {/* SEO Guide & Value Props Section */}
+          <section className="space-y-6 pt-6 text-left border-t border-slate-200">
+            <div>
+              <h2 className="text-xl font-extrabold text-slate-900 sm:text-2xl">
+                The Fastest Online Clipboard for Cross-Device Sharing
+              </h2>
+              <p className="mt-1 text-sm text-slate-600 leading-relaxed">
+                Pasteport solves the friction of moving text, code snippets, photos, PDFs, and files between devices. Whether transferring from your iPhone to a work PC or sending notes between Android and Mac, Pasteport pairs devices in seconds without accounts or software installs.
+              </p>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-3">
+              <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-100 text-xl text-blue-600 mb-3">
+                  🚀
+                </div>
+                <h3 className="text-sm font-bold text-slate-900">Zero Login Required</h3>
+                <p className="mt-1 text-xs text-slate-500 leading-relaxed">
+                  No email, no passwords, and zero tracking. Generate a 6-digit code or QR code to immediately fetch content on any other device.
+                </p>
+              </div>
+
+              <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-100 text-xl text-emerald-600 mb-3">
+                  🔐
+                </div>
+                <h3 className="text-sm font-bold text-slate-900">4-Character PIN & Self-Destruct</h3>
+                <p className="mt-1 text-xs text-slate-500 leading-relaxed">
+                  Protect sensitive data with a 4-character PIN. When enabled or changed at runtime, active readers lock in real time. Configure a Self-Destruct PIN for instant permanent wipes.
+                </p>
+              </div>
+
+              <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-100 text-xl text-purple-600 mb-3">
+                  ⚡
+                </div>
+                <h3 className="text-sm font-bold text-slate-900">Ctrl + V & Live Updates</h3>
+                <p className="mt-1 text-xs text-slate-500 leading-relaxed">
+                  Paste screenshots or text directly anywhere with <kbd className="rounded bg-slate-100 px-1 py-0.5 font-mono text-[10px] text-slate-700">Ctrl + V</kbd>. Enable Live Mode so readers watch edits update in real time.
+                </p>
+              </div>
+            </div>
+
+            {/* FAQ Accordion */}
+            <div className="space-y-3 pt-4">
+              <h3 className="text-lg font-bold text-slate-900">
+                Frequently Asked Questions
+              </h3>
+
+              <div className="space-y-2">
+                <details className="group rounded-2xl border border-slate-200 bg-white p-4 shadow-xs transition-colors open:border-blue-300">
+                  <summary className="flex cursor-pointer items-center justify-between font-bold text-sm text-slate-800 hover:text-blue-600">
+                    <span>How do I share my clipboard between phone and PC without logging in?</span>
+                    <span className="ml-2 text-slate-400 group-open:rotate-180 transition-transform">▼</span>
+                  </summary>
+                  <p className="mt-3 text-xs text-slate-600 leading-relaxed">
+                    Open Pasteport (https://pasteport.zain-imran.com) on your first device, paste or type your content, and click &quot;Generate Share Code&quot;. Open the site on your second device, enter the 6-digit code or scan the QR code, and your content appears instantly.
+                  </p>
+                </details>
+
+                <details className="group rounded-2xl border border-slate-200 bg-white p-4 shadow-xs transition-colors open:border-blue-300">
+                  <summary className="flex cursor-pointer items-center justify-between font-bold text-sm text-slate-800 hover:text-blue-600">
+                    <span>How does the 4-character PIN password protection work?</span>
+                    <span className="ml-2 text-slate-400 group-open:rotate-180 transition-transform">▼</span>
+                  </summary>
+                  <p className="mt-3 text-xs text-slate-600 leading-relaxed">
+                    You can toggle on a 4-character PIN when composing a share or at runtime from the generated share card. Anyone opening the share must enter the 4-character PIN before seeing any content. If you turn on the PIN while a reader is currently viewing the share, their screen locks immediately in real time.
+                  </p>
+                </details>
+
+                <details className="group rounded-2xl border border-slate-200 bg-white p-4 shadow-xs transition-colors open:border-blue-300">
+                  <summary className="flex cursor-pointer items-center justify-between font-bold text-sm text-slate-800 hover:text-blue-600">
+                    <span>What is the Self-Destruct PIN feature?</span>
+                    <span className="ml-2 text-slate-400 group-open:rotate-180 transition-transform">▼</span>
+                  </summary>
+                  <p className="mt-3 text-xs text-slate-600 leading-relaxed">
+                    When generating a share, you can set an optional Self-Destruct PIN. The Self-Destruct button appears right below the code digits and only appears on the reader page if configured. When entered, all Firestore metadata and Cloudflare R2 files are instantly wiped, disappearing immediately from all reader screens.
+                  </p>
+                </details>
+
+                <details className="group rounded-2xl border border-slate-200 bg-white p-4 shadow-xs transition-colors open:border-blue-300">
+                  <summary className="flex cursor-pointer items-center justify-between font-bold text-sm text-slate-800 hover:text-blue-600">
+                    <span>How long does Pasteport keep my files and clipboard data?</span>
+                    <span className="ml-2 text-slate-400 group-open:rotate-180 transition-transform">▼</span>
+                  </summary>
+                  <p className="mt-3 text-xs text-slate-600 leading-relaxed">
+                    You choose the lifespan (1h, 3h, 6h, 12h, or 24h). Once expired, clips are immediately blocked and purged upon access or cleaned up via the daily cron job. No personal data or user accounts are ever retained.
+                  </p>
+                </details>
+
+                <details className="group rounded-2xl border border-slate-200 bg-white p-4 shadow-xs transition-colors open:border-blue-300">
+                  <summary className="flex cursor-pointer items-center justify-between font-bold text-sm text-slate-800 hover:text-blue-600">
+                    <span>Can I paste screenshots directly with Ctrl + V?</span>
+                    <span className="ml-2 text-slate-400 group-open:rotate-180 transition-transform">▼</span>
+                  </summary>
+                  <p className="mt-3 text-xs text-slate-600 leading-relaxed">
+                    Yes! Press <kbd className="rounded bg-slate-100 px-1 py-0.5 font-mono text-[10px] text-slate-700">Ctrl + V</kbd> anywhere on the page to paste clipboard images, screenshots, or copied text directly without needing to save a file first.
+                  </p>
+                </details>
+              </div>
+            </div>
+          </section>
         </div>
       </main>
 

@@ -1,9 +1,53 @@
 # *
 User-agent: *
 Allow: /
+Disallow: /api/
+Disallow: /view/
+
+# Googlebot
+User-agent: Googlebot
+Allow: /
+Disallow: /api/
+Disallow: /view/
+
+# Google-Extended
+User-agent: Google-Extended
+Allow: /
+Disallow: /api/
+Disallow: /view/
+
+# GPTBot
+User-agent: GPTBot
+Allow: /
+Disallow: /api/
+Disallow: /view/
+
+# ChatGPT-User
+User-agent: ChatGPT-User
+Allow: /
+Disallow: /api/
+Disallow: /view/
+
+# PerplexityBot
+User-agent: PerplexityBot
+Allow: /
+Disallow: /api/
+Disallow: /view/
+
+# ClaudeBot
+User-agent: ClaudeBot
+Allow: /
+Disallow: /api/
+Disallow: /view/
+
+# anthropic-ai
+User-agent: anthropic-ai
+Allow: /
+Disallow: /api/
+Disallow: /view/
 
 # Host
-Host: https://online-clipboard-beta.vercel.app
+Host: https://pasteport.zain-imran.com
 
 # Sitemaps
-Sitemap: https://online-clipboard-beta.vercel.app/sitemap.xml
+Sitemap: https://pasteport.zain-imran.com/sitemap.xml
