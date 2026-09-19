@@ -37,32 +37,34 @@ export async function POST(request: Request) {
         const data = clipDoc.data();
 
         // Check authentication / authorization
+        // Check if clip is expired - expired clips are purged immediately
+        const isExpired = Boolean(data.expiresAt && data.expiresAt.toMillis() <= Date.now());
         const hasPin = Boolean(data.deletePin);
-        const hasCreatorToken = Boolean(data.creatorToken);
+        const isCreator = Boolean(data.creatorToken && creatorToken && data.creatorToken === creatorToken);
 
         let isAuthorized = false;
 
-        if (hasPin) {
+        if (isExpired) {
+            isAuthorized = true;
+        } else if (hasPin) {
             if (pin && String(pin).trim() === String(data.deletePin).trim()) {
                 isAuthorized = true;
-            } else if (hasCreatorToken && creatorToken && creatorToken === data.creatorToken) {
+            } else if (isCreator) {
                 isAuthorized = true;
-            }
-        } else if (hasCreatorToken) {
-            if (creatorToken && creatorToken === data.creatorToken) {
-                isAuthorized = true;
-            } else if (!pin) {
-                // If no PIN was required on creation and user requests wipe, check token
-                isAuthorized = true;
+            } else {
+                return NextResponse.json(
+                    { error: 'Incorrect Self-Destruct PIN' },
+                    { status: 401 }
+                );
             }
         } else {
-            // Legacy / no pin set
+            // No PIN was configured on the clip
             isAuthorized = true;
         }
 
         if (!isAuthorized) {
             return NextResponse.json(
-                { error: 'Incorrect Self-Destruct PIN or unauthorized to revoke this clip' },
+                { error: 'Unauthorized to revoke this clip' },
                 { status: 401 }
             );
         }
