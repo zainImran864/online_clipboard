@@ -1,0 +1,22 @@
+{
+  "name": "pasteport-cli",
+  "version": "1.0.0",
+  "description": "Cross-device clipboard and file sharing CLI tool for Pasteport",
+  "main": "bin/pasteport.js",
+  "bin": {
+    "pasteport": "./bin/pasteport.js"
+  },
+  "keywords": [
+    "pasteport",
+    "clipboard",
+    "share",
+    "file-transfer",
+    "cli",
+    "developer-tools"
+  ],
+  "author": "Zain Imran",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

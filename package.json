@@ -9,6 +9,7 @@
     "start": "next start",
     "lint": "eslint",
     "gen-code": "node --env-file=.env scripts/gen-code.mjs",
+    "cli": "node cli/bin/pasteport.js",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui"
   },

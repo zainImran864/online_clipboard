@@ -63,7 +63,7 @@ module.exports = {
     } else if (path === '/send' || path === '/read') {
       priority = 0.9;
       changefreq = 'daily';
-    } else if (path === '/tools') {
+    } else if (path === '/tools' || path === '/desktop' || path === '/cli') {
       priority = 0.85;
       changefreq = 'daily';
     } else if ([

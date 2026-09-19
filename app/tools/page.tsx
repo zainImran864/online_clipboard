@@ -9,7 +9,7 @@ export interface DevToolItem {
     href: string;
     name: string;
     icon: string;
-    category: 'Formatters' | 'Security' | 'Web & HTTP' | 'Generators';
+    category: 'Formatters' | 'Security' | 'Web & HTTP' | 'Generators' | 'Native & CLI';
     desc: string;
     tags: string[];
 }
@@ -159,6 +159,22 @@ export const ALL_DEV_TOOLS: DevToolItem[] = [
         desc: 'Convert HEX, RGB, HSL color codes and calculate WCAG 2.1 accessibility contrast ratios.',
         tags: ['color', 'hex', 'rgb', 'hsl', 'contrast', 'wcag'],
     },
+    {
+        href: '/desktop',
+        name: 'Pasteport Desktop App',
+        icon: '🖥️',
+        category: 'Native & CLI',
+        desc: 'Cross-platform app for Windows, macOS, and Linux with global hotkey (Ctrl+Shift+P) and tray daemon.',
+        tags: ['desktop', 'electron', 'windows', 'macos', 'linux', 'hotkey', 'native', 'daemon', 'system tray'],
+    },
+    {
+        href: '/cli',
+        name: 'Pasteport CLI Tool',
+        icon: '⚡',
+        category: 'Native & CLI',
+        desc: 'Zero-dependency command-line interface. Pipe terminal outputs, upload zip archives, and script sharing.',
+        tags: ['cli', 'terminal', 'bash', 'npm', 'pipeline', 'developer', 'command', 'piping', 'automation'],
+    },
 ];
 
 export default function ToolsDirectoryPage() {
@@ -220,7 +236,7 @@ export default function ToolsDirectoryPage() {
 
                         {/* Category Filter Pills */}
                         <div className="flex flex-wrap gap-1.5">
-                            {['All', 'Formatters', 'Security', 'Generators', 'Web & HTTP'].map((cat) => (
+                            {['All', 'Native & CLI', 'Formatters', 'Security', 'Generators', 'Web & HTTP'].map((cat) => (
                                 <button
                                     key={cat}
                                     onClick={() => setSelectedCategory(cat)}
