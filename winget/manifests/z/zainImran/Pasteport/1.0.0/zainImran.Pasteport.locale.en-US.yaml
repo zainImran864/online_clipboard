@@ -1,0 +1,25 @@
+# yaml-language-server: $schema=https://aka.ms/winget-manifest.defaultLocale.1.6.0.schema.json
+
+PackageIdentifier: zainImran.Pasteport
+PackageVersion: 1.0.0
+PackageLocale: en-US
+Publisher: Zain Imran
+PublisherUrl: https://github.com/zainImran864
+PublisherSupportUrl: https://github.com/zainImran864/online_clipboard/issues
+PackageName: Pasteport
+PackageUrl: https://pasteport.zain-imran.com
+License: MIT
+LicenseUrl: https://github.com/zainImran864/online_clipboard/blob/main/LICENSE
+Copyright: Copyright (c) 2026 Zain Imran
+ShortDescription: Cross-device clipboard sharing platform and developer toolkit for Windows, macOS, and Linux.
+Description: Pasteport Desktop enables seamless cross-device sharing, background clipboard sync, global shortcut HUD (Ctrl+Shift+P), end-to-end zero-knowledge encryption, and a built-in developer toolkit suite.
+Moniker: pasteport
+Tags:
+  - clipboard
+  - sharing
+  - developer-tools
+  - productivity
+  - cross-platform
+ReleaseNotesUrl: https://github.com/zainImran864/online_clipboard/releases/tag/v1.0.0
+ManifestType: defaultLocale
+ManifestVersion: 1.6.0

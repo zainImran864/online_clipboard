@@ -1,0 +1,78 @@
+name: Build & Release Desktop App
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version (e.g. 1.0.0)'
+        required: false
+        default: '1.0.0'
+
+permissions:
+  contents: write
+
+jobs:
+  build-release:
+    name: Build Desktop App (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest, macos-latest]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: desktop/package.json
+
+      - name: Install system dependencies (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y rpm libarchive-tools
+
+      - name: Install Desktop dependencies
+        working-directory: desktop
+        run: npm ci || npm install
+
+      - name: Build Windows binaries
+        if: runner.os == 'Windows'
+        working-directory: desktop
+        run: npm run build:win
+
+      - name: Build Linux packages
+        if: runner.os == 'Linux'
+        working-directory: desktop
+        run: npm run build:linux
+
+      - name: Build macOS bundles
+        if: runner.os == 'macOS'
+        working-directory: desktop
+        run: npm run build:mac
+
+      - name: Upload artifacts to GitHub Release
+        uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
+        with:
+          files: |
+            desktop/dist/*.exe
+            desktop/dist/*.dmg
+            desktop/dist/*.zip
+            desktop/dist/*.deb
+            desktop/dist/*.rpm
+            desktop/dist/*.AppImage
+            desktop/dist/*.blockmap
+          generate_release_notes: true
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
