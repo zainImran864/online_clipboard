@@ -24,7 +24,7 @@ jobs:
   publish-npm:
     name: Publish to NPM Registry
     runs-on: ubuntu-latest
-    if: inputs.publish_npm != false
+    if: github.event_name != 'workflow_dispatch' || inputs.publish_npm != false
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -63,7 +63,7 @@ jobs:
   publish-pypi:
     name: Publish to PyPI
     runs-on: ubuntu-latest
-    if: inputs.publish_pypi != false
+    if: github.event_name != 'workflow_dispatch' || inputs.publish_pypi != false
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
